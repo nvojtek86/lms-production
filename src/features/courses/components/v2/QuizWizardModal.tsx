@@ -61,6 +61,7 @@ type QuizOption = {
   id: string;
   title: string;
   image_data_url: string | null;
+  image_upload_id?: string | null;
   display_format: QuizOptionDisplayFormat;
   position: number;
 };
@@ -224,6 +225,7 @@ function normalizePayload(initial: Record<string, unknown> | null | undefined, f
             id: typeof (o as { id?: unknown }).id === "string" ? String((o as { id: string }).id) : makeId("opt"),
             title: typeof (o as { title?: unknown }).title === "string" ? String((o as { title: string }).title) : "",
             image_data_url: typeof (o as { image_data_url?: unknown }).image_data_url === "string" ? String((o as { image_data_url: string }).image_data_url) : null,
+            image_upload_id: typeof (o as { image_upload_id?: unknown }).image_upload_id === "string" ? String((o as { image_upload_id: string }).image_upload_id) : null,
             display_format:
               (o as { display_format?: unknown }).display_format === "only_image" ||
               (o as { display_format?: unknown }).display_format === "text_and_image_both"
@@ -951,8 +953,9 @@ export function QuizWizardModal({
 
   async function uploadOptionImage(file: File) {
     if (!editingQuestion || !optionEditorId) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
+    const allowed = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+    if (!allowed.has(file.type)) {
+      toast.error("Invalid image type. Allowed: PNG, JPG, WebP, GIF.");
       return;
     }
     const maxBytes = 5 * 1024 * 1024;
@@ -960,19 +963,26 @@ export function QuizWizardModal({
       toast.error("Image is too large (max 5MB).");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === "string" ? reader.result : null;
-      if (!dataUrl) return;
-      setEditingQuestion((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          options: prev.options.map((o) => (o.id === optionEditorId ? { ...o, image_data_url: dataUrl } : o)),
-        };
-      });
-    };
-    reader.readAsDataURL(file);
+    const uploadId = makeId("option_image");
+    const objectUrl = URL.createObjectURL(file);
+    const previousUploadId = editingQuestion.options.find((o) => o.id === optionEditorId)?.image_upload_id ?? null;
+    setQueuedInlineImages((prev) => {
+      const next = { ...prev };
+      if (previousUploadId) {
+        const existing = next[previousUploadId];
+        if (existing?.objectUrl) URL.revokeObjectURL(existing.objectUrl);
+        delete next[previousUploadId];
+      }
+      next[uploadId] = { file, objectUrl };
+      return next;
+    });
+    setEditingQuestion((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        options: prev.options.map((o) => (o.id === optionEditorId ? { ...o, image_data_url: objectUrl, image_upload_id: uploadId } : o)),
+      };
+    });
   }
 
   const content = (

@@ -20,8 +20,7 @@ const signSchema = z.object({
         size_bytes: z.number().int().positive().max(300 * 1024 * 1024),
       })
     )
-    .min(1)
-    .max(10),
+    .min(1),
 });
 
 export async function POST(request: NextRequest, context: { params: Promise<{ itemId: string }> }) {

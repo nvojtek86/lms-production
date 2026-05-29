@@ -365,6 +365,17 @@ function makeBlockId(): string {
   return makeTempId("blk");
 }
 
+async function fileFromImageDataUrl(dataUrl: string, fallbackName: string): Promise<File | null> {
+  const match = /^data:(image\/(?:png|jpeg|webp|gif));base64,/i.exec(dataUrl);
+  if (!match) return null;
+  const mime = match[1].toLowerCase();
+  const ext = mime === "image/jpeg" ? "jpg" : mime.split("/")[1] ?? "bin";
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  if (!blob.size) return null;
+  return new File([blob], `${fallbackName}.${ext}`, { type: mime });
+}
+
 function FieldHint({ children }: { children: React.ReactNode }) {
   return <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{children}</p>;
 }
@@ -2384,12 +2395,30 @@ export function CourseEditorV2Form({
             nextPayload = finalPayload;
           }
 
-          // QUIZ: upload any queued inline images referenced inside question HTML, then patch payload_json.
-          if (item.item_type === "quiz" && pendingUploads && Object.keys(pendingUploads.inlineImages ?? {}).length) {
+          // QUIZ: upload queued images and migrate any legacy data-URL option images before patching payload_json.
+          const hasQueuedQuizImages = Boolean(pendingUploads && Object.keys(pendingUploads.inlineImages ?? {}).length);
+          const hasLegacyQuizDataUrls = item.item_type === "quiz" && JSON.stringify(nextPayload).includes("data:image/");
+          if (item.item_type === "quiz" && (hasQueuedQuizImages || hasLegacyQuizDataUrls)) {
             shouldPatch = true;
             const base = nextPayload as Record<string, unknown>;
-            const workingQueue: InlineImageQueue = { ...(pendingUploads.inlineImages ?? {}) };
+            const workingQueue: InlineImageQueue = { ...(pendingUploads?.inlineImages ?? {}) };
             const rawQuestions = Array.isArray((base as { questions?: unknown }).questions) ? ((base as { questions: unknown[] }).questions as unknown[]) : [];
+            const stableSrcForStoragePath = (storagePath: string) => `/api/v2/lesson-assets?path=${encodeURIComponent(storagePath)}`;
+            const uploadQuizImage = async ({ uploadId, file }: { uploadId: string; file: File }) => {
+              const { data: sign } = await fetchJson<{ bucket_id: string; object_name: string; token: string }>(
+                `/api/v2/items/${resolvedItemId}/lesson/inline-images/sign`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ mime: file.type, size_bytes: file.size, file_name: file.name }),
+                }
+              );
+              const uploadRes = await supabase.storage.from(sign.bucket_id).uploadToSignedUrl(sign.object_name, sign.token, file, {
+                contentType: file.type,
+              });
+              if (uploadRes.error) throw new Error(`Quiz image upload failed: ${uploadRes.error.message}`);
+              return { storage_path: String(sign.object_name ?? ""), upload_id: uploadId };
+            };
 
             const nextQuestions = [];
             for (const q of rawQuestions) {
@@ -2404,22 +2433,8 @@ export function CourseEditorV2Form({
                 const res = await finalizeInlineImagesInHtml({
                   html: desc,
                   queue: workingQueue,
-                  upload: async ({ uploadId, file }) => {
-                    const { data: sign } = await fetchJson<{ bucket_id: string; object_name: string; token: string }>(
-                      `/api/v2/items/${resolvedItemId}/lesson/inline-images/sign`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ mime: file.type, size_bytes: file.size, file_name: file.name }),
-                      }
-                    );
-                    const uploadRes = await supabase.storage.from(sign.bucket_id).uploadToSignedUrl(sign.object_name, sign.token, file, {
-                      contentType: file.type,
-                    });
-                    if (uploadRes.error) throw new Error(`Inline image upload failed: ${uploadRes.error.message}`);
-                    return { storage_path: String(sign.object_name ?? ""), upload_id: uploadId };
-                  },
-                  stableSrcForStoragePath: (storagePath) => `/api/v2/lesson-assets?path=${encodeURIComponent(storagePath)}`,
+                  upload: uploadQuizImage,
+                  stableSrcForStoragePath,
                 });
                 desc = res.html;
                 for (const id of res.uploadedIds) delete workingQueue[id];
@@ -2428,28 +2443,45 @@ export function CourseEditorV2Form({
                 const res = await finalizeInlineImagesInHtml({
                   html: expl,
                   queue: workingQueue,
-                  upload: async ({ uploadId, file }) => {
-                    const { data: sign } = await fetchJson<{ bucket_id: string; object_name: string; token: string }>(
-                      `/api/v2/items/${resolvedItemId}/lesson/inline-images/sign`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ mime: file.type, size_bytes: file.size, file_name: file.name }),
-                      }
-                    );
-                    const uploadRes = await supabase.storage.from(sign.bucket_id).uploadToSignedUrl(sign.object_name, sign.token, file, {
-                      contentType: file.type,
-                    });
-                    if (uploadRes.error) throw new Error(`Inline image upload failed: ${uploadRes.error.message}`);
-                    return { storage_path: String(sign.object_name ?? ""), upload_id: uploadId };
-                  },
-                  stableSrcForStoragePath: (storagePath) => `/api/v2/lesson-assets?path=${encodeURIComponent(storagePath)}`,
+                  upload: uploadQuizImage,
+                  stableSrcForStoragePath,
                 });
                 expl = res.html;
                 for (const id of res.uploadedIds) delete workingQueue[id];
               }
 
-              nextQuestions.push({ ...qq, description_html: desc, answer_explanation_html: expl });
+              const rawOptions = Array.isArray((qq as { options?: unknown }).options) ? ((qq as { options: unknown[] }).options as unknown[]) : [];
+              const nextOptions = [];
+              for (let optionIdx = 0; optionIdx < rawOptions.length; optionIdx++) {
+                const option = rawOptions[optionIdx];
+                if (!option || typeof option !== "object") {
+                  nextOptions.push(option);
+                  continue;
+                }
+                const oo = option as Record<string, unknown>;
+                const imageUploadId = typeof oo.image_upload_id === "string" && oo.image_upload_id.trim().length ? oo.image_upload_id.trim() : null;
+                let imageDataUrl = typeof oo.image_data_url === "string" && oo.image_data_url.trim().length ? oo.image_data_url.trim() : null;
+
+                if (imageUploadId && workingQueue[imageUploadId]?.file) {
+                  const uploaded = await uploadQuizImage({ uploadId: imageUploadId, file: workingQueue[imageUploadId].file });
+                  imageDataUrl = stableSrcForStoragePath(uploaded.storage_path);
+                  revokeObjectUrlSafe(workingQueue[imageUploadId].objectUrl);
+                  delete workingQueue[imageUploadId];
+                } else if (imageDataUrl?.startsWith("data:image/")) {
+                  const fallbackName = `quiz-option-${String(oo.id ?? optionIdx)}`;
+                  const file = await fileFromImageDataUrl(imageDataUrl, fallbackName);
+                  if (file) {
+                    const uploaded = await uploadQuizImage({ uploadId: imageUploadId ?? makeTempId("option_image"), file });
+                    imageDataUrl = stableSrcForStoragePath(uploaded.storage_path);
+                  }
+                }
+
+                const nextOption = { ...oo, image_data_url: imageDataUrl };
+                delete (nextOption as { image_upload_id?: unknown }).image_upload_id;
+                nextOptions.push(nextOption);
+              }
+
+              nextQuestions.push({ ...qq, description_html: desc, answer_explanation_html: expl, options: nextOptions });
             }
 
             nextPayload = { ...base, questions: nextQuestions };
@@ -4777,11 +4809,17 @@ export function CourseEditorV2Form({
                     const p = payload_json as Record<string, unknown>;
                     const questions = Array.isArray(p.questions) ? (p.questions as Array<Record<string, unknown>>) : [];
                     const htmls: string[] = [];
+                    const ids = new Set<string>();
                     for (const q of questions) {
                       if (typeof q.description_html === "string") htmls.push(q.description_html);
                       if (typeof q.answer_explanation_html === "string") htmls.push(q.answer_explanation_html);
+                      const options = Array.isArray(q.options) ? (q.options as Array<Record<string, unknown>>) : [];
+                      for (const option of options) {
+                        if (typeof option.image_upload_id === "string" && option.image_upload_id.trim().length > 0) {
+                          ids.add(option.image_upload_id.trim());
+                        }
+                      }
                     }
-                    const ids = new Set<string>();
                     for (const h of htmls) {
                       for (const id of extractInlineUploadIdsFromHtml(h)) ids.add(id);
                     }

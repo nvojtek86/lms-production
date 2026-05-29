@@ -28,7 +28,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ it
   if (!form) return apiError("VALIDATION_ERROR", "Invalid form data.", { status: 400 });
   const files = form.getAll("files").filter((v): v is File => v instanceof File);
   if (!files.length) return apiError("VALIDATION_ERROR", "No files uploaded.", { status: 400 });
-  if (files.length > 10) return apiError("VALIDATION_ERROR", "Too many files (max 10).", { status: 400 });
 
   const maxBytesPerFile = 300 * 1024 * 1024; // 300MB
   for (const f of files) {
