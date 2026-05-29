@@ -6,6 +6,7 @@ import { generateSupportId } from "@/lib/support/supportId";
 import { patchCourseV2Schema, validateSchema } from "@/lib/validations/schemas";
 import { coerceNullableText, coursePermalink, ensureUniqueCourseSlug } from "@/lib/courses/v2";
 import { sanitizeRichHtml } from "@/lib/courses/sanitize.server";
+import { generateAndPersistCertificatePdf } from "@/lib/certificates/generateCertificatePdf";
 
 type CourseRow = {
   id: string;
@@ -63,6 +64,44 @@ function collectCourseAssetPathsFromHtml(html: string | null): Set<string> {
   const out = new Set<string>();
   if (typeof html === "string" && html.trim().length) extractStoragePathsFromText(html, out);
   return out;
+}
+
+function collectStoragePathsFromJson(value: unknown, out: Set<string>) {
+  if (!value) return;
+  if (typeof value === "string") {
+    extractStoragePathsFromText(value, out);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const v of value) collectStoragePathsFromJson(v, out);
+    return;
+  }
+  if (typeof value !== "object") return;
+  const obj = value as Record<string, unknown>;
+  for (const [key, nested] of Object.entries(obj)) {
+    if (key === "storage_path" && typeof nested === "string" && isSafeStoragePath(nested)) {
+      out.add(nested);
+      continue;
+    }
+    collectStoragePathsFromJson(nested, out);
+  }
+}
+
+async function enqueueAssetDeletion(input: {
+  admin: ReturnType<typeof createAdminSupabaseClient>;
+  bucketId: string;
+  objectName: string;
+  requestedBy: string;
+  reason: string;
+}) {
+  const rpc = await input.admin.rpc("enqueue_asset_deletion", {
+    p_bucket_id: input.bucketId,
+    p_object_name: input.objectName,
+    p_delay_seconds: 60 * 60 * 2,
+    p_requested_by: input.requestedBy,
+    p_reason: input.reason,
+  });
+  return rpc.error?.message ?? null;
 }
 
 function isOrgAdminOwner(caller: { role: string; organization_id?: string | null }, course: { organization_id: string | null }): boolean {
@@ -366,5 +405,171 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   });
 
   return apiOk({ course: updatedData }, { status: 200, message: "Course updated." });
+}
+
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  const { user: caller, error } = await getServerUser();
+  if (error || !caller) {
+    await logApiEvent({ request, caller: null, outcome: "error", status: 401, code: "UNAUTHORIZED", publicMessage: "Unauthorized" });
+    return apiError("UNAUTHORIZED", "Unauthorized", { status: 401 });
+  }
+
+  if (caller.role !== "organization_admin" || !caller.organization_id) {
+    await logApiEvent({ request, caller, outcome: "error", status: 403, code: "FORBIDDEN", publicMessage: "Forbidden" });
+    return apiError("FORBIDDEN", "Forbidden", { status: 403 });
+  }
+
+  const admin = createAdminSupabaseClient();
+  const { data: courseData, error: courseError } = await admin
+    .from("courses")
+    .select("id, organization_id, title, about_html, thumbnail_storage_path, intro_video_storage_path")
+    .eq("id", id)
+    .single();
+
+  if (courseError || !courseData?.id) {
+    return apiError("NOT_FOUND", "Course not found.", { status: 404 });
+  }
+  if (String(courseData.organization_id ?? "") !== caller.organization_id) {
+    await logApiEvent({ request, caller, outcome: "error", status: 403, code: "FORBIDDEN", publicMessage: "Forbidden", details: { course_id: id } });
+    return apiError("FORBIDDEN", "Forbidden", { status: 403 });
+  }
+
+  const { data: certificates, error: certError } = await admin
+    .from("certificates")
+    .select("id, storage_bucket, storage_path, course_title_snapshot, certificate_title_snapshot")
+    .eq("course_id", id);
+
+  if (certError) {
+    const supportId = generateSupportId();
+    await logApiEvent({
+      request,
+      caller,
+      outcome: "error",
+      status: 500,
+      code: "INTERNAL",
+      publicMessage: "Failed to validate certificates before deleting course.",
+      internalMessage: certError.message,
+      details: { course_id: id, support_id: supportId },
+    });
+    return apiError("INTERNAL", "Failed to validate certificates before deleting course.", { status: 500, supportId });
+  }
+
+  for (const cert of Array.isArray(certificates) ? certificates : []) {
+    const storageBucket = typeof cert.storage_bucket === "string" && cert.storage_bucket.trim().length > 0 ? cert.storage_bucket.trim() : null;
+    const storagePath = typeof cert.storage_path === "string" && cert.storage_path.trim().length > 0 ? cert.storage_path.trim() : null;
+    let generatedMissingPdf = false;
+    if (!storageBucket || !storagePath) {
+      const generated = await generateAndPersistCertificatePdf(String(cert.id));
+      if (!generated.ok) {
+        return apiError(
+          "CONFLICT",
+          "Course cannot be deleted because one issued certificate could not be preserved. Please try downloading/regenerating certificates first.",
+          { status: 409 }
+        );
+      }
+      generatedMissingPdf = true;
+    }
+
+    const courseTitleSnapshot =
+      typeof cert.course_title_snapshot === "string" && cert.course_title_snapshot.trim().length > 0 ? cert.course_title_snapshot.trim() : null;
+    const certificateTitleSnapshot =
+      typeof cert.certificate_title_snapshot === "string" && cert.certificate_title_snapshot.trim().length > 0
+        ? cert.certificate_title_snapshot.trim()
+        : null;
+    if (!generatedMissingPdf && (!courseTitleSnapshot || !certificateTitleSnapshot)) {
+      return apiError("CONFLICT", "Course cannot be deleted because one issued certificate is missing snapshot data.", { status: 409 });
+    }
+  }
+
+  const lessonAssetPaths = collectCourseAssetPathsFromHtml((courseData as { about_html?: string | null }).about_html ?? null);
+  const courseCoverPaths = new Set<string>();
+  const introVideoPaths = new Set<string>();
+  const certificateTemplatePaths: Array<{ bucket: string; path: string }> = [];
+
+  const thumbnailPath =
+    typeof (courseData as { thumbnail_storage_path?: unknown }).thumbnail_storage_path === "string"
+      ? String((courseData as { thumbnail_storage_path: string }).thumbnail_storage_path).trim()
+      : "";
+  if (thumbnailPath && isSafeStoragePath(thumbnailPath)) courseCoverPaths.add(thumbnailPath);
+
+  const introVideoPath =
+    typeof (courseData as { intro_video_storage_path?: unknown }).intro_video_storage_path === "string"
+      ? String((courseData as { intro_video_storage_path: string }).intro_video_storage_path).trim()
+      : "";
+  if (introVideoPath && isSafeStoragePath(introVideoPath)) introVideoPaths.add(introVideoPath);
+
+  const [{ data: itemsData }, { data: templateData }] = await Promise.all([
+    admin.from("course_topic_items").select("id, payload_json").eq("course_id", id),
+    admin.from("course_certificate_templates").select("storage_bucket, storage_path").eq("course_id", id),
+  ]);
+
+  for (const row of Array.isArray(itemsData) ? itemsData : []) {
+    collectStoragePathsFromJson((row as { payload_json?: unknown }).payload_json ?? null, lessonAssetPaths);
+  }
+
+  for (const row of Array.isArray(templateData) ? templateData : []) {
+    const bucket = typeof row.storage_bucket === "string" ? row.storage_bucket.trim() : "";
+    const path = typeof row.storage_path === "string" ? row.storage_path.trim() : "";
+    if (bucket && bucket !== "certificates" && path && isSafeStoragePath(path)) {
+      certificateTemplatePaths.push({ bucket, path });
+    }
+  }
+
+  const { error: deleteError } = await admin.from("courses").delete().eq("id", id);
+  if (deleteError) {
+    const supportId = generateSupportId();
+    await logApiEvent({
+      request,
+      caller,
+      outcome: "error",
+      status: 500,
+      code: "INTERNAL",
+      publicMessage: "Failed to delete course.",
+      internalMessage: deleteError.message,
+      details: { course_id: id, support_id: supportId },
+    });
+    return apiError("INTERNAL", "Failed to delete course.", { status: 500, supportId });
+  }
+
+  const cleanupErrors: string[] = [];
+  for (const path of courseCoverPaths) {
+    const err = await enqueueAssetDeletion({ admin, bucketId: "course-covers", objectName: path, requestedBy: caller.id, reason: "course hard deleted" });
+    if (err) cleanupErrors.push(`course-covers/${path}: ${err}`);
+  }
+  for (const path of introVideoPaths) {
+    const err = await enqueueAssetDeletion({ admin, bucketId: "course-intro-videos", objectName: path, requestedBy: caller.id, reason: "course hard deleted" });
+    if (err) cleanupErrors.push(`course-intro-videos/${path}: ${err}`);
+  }
+  for (const path of lessonAssetPaths) {
+    const err = await enqueueAssetDeletion({ admin, bucketId: "course-lesson-assets", objectName: path, requestedBy: caller.id, reason: "course hard deleted" });
+    if (err) cleanupErrors.push(`course-lesson-assets/${path}: ${err}`);
+  }
+  for (const item of certificateTemplatePaths) {
+    const err = await enqueueAssetDeletion({ admin, bucketId: item.bucket, objectName: item.path, requestedBy: caller.id, reason: "course hard deleted" });
+    if (err) cleanupErrors.push(`${item.bucket}/${item.path}: ${err}`);
+  }
+
+  await logApiEvent({
+    request,
+    caller,
+    outcome: "success",
+    status: 200,
+    publicMessage: "Course deleted.",
+    details: {
+      course_id: id,
+      preserved_certificates_count: Array.isArray(certificates) ? certificates.length : 0,
+      cleanup_error_count: cleanupErrors.length,
+    },
+  });
+
+  return apiOk(
+    {
+      course_id: id,
+      preserved_certificates_count: Array.isArray(certificates) ? certificates.length : 0,
+      cleanup_error_count: cleanupErrors.length,
+    },
+    { status: 200, message: "Course deleted." }
+  );
 }
 

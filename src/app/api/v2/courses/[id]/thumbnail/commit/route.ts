@@ -13,6 +13,19 @@ const commitSchema = z.object({
   size_bytes: z.number().int().positive().max(10 * 1024 * 1024),
 });
 
+function splitStoragePath(path: string): { directory: string; fileName: string } | null {
+  const idx = path.lastIndexOf("/");
+  if (idx <= 0 || idx >= path.length - 1) return null;
+  return {
+    directory: path.slice(0, idx),
+    fileName: path.slice(idx + 1),
+  };
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await context.params;
   const { user: caller, error } = await getServerUser();
@@ -39,6 +52,43 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (String(row.organization_id ?? "") !== String(caller.organization_id)) return apiError("FORBIDDEN", "Forbidden", { status: 403 });
 
   const prevPath = typeof row.thumbnail_storage_path === "string" && row.thumbnail_storage_path.trim().length ? row.thumbnail_storage_path.trim() : null;
+
+  const split = splitStoragePath(storage_path);
+  if (!split) {
+    return apiError("VALIDATION_ERROR", "Invalid storage path.", { status: 400 });
+  }
+
+  let objectExists = false;
+  let listErrorMessage: string | null = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const { data: objects, error: listError } = await admin.storage
+      .from("course-covers")
+      .list(split.directory, { limit: 10, search: split.fileName });
+
+    if (listError) {
+      listErrorMessage = listError.message;
+    } else {
+      objectExists = Array.isArray(objects) && objects.some((object) => object.name === split.fileName);
+      if (objectExists) break;
+    }
+
+    if (attempt < 3) await wait(250);
+  }
+
+  if (!objectExists) {
+    const supportId = generateSupportId();
+    await logApiEvent({
+      request,
+      caller,
+      outcome: "error",
+      status: 409,
+      code: "CONFLICT",
+      publicMessage: "Uploaded thumbnail was not found.",
+      internalMessage: listErrorMessage ?? "Storage object missing after signed upload.",
+      details: { support_id: supportId, course_id: courseId, storage_path },
+    });
+    return apiError("CONFLICT", "Uploaded thumbnail was not found. Please try uploading it again.", { status: 409, supportId });
+  }
 
   const { data: publicUrlData } = admin.storage.from("course-covers").getPublicUrl(storage_path);
   const coverUrl = publicUrlData.publicUrl;

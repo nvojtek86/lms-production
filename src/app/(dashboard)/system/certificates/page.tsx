@@ -14,6 +14,11 @@ type CertificateRow = {
   created_at?: string | null;
   status?: string | null;
   expires_at?: string | null;
+  course_title_snapshot?: string | null;
+  organization_name_snapshot?: string | null;
+  organization_slug_snapshot?: string | null;
+  user_full_name_snapshot?: string | null;
+  user_email_snapshot?: string | null;
 };
 
 export default async function SystemCertificatesPage() {
@@ -78,13 +83,19 @@ export default async function SystemCertificatesPage() {
     const expires = cert.expires_at;
     const status = cert.status ?? "—";
 
-    const courseLabel = (c?.title ?? "").trim() || "Untitled course";
+    const courseLabel = (c?.title ?? "").trim() || (cert.course_title_snapshot ?? "").trim() || "Untitled course";
 
-    const fullName = (u?.full_name ?? "").trim();
-    const email = (u?.email ?? "").trim();
+    const fullName = (u?.full_name ?? "").trim() || (cert.user_full_name_snapshot ?? "").trim();
+    const email = (u?.email ?? "").trim() || (cert.user_email_snapshot ?? "").trim();
     const userLabel = fullName ? (email ? `${fullName} (${email})` : fullName) : (email || cert.user_id || "—");
 
-    const orgLabel = (o?.name ?? "").trim() || (o?.slug ?? "").trim() || cert.organization_id || null;
+    const orgLabel =
+      (o?.name ?? "").trim() ||
+      (o?.slug ?? "").trim() ||
+      (cert.organization_name_snapshot ?? "").trim() ||
+      (cert.organization_slug_snapshot ?? "").trim() ||
+      cert.organization_id ||
+      null;
 
     const canDownload = typeof cert.id === "string" && cert.id.length > 0;
     const downloadHref = canDownload ? `/api/certificates/${cert.id}/download` : null;

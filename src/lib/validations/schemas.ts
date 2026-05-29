@@ -61,7 +61,6 @@ export const updateSettingsSchema = z.object({
   logo_url: z.string().url().or(z.literal('')).optional(),
   top_logo_url: z.string().url().or(z.literal('')).optional(),
   top_logo_compact_url: z.string().url().or(z.literal('')).optional(),
-  bottom_logo_url: z.string().url().or(z.literal('')).optional(),
   default_language: z.string().min(2).max(10).optional(),
   timezone: z.string().min(1).max(50).optional(),
   theme: themeSchema.optional(),
@@ -71,15 +70,13 @@ export const updateSettingsSchema = z.object({
     'app_name' in data &&
     'logo_url' in data &&
     'top_logo_url' in data &&
-    'top_logo_compact_url' in data &&
-    'bottom_logo_url' in data
+    'top_logo_compact_url' in data
   ) {
     const hasAppName = data.app_name && data.app_name.trim().length > 0;
     const hasLogo = data.logo_url && data.logo_url.trim().length > 0;
     const hasTopLogo = data.top_logo_url && data.top_logo_url.trim().length > 0;
     const hasTopCompactLogo = data.top_logo_compact_url && data.top_logo_compact_url.trim().length > 0;
-    const hasBottomLogo = data.bottom_logo_url && data.bottom_logo_url.trim().length > 0;
-    return hasAppName || hasLogo || hasTopLogo || hasTopCompactLogo || hasBottomLogo;
+    return hasAppName || hasLogo || hasTopLogo || hasTopCompactLogo;
   }
   return true;
 }, {

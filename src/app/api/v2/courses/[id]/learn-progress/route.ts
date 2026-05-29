@@ -10,6 +10,24 @@ const upsertSchema = z.object({
   item_id: z.string().uuid(),
 });
 
+async function isPublishedCourseForOrg(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  courseId: string,
+  organizationId: string
+): Promise<boolean> {
+  const { data: course } = await supabase
+    .from("courses")
+    .select("id, organization_id, is_published")
+    .eq("id", courseId)
+    .maybeSingle();
+
+  return Boolean(
+    course?.id &&
+      String((course as { organization_id?: unknown }).organization_id ?? "") === organizationId &&
+      (course as { is_published?: unknown }).is_published === true
+  );
+}
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await context.params;
   const { user: caller, error } = await getServerUser();
@@ -23,6 +41,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   }
 
   const supabase = await createServerSupabaseClient();
+  const canAccessCourse = await isPublishedCourseForOrg(supabase, courseId, caller.organization_id);
+  if (!canAccessCourse) return apiError("FORBIDDEN", "This course is not published.", { status: 403 });
 
   const [{ data: resume }, { data: visits }] = await Promise.all([
     supabase
@@ -67,6 +87,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
   const { item_id } = parsed.data;
   const supabase = await createServerSupabaseClient();
+  const canAccessCourse = await isPublishedCourseForOrg(supabase, courseId, caller.organization_id);
+  if (!canAccessCourse) return apiError("FORBIDDEN", "This course is not published.", { status: 403 });
 
   // Validate that the item belongs to this course (defense in depth; FK does not enforce this relation).
   const { data: itemRow, error: itemError } = await supabase

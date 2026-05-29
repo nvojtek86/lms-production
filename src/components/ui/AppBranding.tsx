@@ -9,7 +9,6 @@ type Branding = {
   logo_url: string | null;
   top_logo_url: string | null;
   top_logo_compact_url: string | null;
-  bottom_logo_url: string | null;
   updated_at?: string | null;
 };
 
@@ -21,7 +20,7 @@ export default function AppBranding({
   width = 140,
   height = 40,
 }: {
-  variant?: "legacy" | "top" | "top-compact" | "bottom";
+  variant?: "legacy" | "top" | "top-compact";
   width?: number;
   height?: number;
 }) {
@@ -78,8 +77,6 @@ export default function AppBranding({
     branding?.top_logo_compact_url && branding.top_logo_compact_url.trim().length > 0
       ? branding.top_logo_compact_url
       : null;
-  const bottomLogoUrl =
-    branding?.bottom_logo_url && branding.bottom_logo_url.trim().length > 0 ? branding.bottom_logo_url : null;
 
   const logoUrl = (() => {
     switch (variant) {
@@ -87,8 +84,6 @@ export default function AppBranding({
         return topLogoUrl ?? legacyLogoUrl;
       case "top-compact":
         return topCompactLogoUrl ?? topLogoUrl ?? legacyLogoUrl;
-      case "bottom":
-        return bottomLogoUrl ?? legacyLogoUrl;
       case "legacy":
       default:
         return legacyLogoUrl;

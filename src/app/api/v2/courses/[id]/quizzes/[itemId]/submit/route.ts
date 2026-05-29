@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/api/response";
 import { logApiEvent } from "@/lib/audit/apiEvents";
+import { generateAndPersistCertificatePdf } from "@/lib/certificates/generateCertificatePdf";
 import { createAdminSupabaseClient, createServerSupabaseClient, getServerUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -38,6 +39,24 @@ function clampInt(v: unknown, min: number, max: number, fallback: number) {
   if (!Number.isFinite(n)) return fallback;
   const i = Math.floor(n);
   return Math.max(min, Math.min(max, i));
+}
+
+async function isPublishedCourseForOrg(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  courseId: string,
+  organizationId: string
+): Promise<boolean> {
+  const { data: course } = await supabase
+    .from("courses")
+    .select("id, organization_id, is_published")
+    .eq("id", courseId)
+    .maybeSingle();
+
+  return Boolean(
+    course?.id &&
+      String((course as { organization_id?: unknown }).organization_id ?? "") === organizationId &&
+      (course as { is_published?: unknown }).is_published === true
+  );
 }
 
 function asString(v: unknown): string {
@@ -159,6 +178,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (!parsed.success) return apiError("VALIDATION_ERROR", "Invalid request.", { status: 400 });
 
   const supabase = await createServerSupabaseClient();
+  const canAccessCourse = await isPublishedCourseForOrg(supabase, courseId, caller.organization_id);
+  if (!canAccessCourse) return apiError("FORBIDDEN", "This course is not published.", { status: 403 });
 
   const { data: enrollment } = await supabase
     .from("course_enrollments")
@@ -401,13 +422,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
             const now2 = new Date().toISOString();
             const { data: existingCert } = await admin
               .from("certificates")
-              .select("id")
+              .select("id, storage_bucket, storage_path")
               .eq("user_id", caller.id)
               .eq("course_id", courseId)
               .maybeSingle();
 
+            let certificateId: string | null = null;
             if (!existingCert?.id) {
-              await admin
+              const { data: insertedCert } = await admin
                 .from("certificates")
                 .upsert(
                   {
@@ -420,21 +442,35 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
                     source_attempt_id: null,
                     course_score_percent: coursePercent,
                     template_id: certTemplate?.id ?? null,
-                    generated_at: null,
-                    storage_bucket: null,
-                    storage_path: null,
-                    file_name: null,
-                    mime_type: null,
-                    size_bytes: null,
                   },
                   { onConflict: "user_id,course_id" }
-                );
+                )
+                .select("id")
+                .single();
+              certificateId = typeof insertedCert?.id === "string" ? insertedCert.id : null;
             } else {
+              certificateId = existingCert.id;
               // Keep issued_at stable; refresh score/template for reporting.
               await admin
                 .from("certificates")
                 .update({ course_score_percent: coursePercent, template_id: certTemplate?.id ?? null })
                 .eq("id", existingCert.id);
+            }
+
+            if (certificateId) {
+              const generated = await generateAndPersistCertificatePdf(certificateId);
+              if (!generated.ok) {
+                await logApiEvent({
+                  request,
+                  caller,
+                  outcome: "error",
+                  status: generated.status,
+                  code: generated.code,
+                  publicMessage: "Certificate PDF generation failed.",
+                  internalMessage: generated.message,
+                  details: { course_id: courseId, certificate_id: certificateId },
+                });
+              }
             }
           }
         }

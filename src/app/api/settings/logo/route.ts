@@ -10,7 +10,6 @@ const SLOT_TO_FIELD = {
   legacy: 'logo_url',
   top: 'top_logo_url',
   'top-compact': 'top_logo_compact_url',
-  bottom: 'bottom_logo_url',
 } as const;
 
 type LogoSlot = keyof typeof SLOT_TO_FIELD;

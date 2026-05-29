@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { THEME_CACHE_KEY } from "@/lib/theme/themeConstants";
 import { fetchJson } from "@/lib/api";
 
-type ManagedLogoSlot = "top" | "top-compact" | "bottom";
+type ManagedLogoSlot = "top" | "top-compact";
 
 type SettingsResponse = {
   settings: {
@@ -190,14 +190,12 @@ export default function SystemSettingsPage() {
   const [appName, setAppName] = useState("");
   const [topLogoUrl, setTopLogoUrl] = useState("");
   const [topCompactLogoUrl, setTopCompactLogoUrl] = useState("");
-  const [bottomLogoUrl, setBottomLogoUrl] = useState("");
   const [defaultLanguage, setDefaultLanguage] = useState("en");
   const [timezone, setTimezone] = useState("UTC");
   const [themeText, setThemeText] = useState<string>("{}");
   const [themeJsonError, setThemeJsonError] = useState<string | null>(null);
   const topLogoInputRef = useRef<HTMLInputElement | null>(null);
   const topCompactLogoInputRef = useRef<HTMLInputElement | null>(null);
-  const bottomLogoInputRef = useRef<HTMLInputElement | null>(null);
 
   const parsedTheme = useMemo(() => {
     try {
@@ -231,7 +229,6 @@ export default function SystemSettingsPage() {
         setAppName(data.settings.app_name ?? "");
         setTopLogoUrl(data.settings.top_logo_url ?? "");
         setTopCompactLogoUrl(data.settings.top_logo_compact_url ?? "");
-        setBottomLogoUrl(data.settings.bottom_logo_url ?? data.settings.logo_url ?? "");
         setDefaultLanguage(data.settings.default_language ?? "en");
         setTimezone(data.settings.timezone ?? "UTC");
         setThemeText(JSON.stringify(data.settings.theme ?? {}, null, 2));
@@ -265,7 +262,6 @@ export default function SystemSettingsPage() {
           app_name: appName,
           top_logo_url: topLogoUrl,
           top_logo_compact_url: topCompactLogoUrl,
-          bottom_logo_url: bottomLogoUrl,
           default_language: defaultLanguage,
           timezone,
           theme: parsedTheme,
@@ -303,9 +299,7 @@ export default function SystemSettingsPage() {
     }
     if (slot === "top-compact") {
       setTopCompactLogoUrl(value);
-      return;
     }
-    setBottomLogoUrl(value);
   }
 
   async function handleLogoSelected(slot: ManagedLogoSlot, file: File) {
@@ -339,8 +333,7 @@ export default function SystemSettingsPage() {
 
   function labelForSlot(slot: ManagedLogoSlot) {
     if (slot === "top") return "Big Logo";
-    if (slot === "top-compact") return "Small Logo";
-    return "Bottom Logo";
+    return "Small Logo";
   }
 
   function handleLogoDrop(slot: ManagedLogoSlot, event: React.DragEvent<HTMLDivElement>) {
@@ -438,25 +431,6 @@ export default function SystemSettingsPage() {
               onRemove={() => {
                 setTopCompactLogoUrl("");
                 setSuccess("Small Logo removed (not saved). Click Save Changes to persist.");
-              }}
-              onPick={(slot, file) => void handleLogoSelected(slot, file)}
-              onDrop={handleLogoDrop}
-              onDragStateChange={setDraggingSlot}
-            />
-            <LogoUploadField
-              slot="bottom"
-              label="Bottom Logo"
-              description="Visible above the sidebar copyright on tablet/desktop when the sidebar is expanded."
-              value={bottomLogoUrl}
-              appName={appName}
-              isLoading={isLoading}
-              isUploading={uploadingSlot === "bottom"}
-              isDragging={draggingSlot === "bottom"}
-              inputRef={bottomLogoInputRef}
-              onValueChange={setBottomLogoUrl}
-              onRemove={() => {
-                setBottomLogoUrl("");
-                setSuccess("Bottom Logo removed (not saved). Click Save Changes to persist.");
               }}
               onPick={(slot, file) => void handleLogoSelected(slot, file)}
               onDrop={handleLogoDrop}

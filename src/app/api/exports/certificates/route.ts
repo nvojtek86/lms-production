@@ -14,6 +14,11 @@ type CertificateRow = {
   status?: string | null;
   expires_at?: string | null;
   source_attempt_id?: string | null;
+  course_title_snapshot?: string | null;
+  organization_name_snapshot?: string | null;
+  organization_slug_snapshot?: string | null;
+  user_full_name_snapshot?: string | null;
+  user_email_snapshot?: string | null;
 };
 
 function csvEscape(value: unknown): string {
@@ -78,7 +83,7 @@ export async function GET(request: NextRequest) {
 
   let q = admin
     .from("certificates")
-    .select("id, organization_id, user_id, course_id, issued_at, created_at, status, expires_at, source_attempt_id")
+    .select("id, organization_id, user_id, course_id, issued_at, created_at, status, expires_at, source_attempt_id, course_title_snapshot, organization_name_snapshot, organization_slug_snapshot, user_full_name_snapshot, user_email_snapshot")
     .order("created_at", { ascending: false })
     .range(0, Math.max(0, max - 1));
 
@@ -130,12 +135,16 @@ export async function GET(request: NextRequest) {
 
   const exportRows = certs.map((c) => ({
     organization_id: c.organization_id ?? "",
-    organization_name: c.organization_id ? (orgLabelById.get(c.organization_id) ?? "") : "",
+    organization_name: c.organization_id
+      ? (orgLabelById.get(c.organization_id) ?? c.organization_name_snapshot ?? c.organization_slug_snapshot ?? "")
+      : (c.organization_name_snapshot ?? c.organization_slug_snapshot ?? ""),
     certificate_id: c.id,
     user_id: c.user_id ?? "",
-    user: c.user_id ? (userLabelById.get(c.user_id) ?? "") : "",
+    user: c.user_id
+      ? (userLabelById.get(c.user_id) ?? c.user_full_name_snapshot ?? c.user_email_snapshot ?? "")
+      : (c.user_full_name_snapshot ?? c.user_email_snapshot ?? ""),
     course_id: c.course_id ?? "",
-    course_title: c.course_id ? (courseTitleById.get(c.course_id) ?? "") : "",
+    course_title: c.course_id ? (courseTitleById.get(c.course_id) ?? c.course_title_snapshot ?? "") : (c.course_title_snapshot ?? ""),
     status: c.status ?? "",
     issued_at: c.issued_at ?? c.created_at ?? "",
     expires_at: c.expires_at ?? "",

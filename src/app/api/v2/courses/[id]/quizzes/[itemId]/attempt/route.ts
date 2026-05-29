@@ -21,6 +21,24 @@ type AttemptRow = {
   answers_json: Record<string, unknown>;
 };
 
+async function isPublishedCourseForOrg(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  courseId: string,
+  organizationId: string
+): Promise<boolean> {
+  const { data: course } = await supabase
+    .from("courses")
+    .select("id, organization_id, is_published")
+    .eq("id", courseId)
+    .maybeSingle();
+
+  return Boolean(
+    course?.id &&
+      String((course as { organization_id?: unknown }).organization_id ?? "") === organizationId &&
+      (course as { is_published?: unknown }).is_published === true
+  );
+}
+
 async function loadQuizSettings(input: {
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
   courseId: string;
@@ -64,6 +82,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   }
 
   const supabase = await createServerSupabaseClient();
+  const canAccessCourse = await isPublishedCourseForOrg(supabase, courseId, caller.organization_id);
+  if (!canAccessCourse) return apiError("FORBIDDEN", "This course is not published.", { status: 403 });
 
   // Ensure enrolled (RLS allows member read own enrollment).
   const { data: enrollment } = await supabase
@@ -150,6 +170,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   }
 
   const supabase = await createServerSupabaseClient();
+  const canAccessCourse = await isPublishedCourseForOrg(supabase, courseId, caller.organization_id);
+  if (!canAccessCourse) return apiError("FORBIDDEN", "This course is not published.", { status: 403 });
 
   const { data: enrollment } = await supabase
     .from("course_enrollments")

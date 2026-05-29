@@ -14,6 +14,11 @@ type CertificateRow = {
   created_at?: string | null;
   status?: string | null;
   expires_at?: string | null;
+  course_title_snapshot?: string | null;
+  organization_name_snapshot?: string | null;
+  organization_slug_snapshot?: string | null;
+  user_full_name_snapshot?: string | null;
+  user_email_snapshot?: string | null;
 };
 
 export default async function CertificatesPage() {
@@ -94,17 +99,19 @@ export default async function CertificatesPage() {
                 const o = cert.organization_id ? orgMap.get(cert.organization_id) : null;
                 const issued = cert.issued_at ?? cert.created_at;
                 const status = cert.status ?? "—";
-                const courseLabel = (c?.title ?? "").trim() || "Untitled course";
-                const fullName = (u?.full_name ?? "").trim();
-                const email = (u?.email ?? "").trim();
+                const courseLabel = (c?.title ?? "").trim() || (cert.course_title_snapshot ?? "").trim() || "Untitled course";
+                const fullName = (u?.full_name ?? "").trim() || (cert.user_full_name_snapshot ?? "").trim();
+                const email = (u?.email ?? "").trim() || (cert.user_email_snapshot ?? "").trim();
                 const userLabel = fullName ? (email ? `${fullName} (${email})` : fullName) : (email || cert.user_id || "—");
-                const canDownload = typeof cert.course_id === "string" && cert.course_id.length > 0;
+                const canDownload = typeof cert.id === "string" && cert.id.length > 0;
 
                 return (
                   <tr key={cert.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 font-medium">{userLabel}</td>
                     <td className="px-6 py-4">{courseLabel}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{o?.name ?? o?.slug ?? cert.organization_id ?? "—"}</td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {o?.name ?? o?.slug ?? cert.organization_name_snapshot ?? cert.organization_slug_snapshot ?? cert.organization_id ?? "—"}
+                    </td>
                     <td className="px-6 py-4">{issued ? new Date(issued).toLocaleDateString() : "—"}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${

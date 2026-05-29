@@ -135,6 +135,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
           .from("courses")
           .select("id, slug, title, excerpt, is_published, cover_image_url, builder_version, created_at, organization_id")
           .in("id", courseIds)
+          .eq("is_published", true)
           .order("created_at", { ascending: false })
       : { data: [] };
 

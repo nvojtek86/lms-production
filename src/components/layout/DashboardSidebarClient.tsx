@@ -198,12 +198,6 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
         <div className="flex-1" />
       )}
 
-      {!collapsed ? (
-        <div className="hidden items-center justify-center border-t border-white/10 px-4 py-4 md:flex">
-          <AppBranding variant="bottom" width={152} height={48} />
-        </div>
-      ) : null}
-
       <div
         className={`mt-auto border-t border-white/10 px-3 py-3 text-white/70 ${
           collapsed ? "text-[10px] text-center" : "text-xs text-center leading-relaxed"

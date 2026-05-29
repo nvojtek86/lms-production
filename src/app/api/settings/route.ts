@@ -162,12 +162,6 @@ export async function PATCH(request: NextRequest) {
     updatePayload.top_logo_compact_url = trimmed.length > 0 ? trimmed : null;
   }
 
-  // Handle bottom_logo_url
-  if ('bottom_logo_url' in validatedData) {
-    const trimmed = validatedData.bottom_logo_url?.trim() || '';
-    updatePayload.bottom_logo_url = trimmed.length > 0 ? trimmed : null;
-  }
-
   // Handle default_language
   if ('default_language' in validatedData) {
     updatePayload.default_language = validatedData.default_language;
@@ -196,11 +190,8 @@ export async function PATCH(request: NextRequest) {
   const nextTopLogoCompactUrl = 'top_logo_compact_url' in updatePayload
     ? updatePayload.top_logo_compact_url
     : currentSettings.top_logo_compact_url;
-  const nextBottomLogoUrl = 'bottom_logo_url' in updatePayload
-    ? updatePayload.bottom_logo_url
-    : currentSettings.bottom_logo_url;
 
-  if (!nextAppName && !nextLogoUrl && !nextTopLogoUrl && !nextTopLogoCompactUrl && !nextBottomLogoUrl) {
+  if (!nextAppName && !nextLogoUrl && !nextTopLogoUrl && !nextTopLogoCompactUrl) {
     await logApiEvent({
       request,
       caller,
@@ -208,7 +199,7 @@ export async function PATCH(request: NextRequest) {
       status: 400,
       code: "VALIDATION_ERROR",
       publicMessage: "You must provide at least one branding field.",
-      internalMessage: "branding invalid: app_name and all logo fields empty",
+      internalMessage: "branding invalid: app_name and all active logo fields empty",
     });
     return apiError("VALIDATION_ERROR", "You must provide at least one branding field.", { status: 400 });
   }

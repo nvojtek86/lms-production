@@ -633,7 +633,7 @@ export function CourseLearnV2Client({
                                   isOpen ? "text-primary" : "text-foreground"
                                 )}
                               >
-                                Current Chapter
+                                {isOpen ? "Current Chapter" : "Chapter"}
                               </div>
                               <div className={cn("text-sm font-semibold truncate", isOpen ? "text-primary" : "text-muted-foreground")}>
                                 {t.title}
@@ -895,6 +895,8 @@ export function CourseLearnV2Client({
                                 const r = perQ.get(q.id) ?? null;
                                 const isCorrect = Boolean(r?.correct);
                                 const qType = (q.type ?? "").toString();
+                                const questionTitle = q.title?.trim() || `Question ${idx + 1}`;
+                                const questionTypeLabel = qType.replace(/_/g, " ");
 
                                 const correctBlock = (() => {
                                   if (!r || r.correct) return null;
@@ -946,8 +948,14 @@ export function CourseLearnV2Client({
                                 return (
                                   <div key={q.id} className="rounded-2xl border bg-card p-5 space-y-3">
                                     <div className="flex items-start justify-between gap-3">
-                                      <div className="font-semibold text-foreground">
-                                        Q{idx + 1} • {q.title?.trim() ? q.title : "Question"}
+                                      <div className="min-w-0 space-y-1">
+                                        <div className="font-semibold text-foreground">
+                                          Q{idx + 1} • {questionTitle}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {questionTypeLabel}
+                                          {q.points ? ` • ${q.points} pts` : ""}
+                                        </div>
                                       </div>
                                       <span
                                         className={cn(
@@ -993,6 +1001,8 @@ export function CourseLearnV2Client({
 
                             {(quiz?.questions ?? []).map((q, idx) => {
                               const qType = (q.type ?? "").toString();
+                              const questionTitle = q.title?.trim() || `Question ${idx + 1}`;
+                              const questionTypeLabel = qType.replace(/_/g, " ");
                               const answer = quizAnswers[q.id];
                               const isRequired = Boolean(q.answer_required);
 
@@ -1014,9 +1024,15 @@ export function CourseLearnV2Client({
                               return (
                                 <div key={q.id} className="rounded-2xl border bg-card p-5 space-y-3">
                                   <div className="flex items-start justify-between gap-3">
-                                    <div className="font-semibold text-foreground">
-                                      Q{idx + 1} • {qType.replace(/_/g, " ")} {q.points ? `• ${q.points} pts` : ""}{" "}
-                                      {isRequired ? "" : "• Optional"}
+                                    <div className="min-w-0 space-y-1">
+                                      <div className="font-semibold text-foreground">
+                                        Q{idx + 1} • {questionTitle}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {questionTypeLabel}
+                                        {q.points ? ` • ${q.points} pts` : ""}
+                                        {isRequired ? "" : " • Optional"}
+                                      </div>
                                     </div>
                                   </div>
 

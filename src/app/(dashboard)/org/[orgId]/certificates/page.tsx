@@ -16,6 +16,11 @@ type CertificateRow = {
   created_at?: string | null;
   status?: string | null;
   expires_at?: string | null;
+  course_title_snapshot?: string | null;
+  organization_name_snapshot?: string | null;
+  organization_slug_snapshot?: string | null;
+  user_full_name_snapshot?: string | null;
+  user_email_snapshot?: string | null;
 };
 
 export default async function CertificatesPage({ params }: { params: Promise<{ orgId: string }> }) {
@@ -49,7 +54,7 @@ export default async function CertificatesPage({ params }: { params: Promise<{ o
   // Load certificates (role-dependent filter)
   let certQuery = supabase
     .from("certificates")
-    .select("id, user_id, course_id, organization_id, issued_at, created_at, status, expires_at")
+    .select("id, user_id, course_id, organization_id, issued_at, created_at, status, expires_at, course_title_snapshot, organization_name_snapshot, organization_slug_snapshot, user_full_name_snapshot, user_email_snapshot")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -116,13 +121,15 @@ export default async function CertificatesPage({ params }: { params: Promise<{ o
     const expires = cert.expires_at;
     const status = cert.status ?? "—";
 
-    const courseLabel = (c?.title ?? "").trim() || "Untitled course";
+    const courseLabel = (c?.title ?? "").trim() || (cert.course_title_snapshot ?? "").trim() || "Untitled course";
 
     const fullName =
       (u?.full_name && u.full_name.trim().length > 0 ? u.full_name.trim() : null) ??
+      (cert.user_full_name_snapshot && cert.user_full_name_snapshot.trim().length > 0 ? cert.user_full_name_snapshot.trim() : null) ??
       (user.role === "member" && user.full_name && user.full_name.trim().length > 0 ? user.full_name.trim() : null);
     const email =
       (u?.email && u.email.trim().length > 0 ? u.email.trim() : null) ??
+      (cert.user_email_snapshot && cert.user_email_snapshot.trim().length > 0 ? cert.user_email_snapshot.trim() : null) ??
       (user.role === "member" && user.email && user.email.trim().length > 0 ? user.email.trim() : null);
     const userLabel = fullName ? (email ? `${fullName} (${email})` : fullName) : (email ?? cert.user_id ?? "—");
 
@@ -134,6 +141,8 @@ export default async function CertificatesPage({ params }: { params: Promise<{ o
     const certificateOrgLabel =
       certificateOrg?.name?.trim() ||
       certificateOrg?.slug?.trim() ||
+      cert.organization_name_snapshot?.trim() ||
+      cert.organization_slug_snapshot?.trim() ||
       orgLabel;
 
     return {

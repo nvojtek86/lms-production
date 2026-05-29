@@ -147,6 +147,106 @@ class StepError extends Error {
   }
 }
 
+const THUMBNAIL_ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
+const THUMBNAIL_MAX_BYTES = 10 * 1024 * 1024;
+const THUMBNAIL_MAX_WIDTH = 1400;
+const THUMBNAIL_MAX_HEIGHT = 860;
+const THUMBNAIL_WEBP_QUALITIES = [0.86, 0.78, 0.7];
+const THUMBNAIL_UPLOAD_TIMEOUT_MS = 30_000;
+const THUMBNAIL_UPLOAD_ATTEMPTS = 2;
+
+function fileNameToWebp(name: string): string {
+  const base = name.trim().replace(/\.[^.]+$/, "") || "thumbnail";
+  return `${base}.webp`;
+}
+
+function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob || blob.type !== "image/webp") {
+          reject(new Error("This browser could not convert the thumbnail to WebP."));
+          return;
+        }
+        resolve(blob);
+      },
+      "image/webp",
+      quality
+    );
+  });
+}
+
+function loadImageElement(file: File): Promise<{ image: HTMLImageElement; objectUrl: string }> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => resolve({ image, objectUrl });
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read thumbnail image."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+async function loadImageForCanvas(file: File): Promise<{
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  cleanup: () => void;
+}> {
+  if (typeof createImageBitmap === "function") {
+    const bitmap = await createImageBitmap(file);
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      cleanup: () => bitmap.close(),
+    };
+  }
+
+  const { image, objectUrl } = await loadImageElement(file);
+  return {
+    source: image,
+    width: image.naturalWidth || image.width,
+    height: image.naturalHeight || image.height,
+    cleanup: () => URL.revokeObjectURL(objectUrl),
+  };
+}
+
+async function convertImageFileToThumbnailWebp(file: File): Promise<File> {
+  const image = await loadImageForCanvas(file);
+  try {
+    const scale = Math.min(1, THUMBNAIL_MAX_WIDTH / image.width, THUMBNAIL_MAX_HEIGHT / image.height);
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not prepare thumbnail image.");
+    ctx.drawImage(image.source, 0, 0, width, height);
+
+    let bestBlob: Blob | null = null;
+    for (const quality of THUMBNAIL_WEBP_QUALITIES) {
+      const blob = await canvasToWebpBlob(canvas, quality);
+      bestBlob = blob;
+      if (blob.size <= THUMBNAIL_MAX_BYTES) break;
+    }
+
+    if (!bestBlob || bestBlob.size > THUMBNAIL_MAX_BYTES) {
+      throw new Error("Thumbnail is too large after WebP conversion. Please choose a smaller image.");
+    }
+
+    return new File([bestBlob], fileNameToWebp(file.name), {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  } finally {
+    image.cleanup();
+  }
+}
+
 type SaveResultCourse = {
   id: string;
   slug: string | null;
@@ -964,6 +1064,8 @@ export function CourseEditorV2Form({
   const [pendingLessonUploadsByItemId, setPendingLessonUploadsByItemId] = useState<Record<string, PendingLessonUploads>>({});
   const [leavePrompt, setLeavePrompt] = useState<{ href: string } | null>(null);
   const [confirmUnpublishDraftOpen, setConfirmUnpublishDraftOpen] = useState(false);
+  const [deleteCourseOpen, setDeleteCourseOpen] = useState(false);
+  const [deleteCourseConfirmText, setDeleteCourseConfirmText] = useState("");
   const [title, setTitle] = useState(initialCourse?.title ?? "");
   const [slug, setSlug] = useState(initialCourse?.slug ?? "");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(Boolean(initialCourse?.slug?.trim()));
@@ -987,6 +1089,7 @@ export function CourseEditorV2Form({
   const [isThumbnailDragActive, setIsThumbnailDragActive] = useState(false);
   const [pendingThumbnailRemoval, setPendingThumbnailRemoval] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement | null>(null);
+  const thumbnailPrepareSeqRef = useRef(0);
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set(initialCourse?.assigned_member_ids ?? []));
   const [memberDefaultAccess, setMemberDefaultAccess] = useState<AccessDurationKey>("unlimited");
   const [memberAccessById, setMemberAccessById] = useState<Record<string, AccessDurationKey>>(() => {
@@ -1041,7 +1144,7 @@ export function CourseEditorV2Form({
   const [expandedTopicIds, setExpandedTopicIds] = useState<Set<string>>(new Set());
 
   const [isBusy, setIsBusy] = useState(false);
-  type BusyAction = "save_published" | "save_draft" | "publish";
+  type BusyAction = "save_published" | "save_draft" | "publish" | "delete_course";
   const [busyAction, setBusyAction] = useState<BusyAction | null>(null);
   const busyActionRef = useRef<BusyAction | null>(null);
   const [busyStep, setBusyStep] = useState<string | null>(null);
@@ -2445,13 +2548,67 @@ export function CourseEditorV2Form({
   async function uploadThumbnail(courseIdToUse: string) {
     if (!thumbnailFile) return;
     const file = thumbnailFile;
-    const { data: sign } = await fetchJson<{ bucket_id: string; object_name: string; token: string }>(`/api/v2/courses/${courseIdToUse}/thumbnail/sign`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mime: file.type, size_bytes: file.size }),
-    });
-    const uploadRes = await supabase.storage.from(sign.bucket_id).uploadToSignedUrl(sign.object_name, sign.token, file, { contentType: file.type });
-    if (uploadRes.error) throw new Error(`Thumbnail upload failed: ${uploadRes.error.message}`);
+
+    async function signThumbnailUpload() {
+      const { data } = await fetchJson<{ bucket_id: string; object_name: string; token: string }>(
+        `/api/v2/courses/${courseIdToUse}/thumbnail/sign`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mime: file.type, size_bytes: file.size }),
+        }
+      );
+      return data;
+    }
+
+    async function uploadSignedThumbnail(
+      sign: { bucket_id: string; object_name: string; token: string },
+      attempt: number
+    ) {
+      if (busyActionRef.current) {
+        setBusyStep(`Uploading thumbnail (${attempt}/${THUMBNAIL_UPLOAD_ATTEMPTS})`);
+      }
+
+      const uploadPromise = supabase.storage.from(sign.bucket_id).uploadToSignedUrl(sign.object_name, sign.token, file, {
+        contentType: file.type,
+      });
+      type UploadResult = Awaited<typeof uploadPromise>;
+
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      const timeoutPromise = new Promise<UploadResult>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Thumbnail upload timed out. Retrying with a fresh upload link..."));
+        }, THUMBNAIL_UPLOAD_TIMEOUT_MS);
+      });
+
+      try {
+        const uploadRes = await Promise.race([uploadPromise, timeoutPromise]);
+        if (uploadRes.error) throw new Error(`Thumbnail upload failed: ${uploadRes.error.message}`);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    }
+
+    let sign = await signThumbnailUpload();
+    let lastError: unknown = null;
+    for (let attempt = 1; attempt <= THUMBNAIL_UPLOAD_ATTEMPTS; attempt++) {
+      try {
+        await uploadSignedThumbnail(sign, attempt);
+        lastError = null;
+        break;
+      } catch (e) {
+        lastError = e;
+        if (attempt >= THUMBNAIL_UPLOAD_ATTEMPTS) break;
+        if (busyActionRef.current) setBusyStep("Retrying thumbnail upload");
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        sign = await signThumbnailUpload();
+      }
+    }
+
+    if (lastError) {
+      const message = lastError instanceof Error ? lastError.message : "Thumbnail upload failed.";
+      throw new Error(message.replace(" Retrying with a fresh upload link...", ""));
+    }
 
     const { data } = await fetchJson<{ cover_image_url: string }>(`/api/v2/courses/${courseIdToUse}/thumbnail/commit`, {
       method: "POST",
@@ -2570,23 +2727,35 @@ export function CourseEditorV2Form({
     }
   }
 
-  function applyThumbnailFile(file: File | null) {
+  async function applyThumbnailFile(file: File | null) {
     if (!file) return;
-    const allowed = new Set(["image/png", "image/jpeg", "image/webp"]);
-    if (!allowed.has(file.type)) {
+    const seq = thumbnailPrepareSeqRef.current + 1;
+    thumbnailPrepareSeqRef.current = seq;
+    if (!THUMBNAIL_ALLOWED_MIME.has(file.type)) {
       toast.error("Invalid thumbnail type. Allowed: PNG, JPG, WebP.");
       return;
     }
-    const maxBytes = 10 * 1024 * 1024;
-    if (file.size > maxBytes) {
+    if (file.size > THUMBNAIL_MAX_BYTES) {
       toast.error("Thumbnail is too large. Max size is 10MB.");
       return;
     }
-    setPendingThumbnailRemoval(false);
-    setThumbnailFile(file);
+    const toastId = toast.loading("Preparing thumbnail...");
+    try {
+      const webpFile = await convertImageFileToThumbnailWebp(file);
+      if (thumbnailPrepareSeqRef.current !== seq) {
+        toast.dismiss(toastId);
+        return;
+      }
+      setPendingThumbnailRemoval(false);
+      setThumbnailFile(webpFile);
+      toast.dismiss(toastId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to prepare thumbnail.", { id: toastId });
+    }
   }
 
   function removeThumbnailLocal() {
+    thumbnailPrepareSeqRef.current += 1;
     // Clear input value so selecting the same file again re-triggers onChange.
     try {
       if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
@@ -3070,6 +3239,58 @@ export function CourseEditorV2Form({
     }
   }
 
+  async function deleteCourseHard() {
+    if (!courseId) return;
+    if (deleteCourseConfirmText !== "DELETE") {
+      toast.error('Type "DELETE" to confirm course deletion.');
+      return;
+    }
+
+    setError(null);
+    setIsBusy(true);
+    busyActionRef.current = "delete_course";
+    setBusyAction("delete_course");
+    setBusyStep("Deleting course");
+    setBusyVisitedSteps([]);
+
+    try {
+      await fetchJson(`/api/v2/courses/${courseId}`, { method: "DELETE" });
+      discardAllChanges();
+      setDeleteCourseOpen(false);
+      toast.success("Course deleted. Issued certificates remain available.");
+      router.push(backHref);
+    } catch (e) {
+      const info = normalizeStepError(e);
+      const reportable = isReportableSystemError({ api: info.api, cause: info.cause });
+      const supportId = reportable ? (info.api?.supportId ?? generateSupportId()) : null;
+      const message = reportable
+        ? "Course deletion failed. Please report this error to Support."
+        : (info.api?.message ?? (info.cause instanceof Error ? info.cause.message : "Failed to delete course."));
+
+      setErrorWithSupport({
+        message,
+        step: "Deleting course",
+        supportId,
+        canReport: reportable,
+        reportPayload: reportable
+          ? buildReportPayload({
+              supportId: supportId ?? generateSupportId(),
+              step: "Deleting course",
+              context: { action: "delete_course", course_id: courseId, mode, status },
+              cause: info.cause,
+              api: info.api,
+            })
+          : null,
+      });
+    } finally {
+      setIsBusy(false);
+      busyActionRef.current = null;
+      setBusyAction(null);
+      setBusyStep(null);
+      setBusyVisitedSteps([]);
+    }
+  }
+
   async function createOrUpdateTopic() {
     if (!topicModal) return;
     setError(null);
@@ -3432,6 +3653,21 @@ export function CourseEditorV2Form({
               Unpublish
             </Button>
           ) : null}
+          {mode === "edit" && courseId ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isBusy}
+              className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+              onClick={() => {
+                setDeleteCourseConfirmText("");
+                setDeleteCourseOpen(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             type="button"
@@ -3749,7 +3985,7 @@ export function CourseEditorV2Form({
                 e.preventDefault();
                 setIsThumbnailDragActive(false);
                 const file = e.dataTransfer.files?.[0] ?? null;
-                applyThumbnailFile(file);
+                void applyThumbnailFile(file);
               }}
               className={cn(
                 "relative h-[180px] cursor-pointer rounded-md border border-dashed flex items-center justify-center overflow-hidden bg-muted/10 transition-colors",
@@ -3793,7 +4029,7 @@ export function CourseEditorV2Form({
               type="file"
               accept="image/png,image/jpeg,image/webp"
               className="hidden"
-              onChange={(e) => applyThumbnailFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => void applyThumbnailFile(e.target.files?.[0] ?? null)}
             />
           </div>
           <div className="space-y-3">
@@ -5032,13 +5268,76 @@ export function CourseEditorV2Form({
         </div>
       ) : null}
 
+      {deleteCourseOpen ? (
+        <div className="fixed inset-0 z-1000 bg-black/50 p-4 sm:p-6 overflow-y-auto" data-leave-guard-ignore="true">
+          <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
+            <div className="w-full max-w-lg rounded-lg border bg-card shadow-xl">
+              <div className="border-b px-4 py-3">
+                <h3 className="font-semibold text-red-700">Permanently delete course</h3>
+              </div>
+              <div className="p-4 space-y-4 text-sm text-muted-foreground">
+                <div className="space-y-2">
+                  <p>
+                    This permanently deletes the course and unfinished learner progress.
+                  </p>
+                  <p>
+                    Issued certificates will remain available to members.
+                  </p>
+                  <p className="font-medium text-red-700">
+                    This cannot be undone.
+                  </p>
+                </div>
+                <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-900">
+                  To confirm, type <span className="font-mono font-semibold">DELETE</span> in uppercase letters.
+                </div>
+                <Input
+                  value={deleteCourseConfirmText}
+                  onChange={(e) => setDeleteCourseConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  disabled={isBusy}
+                  autoFocus
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 border-t px-4 py-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isBusy}
+                  onClick={() => {
+                    setDeleteCourseOpen(false);
+                    setDeleteCourseConfirmText("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isBusy || deleteCourseConfirmText !== "DELETE"}
+                  className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                  onClick={() => void deleteCourseHard()}
+                >
+                  {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Permanently delete course
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {isBusy && busyAction ? (
         <div className="fixed inset-0 z-1000 bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto" data-leave-guard-ignore="true">
           <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
             <div className="w-full max-w-md rounded-2xl border bg-card shadow-2xl px-6 py-6">
               {(() => {
                 const steps =
-                  busyAction === "publish"
+                  busyAction === "delete_course"
+                    ? [
+                        "Deleting course",
+                        "Preserving issued certificates",
+                        "Cleaning up course assets",
+                      ]
+                    : busyAction === "publish"
                     ? [
                         "Preparing course",
                         "Saving About Course content",
@@ -5061,7 +5360,13 @@ export function CourseEditorV2Form({
                       ];
 
                 const title =
-                  busyAction === "publish" ? "Publishing course…" : busyAction === "save_draft" ? "Saving draft…" : "Saving changes…";
+                  busyAction === "delete_course"
+                    ? "Deleting course…"
+                    : busyAction === "publish"
+                      ? "Publishing course…"
+                      : busyAction === "save_draft"
+                        ? "Saving draft…"
+                        : "Saving changes…";
 
                 const activeIdx = busyStep ? steps.indexOf(busyStep) : -1;
                 const doneCount = steps.filter((s, idx) => busyVisitedSteps.includes(s) || (activeIdx >= 0 && idx < activeIdx)).length;
@@ -5113,7 +5418,9 @@ export function CourseEditorV2Form({
                       })}
                     </div>
 
-                    <p className="mt-5 text-xs text-muted-foreground">Please don’t close this tab while saving.</p>
+                    <p className="mt-5 text-xs text-muted-foreground">
+                      Please don’t close this tab while {busyAction === "delete_course" ? "deleting" : "saving"}.
+                    </p>
                   </>
                 );
               })()}
