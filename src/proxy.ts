@@ -180,7 +180,8 @@ export async function proxy(request: NextRequest) {
     if (userRole === 'organization_admin' || userRole === 'member') {
       const orgTarget = await getOrgRedirectTarget(supabase, user.id, userRole, organizationId);
       if (!orgTarget) {
-        url.pathname = '/';
+        // Must not target '/': this branch already runs on '/' and would redirect forever.
+        url.pathname = '/unauthorized';
         return NextResponse.redirect(url);
       }
       url.pathname = `/org/${orgTarget.slug ?? orgTarget.organizationId}`;
@@ -205,7 +206,7 @@ export async function proxy(request: NextRequest) {
     if (userRole === 'organization_admin' || userRole === 'member') {
       const orgTarget = await getOrgRedirectTarget(supabase, user.id, userRole, organizationId);
       if (!orgTarget) {
-        url.pathname = '/';
+        url.pathname = '/unauthorized';
         return NextResponse.redirect(url);
       }
       url.pathname = `/org/${orgTarget.slug ?? orgTarget.organizationId}`;
