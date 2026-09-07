@@ -76,3 +76,5 @@ supabase/storage-migration
 supabase/storage-version
 supabase/*.tmp
 .supabase/
+# local archives
+*.zip
