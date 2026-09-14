@@ -366,6 +366,24 @@ function makeBlockId(): string {
   return makeTempId("blk");
 }
 
+function attachmentFileKey(file: File): string {
+  return `${file.name}::${file.size}::${file.type}::${file.lastModified}`;
+}
+
+function formatAttachmentSize(size: number | null | undefined): string {
+  if (size == null || !Number.isFinite(Number(size)) || Number(size) < 0) return "Size unavailable";
+  const bytes = Number(size);
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
 function containsTemporaryAssetReference(value: unknown): boolean {
   if (!value) return false;
   if (typeof value === "string") {
@@ -3776,7 +3794,9 @@ export function CourseEditorV2Form({
             itemModal.videoProvider === "html5"
               ? (itemModal.videoFile ?? existing?.videoFile ?? null)
               : null;
-          const attachments = [...(existing?.attachments ?? []), ...(itemModal.attachments ?? [])];
+          // The modal contains the complete pending attachment selection. Replacing here
+          // lets users remove queued files and prevents duplicates after reopening a lesson.
+          const attachments = itemModal.attachments ?? [];
 
           // Inline images: merge, then keep only those still referenced across ALL lesson blocks.
           const mergedInline = { ...(existing?.inlineImages ?? {}), ...(itemModal.inlineImages ?? {}) };
@@ -3829,6 +3849,7 @@ export function CourseEditorV2Form({
     const video = (p.video ?? {}) as { provider?: unknown; url?: unknown; storage_path?: unknown };
     const feature = (p.feature_image ?? {}) as { storage_path?: unknown };
     const attachments = Array.isArray(p.attachments) ? (p.attachments as LessonModalState["existingAttachments"]) : [];
+    const pendingUploads = pendingLessonUploadsByItemId[item.id] ?? null;
     setItemModal({
       itemType: "lesson",
       mode: "edit",
@@ -3846,7 +3867,7 @@ export function CourseEditorV2Form({
       videoStoragePath: typeof video.storage_path === "string" ? video.storage_path : null,
       playbackHours: Number.isFinite(Number(playback.hours)) ? Number(playback.hours) : 0,
       playbackMinutes: Number.isFinite(Number(playback.minutes)) ? Number(playback.minutes) : 0,
-      attachments: [],
+      attachments: pendingUploads?.attachments ?? [],
       existingAttachments: attachments,
     });
   }
@@ -3921,19 +3942,47 @@ export function CourseEditorV2Form({
   }
 
   function applyLessonAttachmentFiles(files: File[]) {
-    const maxFiles = 10;
     const maxBytesPerFile = 300 * 1024 * 1024;
-    if (files.length > maxFiles) {
-      toast.error("Too many attachments. Max 10 files.");
-      return;
-    }
     for (const f of files) {
       if (f.size > maxBytesPerFile) {
         toast.error(`Attachment too large: ${f.name} (max 300MB).`);
         return;
       }
     }
-    setItemModal((prev) => (prev && prev.itemType === "lesson" ? { ...prev, attachments: files } : prev));
+    if (!itemModal || itemModal.itemType !== "lesson") return;
+
+    const next = [...itemModal.attachments];
+    const seen = new Set(next.map(attachmentFileKey));
+    let skipped = 0;
+    for (const file of files) {
+      const key = attachmentFileKey(file);
+      if (seen.has(key)) {
+        skipped += 1;
+        continue;
+      }
+      seen.add(key);
+      next.push(file);
+    }
+    if (skipped > 0) {
+      toast.info(`${skipped} duplicate attachment${skipped === 1 ? " was" : "s were"} skipped.`);
+    }
+    setItemModal({ ...itemModal, attachments: next });
+  }
+
+  function removeExistingLessonAttachment(storagePath: string) {
+    setItemModal((prev) =>
+      prev && prev.itemType === "lesson"
+        ? { ...prev, existingAttachments: prev.existingAttachments.filter((attachment) => attachment.storage_path !== storagePath) }
+        : prev
+    );
+  }
+
+  function removePendingLessonAttachment(fileKey: string) {
+    setItemModal((prev) =>
+      prev && prev.itemType === "lesson"
+        ? { ...prev, attachments: prev.attachments.filter((file) => attachmentFileKey(file) !== fileKey) }
+        : prev
+    );
   }
 
   async function onTopicDragEnd(event: DragEndEvent) {
@@ -5499,7 +5548,7 @@ export function CourseEditorV2Form({
 
                   <div>
                     <FieldLabel accent="#1b6bb8">Upload exercise files to the Lesson</FieldLabel>
-                    <div className="mt-2 flex items-center gap-3">
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
                       <Input
                         id="lesson-attachments-input"
                         type="file"
@@ -5509,6 +5558,7 @@ export function CourseEditorV2Form({
                           const files = Array.from(e.target.files ?? []);
                           if (!files.length) return;
                           applyLessonAttachmentFiles(files);
+                          e.currentTarget.value = "";
                         }}
                       />
                       <Button
@@ -5520,14 +5570,98 @@ export function CourseEditorV2Form({
                         Upload Attachments
                       </Button>
                       <p className="text-xs text-muted-foreground">
-                        {itemModal.attachments.length
-                          ? `${itemModal.attachments.length} file(s) selected`
-                          : itemModal.existingAttachments.length
-                            ? `${itemModal.existingAttachments.length} existing file(s)`
-                            : "No files selected"}
+                        {itemModal.existingAttachments.length + itemModal.attachments.length
+                          ? `${itemModal.existingAttachments.length} existing, ${itemModal.attachments.length} new`
+                          : "No attachments"}
                       </p>
                     </div>
-                    <FieldHint>Attach PDFs, worksheets, or other exercise materials for learners.</FieldHint>
+
+                    {itemModal.existingAttachments.length || itemModal.attachments.length ? (
+                      <div className="mt-3 space-y-3">
+                        {itemModal.existingAttachments.length ? (
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-foreground">Existing attachments</p>
+                            {itemModal.existingAttachments.map((attachment) => (
+                              <div
+                                key={attachment.storage_path}
+                                className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
+                              >
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">{attachment.file_name}</p>
+                                    <p className="text-xs text-muted-foreground">{formatAttachmentSize(attachment.size_bytes)}</p>
+                                  </div>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <Button type="button" variant="ghost" size="icon-sm" asChild>
+                                    <a
+                                      href={`/api/v2/lesson-assets?path=${encodeURIComponent(attachment.storage_path)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      aria-label={`Download ${attachment.file_name}`}
+                                      title="Download attachment"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={() => removeExistingLessonAttachment(attachment.storage_path)}
+                                    aria-label={`Remove ${attachment.file_name}`}
+                                    title="Remove attachment"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {itemModal.attachments.length ? (
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-foreground">New attachments</p>
+                            {itemModal.attachments.map((file) => {
+                              const fileKey = attachmentFileKey(file);
+                              return (
+                                <div
+                                  key={fileKey}
+                                  className="flex items-center justify-between gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2"
+                                >
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">New</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">{formatAttachmentSize(file.size)}</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={() => removePendingLessonAttachment(fileKey)}
+                                    aria-label={`Remove ${file.name}`}
+                                    title="Remove attachment"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <FieldHint>
+                      Attach PDFs, worksheets, or other exercise materials (max 300MB per file). Changes apply after Update Lesson and the main Save or Publish.
+                    </FieldHint>
                   </div>
               </>
             </div>
