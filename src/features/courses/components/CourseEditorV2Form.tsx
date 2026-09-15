@@ -283,7 +283,13 @@ type LessonModalState = {
   playbackHours: number;
   playbackMinutes: number;
   attachments: File[];
-  existingAttachments: Array<{ file_name: string; storage_path: string; size_bytes?: number | null; mime?: string | null }>;
+  existingAttachments: Array<{
+    file_name: string;
+    storage_path: string;
+    size_bytes?: number | null;
+    mime?: string | null;
+    uploaded_at?: string | null;
+  }>;
 };
 
 type QuizModalState = {
@@ -382,6 +388,16 @@ function formatAttachmentSize(size: number | null | undefined): string {
     unitIndex += 1;
   }
   return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function formatAttachmentUploadedAt(value: string | null | undefined): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function containsTemporaryAssetReference(value: unknown): boolean {
@@ -2639,6 +2655,7 @@ export function CourseEditorV2Form({
                 storage_path: uploaded.object_name,
                 size_bytes: file.size,
                 mime: file.type || null,
+                uploaded_at: new Date().toISOString(),
               });
             }
 
@@ -5581,43 +5598,48 @@ export function CourseEditorV2Form({
                         {itemModal.existingAttachments.length ? (
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-foreground">Existing attachments</p>
-                            {itemModal.existingAttachments.map((attachment) => (
-                              <div
-                                key={attachment.storage_path}
-                                className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
-                              >
-                                <div className="flex min-w-0 items-center gap-2">
-                                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-medium text-foreground">{attachment.file_name}</p>
-                                    <p className="text-xs text-muted-foreground">{formatAttachmentSize(attachment.size_bytes)}</p>
+                            {itemModal.existingAttachments.map((attachment) => {
+                              const uploadedAt = formatAttachmentUploadedAt(attachment.uploaded_at);
+                              return (
+                                <div
+                                  key={attachment.storage_path}
+                                  className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
+                                >
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-medium text-foreground">{attachment.file_name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {formatAttachmentSize(attachment.size_bytes)} · {uploadedAt ? `Uploaded ${uploadedAt}` : "Upload date unavailable"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <Button type="button" variant="ghost" size="icon-sm" asChild>
+                                      <a
+                                        href={`/api/v2/lesson-assets?path=${encodeURIComponent(attachment.storage_path)}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={`Download ${attachment.file_name}`}
+                                        title="Download attachment"
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                      </a>
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => removeExistingLessonAttachment(attachment.storage_path)}
+                                      aria-label={`Remove ${attachment.file_name}`}
+                                      title="Remove attachment"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
                                   </div>
                                 </div>
-                                <div className="flex shrink-0 items-center gap-1">
-                                  <Button type="button" variant="ghost" size="icon-sm" asChild>
-                                    <a
-                                      href={`/api/v2/lesson-assets?path=${encodeURIComponent(attachment.storage_path)}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      aria-label={`Download ${attachment.file_name}`}
-                                      title="Download attachment"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </a>
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    onClick={() => removeExistingLessonAttachment(attachment.storage_path)}
-                                    aria-label={`Remove ${attachment.file_name}`}
-                                    title="Remove attachment"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : null}
 
@@ -5638,7 +5660,7 @@ export function CourseEditorV2Form({
                                         <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
                                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">New</span>
                                       </div>
-                                      <p className="text-xs text-muted-foreground">{formatAttachmentSize(file.size)}</p>
+                                      <p className="text-xs text-muted-foreground">{formatAttachmentSize(file.size)} · Pending upload</p>
                                     </div>
                                   </div>
                                   <Button
