@@ -334,6 +334,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return apiError("INTERNAL", "Failed to update quiz state.", { status: 500 });
   }
 
+  let certificateAwarded: { id: string; course_score_percent: number; download_url: string } | null = null;
+
   // Best-effort: auto-issue course certificate if configured + learner passed course threshold.
   // IMPORTANT: do not fail the request after the attempt is saved (member would be stuck).
   try {
@@ -428,6 +430,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
               .maybeSingle();
 
             let certificateId: string | null = null;
+            let newlyIssued = false;
             if (!existingCert?.id) {
               const { data: insertedCert } = await admin
                 .from("certificates")
@@ -448,6 +451,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
                 .select("id")
                 .single();
               certificateId = typeof insertedCert?.id === "string" ? insertedCert.id : null;
+              newlyIssued = Boolean(certificateId);
             } else {
               certificateId = existingCert.id;
               // Keep issued_at stable; refresh score/template for reporting.
@@ -470,6 +474,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
                   internalMessage: generated.message,
                   details: { course_id: courseId, certificate_id: certificateId },
                 });
+              } else if (newlyIssued) {
+                certificateAwarded = {
+                  id: certificateId,
+                  course_score_percent: coursePercent,
+                  download_url: `/api/certificates/${certificateId}/download`,
+                };
               }
             }
           }
@@ -490,6 +500,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       total_points: grade.total_points,
       per_question: grade.per_question,
       state: { best_score_percent: nextBest, passed_at: nextPassedAt, last_submitted_attempt_id: attempt.id },
+      certificate_awarded: certificateAwarded,
     },
     { status: 200 }
   );

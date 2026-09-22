@@ -2322,20 +2322,20 @@ function UserDetailsDrawer(props: {
                         disabled={isBusy}
                         onClick={async () => {
                           setIsBusy(true);
-                          const t = toast.loading("Resending invite…");
+                          const t = toast.loading("Sending setup link…");
                           try {
                             const res = await props.onResendInvite(user.id);
-                            toast.success(res.message || "Invite resent.", { id: t });
+                            toast.success(res.message || "Password setup link sent.", { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to resend invite", { id: t });
+                            toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
                           } finally {
                             setIsBusy(false);
                           }
                         }}
                       >
-                        Resend invite
+                        Send new setup link
                       </Button>
-                      <HelpText>Resends the invitation email to this user.</HelpText>
+                      <HelpText>Sends a fresh password setup link to this user.</HelpText>
                     </div>
                   ) : null}
 
@@ -3156,20 +3156,20 @@ function MobileUserCard(props: {
                         className={outlineButtonClass}
                         onClick={async () => {
                           setBusy(true);
-                          const t = toast.loading("Resending invite…");
+                          const t = toast.loading("Sending setup link…");
                           try {
                             const res = await props.onResendInvite(user.id);
-                            toast.success(res.message || "Invite resent.", { id: t });
+                            toast.success(res.message || "Password setup link sent.", { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to resend invite", { id: t });
+                            toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
                           } finally {
                             setBusy(false);
                           }
                         }}
                       >
-                        Resend invite
+                        Send new setup link
                       </Button>
-                      <HelpText className={selected ? "text-white/80" : ""}>Resends the invitation email to this user.</HelpText>
+                      <HelpText className={selected ? "text-white/80" : ""}>Sends a fresh password setup link to this user.</HelpText>
                     </div>
                   ) : null}
 
@@ -3329,4 +3329,3 @@ function MobileUserCard(props: {
     </div>
   );
 }
-

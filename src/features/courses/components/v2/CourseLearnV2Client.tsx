@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fetchJson } from "@/lib/api";
 import { ApiClientError } from "@/lib/api/fetchJson";
+import { CertificateAwardModal, type AwardedCertificate } from "@/features/certificates";
 
 export type LearnV2LessonVideo =
   | { kind: "html5"; url: string; mime: string }
@@ -194,6 +195,7 @@ function AttachmentsCard({
 }
 
 export function CourseLearnV2Client({
+  orgId,
   courseTitle,
   topics,
   courseId,
@@ -322,6 +324,7 @@ export function CourseLearnV2Client({
         | { kind: "options"; option_ids: string[] };
     }>;
     state: { best_score_percent: number | null; passed_at: string | null; last_submitted_attempt_id: string | null };
+    certificate_awarded: AwardedCertificate | null;
   };
 
   const [quizMetaLoading, setQuizMetaLoading] = useState(false);
@@ -332,6 +335,7 @@ export function CourseLearnV2Client({
   const [quizAnswers, setQuizAnswers] = useState<Record<string, unknown>>({});
   const [quizSubmitting, setQuizSubmitting] = useState(false);
   const [quizSubmitResult, setQuizSubmitResult] = useState<QuizSubmitResult | null>(null);
+  const [awardedCertificate, setAwardedCertificate] = useState<AwardedCertificate | null>(null);
   const [retakeConfirmOpen, setRetakeConfirmOpen] = useState(false);
 
   const autosaveRef = useRef<{ timer: number | null; attemptId: string | null; courseId: string | null; itemId: string | null; answers: Record<string, unknown> | null }>(
@@ -471,6 +475,7 @@ export function CourseLearnV2Client({
       });
       const body = data as QuizSubmitResult;
       setQuizSubmitResult(body);
+      if (body.certificate_awarded) setAwardedCertificate(body.certificate_awarded);
       setQuizAttempt(null);
       if (body?.state && itemId) setQuizStateByItemId((prev) => ({ ...prev, [itemId]: body.state }));
       void loadQuizAttemptState(courseId, itemId);
@@ -594,6 +599,15 @@ export function CourseLearnV2Client({
 
   return (
     <div className="space-y-0 border-t" id="learn-top">
+      <CertificateAwardModal
+        open={Boolean(awardedCertificate)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setAwardedCertificate(null);
+        }}
+        certificate={awardedCertificate}
+        courseTitle={courseTitle}
+        certificatesHref={`/org/${encodeURIComponent(orgId)}/certificates`}
+      />
       {/* 2-column learning layout (right rail removed) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 items-start">
         {/* Left: curriculum (match screenshot style) */}

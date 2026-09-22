@@ -79,8 +79,14 @@ export function LoginForm() {
   useEffect(() => {
     const url = new URL(window.location.href);
     const hasCode = url.searchParams.get("code");
-    const hasHashTokens = window.location.hash.includes("access_token=") || window.location.hash.includes("refresh_token=");
-    if (hasCode || hasHashTokens) {
+    const hasQueryError = url.searchParams.has("error") || url.searchParams.has("error_code");
+    const hasHashTokens =
+      window.location.hash.includes("token_hash=") ||
+      window.location.hash.includes("access_token=") ||
+      window.location.hash.includes("refresh_token=") ||
+      window.location.hash.includes("error_code=") ||
+      window.location.hash.includes("error=");
+    if (hasCode || hasQueryError || hasHashTokens) {
       window.location.replace(`/reset-password${window.location.search}${window.location.hash}`);
     }
   }, []);
