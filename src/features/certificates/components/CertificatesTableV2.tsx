@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { Award, CalendarDays, ChevronRight, Download, User, BookOpen, Building2, X } from "lucide-react";
@@ -21,12 +23,13 @@ export type CertificateRowV2 = {
 };
 
 function StatusPill({ status, className }: { status: string; className?: string }) {
+  const ui = useUi();
   const s = (status || "—").trim();
   const ok = s.toLowerCase() === "valid";
   const cls = ok ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700";
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${cls} ${className ?? ""}`}>
-      {s || "—"}
+      {ui(s || "—")}
     </span>
   );
 }
@@ -42,6 +45,7 @@ export function CertificatesTableV2({
   rows: CertificateRowV2[];
   tip?: string;
 }) {
+  const ui = useUi();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerMounted = useMountedForAnimation(drawerOpen, 220);
@@ -59,11 +63,11 @@ export function CertificatesTableV2({
           <div className="flex items-center gap-3">
             <Award className="h-8 w-8 text-primary shrink-0" />
             <div>
-              <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-              {subtitle ? <p className="text-muted-foreground">{subtitle}</p> : null}
+              <h2 className="text-2xl font-bold text-foreground">{ui(title)}</h2>
+              {subtitle ? <p className="text-muted-foreground">{ui(subtitle)}</p> : null}
             </div>
           </div>
-          <HelpText className="mt-2">{tip}</HelpText>
+          <HelpText className="mt-2">{ui(tip)}</HelpText>
         </div>
       </div>
 
@@ -73,9 +77,9 @@ export function CertificatesTableV2({
           <table className="min-w-max w-full">
             <thead className="bg-background border-b">
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">User</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Course</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Issued Date</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("User")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Course")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Issued Date")}</th>
                 <th className="px-6 py-3 w-10" />
               </tr>
             </thead>
@@ -83,8 +87,7 @@ export function CertificatesTableV2({
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">
-                    No certificates found.
-                  </td>
+                    {ui("No certificates found.")}</td>
                 </tr>
               ) : (
                 rows.map((r) => (
@@ -100,7 +103,7 @@ export function CertificatesTableV2({
                     <td className="px-6 py-4 text-muted-foreground">{r.courseLabel}</td>
                     <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">{r.issuedLabel}</td>
                     <td className="px-6 py-4 text-right">
-                      <span className="sr-only">Open details</span>
+                      <span className="sr-only">{ui("Open details")}</span>
                       <ChevronRight className="inline-block h-4 w-4 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
                     </td>
                   </tr>
@@ -114,7 +117,7 @@ export function CertificatesTableV2({
       {/* Mobile cards */}
       <div className="lg:hidden space-y-3">
         {rows.length === 0 ? (
-          <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">No certificates found.</div>
+          <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">{ui("No certificates found.")}</div>
         ) : (
           rows.map((r) => (
             <button
@@ -156,6 +159,7 @@ function CertificateDetailsDrawer({
   row: CertificateRowV2;
   onClose: () => void;
 }) {
+  const ui = useUi();
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
@@ -180,10 +184,10 @@ function CertificateDetailsDrawer({
       >
         {/* Header */}
         <div className="h-16 px-6 flex items-center justify-between">
-          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">Certificate Details</div>
+          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">{ui("Certificate Details")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={onClose}
           >
@@ -200,22 +204,19 @@ function CertificateDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <User className="h-4 w-4" />
-                  User
-                </span>
+                  {ui("User")}</span>
                 <span className="text-foreground text-right break-all">{row.userLabel}</span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <BookOpen className="h-4 w-4" />
-                  Course
-                </span>
+                  {ui("Course")}</span>
                 <span className="text-foreground text-right wrap-break-word">{row.courseLabel}</span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <CalendarDays className="h-4 w-4" />
-                  Issued
-                </span>
+                  {ui("Issued")}</span>
                 <span className="text-foreground text-right">{row.issuedLabel}</span>
               </div>
             </div>
@@ -223,26 +224,25 @@ function CertificateDetailsDrawer({
 
           {/* Additional info */}
           <div className="space-y-3">
-            <div className="text-xl font-semibold text-foreground">Info</div>
+            <div className="text-xl font-semibold text-foreground">{ui("Info")}</div>
             <div className="rounded-xl border bg-background p-5 space-y-3 text-sm">
               {row.organizationLabel ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
-                    Organization
-                  </span>
+                    {ui("Organization")}</span>
                   <span className="text-foreground text-right">{row.organizationLabel}</span>
                 </div>
               ) : null}
 
               <div className="flex items-start justify-between gap-4">
-                <span className="text-muted-foreground">Status</span>
+                <span className="text-muted-foreground">{ui("Status")}</span>
                 <StatusPill status={row.statusLabel} />
               </div>
 
               {row.expiresLabel ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Expires</span>
+                  <span className="text-muted-foreground">{ui("Expires")}</span>
                   <span className="text-foreground text-right">{row.expiresLabel}</span>
                 </div>
               ) : null}
@@ -251,19 +251,18 @@ function CertificateDetailsDrawer({
 
           {/* Actions */}
           <div className="space-y-3">
-            <div className="text-xl font-semibold text-foreground">Actions</div>
+            <div className="text-xl font-semibold text-foreground">{ui("Actions")}</div>
             <div className="rounded-xl border bg-background p-5">
               {row.canDownload && row.downloadHref ? (
                 <Button asChild variant="outline">
                   <a href={row.downloadHref} target="_blank" rel="noreferrer">
                     <Download className="h-4 w-4" />
-                    Download
-                  </a>
+                    {ui("Download")}</a>
                 </Button>
               ) : (
-                <div className="text-sm text-muted-foreground">Download not available.</div>
+                <div className="text-sm text-muted-foreground">{ui("Download not available.")}</div>
               )}
-              <HelpText className="mt-2">Downloads the certificate template for this course.</HelpText>
+              <HelpText className="mt-2">{ui("Downloads the certificate template for this course.")}</HelpText>
             </div>
           </div>
         </div>

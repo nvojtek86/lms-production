@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { Settings, Save, Upload, Globe, Palette, Bell, Shield, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -77,9 +79,10 @@ function LogoUploadField({
   onDrop: (slot: ManagedLogoSlot, event: React.DragEvent<HTMLDivElement>) => void;
   onDragStateChange: (slot: ManagedLogoSlot | null) => void;
 }) {
+  const ui = useUi();
   return (
     <div className="space-y-2">
-      <Label htmlFor={`${slot}-logo-url`}>{label}</Label>
+      <Label htmlFor={`${slot}-logo-url`}>{ui(label)}</Label>
       <div className="mt-1 flex items-center gap-4">
         <div
           className={`relative flex min-h-20 w-full flex-1 items-center gap-4 rounded border border-dashed px-4 py-3 text-sm transition ${
@@ -98,7 +101,7 @@ function LogoUploadField({
           onDrop={(event) => onDrop(slot, event)}
           role="button"
           tabIndex={0}
-          aria-label={`Drop ${label.toLowerCase()} image or click to upload`}
+          aria-label={ui("Drop {v0} image or click to upload", {v0: label.toLowerCase()})}
           onClick={() => {
             if (isUploading || isLoading) return;
             inputRef.current?.click();
@@ -114,16 +117,16 @@ function LogoUploadField({
           <div className="relative h-16 w-32 overflow-hidden rounded border bg-background text-sm text-muted-foreground flex items-center justify-center">
             {value ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={value} alt={`${label} preview`} className="h-full w-full object-contain" />
+              <img src={value} alt={ui("{v0} preview", {v0: label})} className="h-full w-full object-contain" />
             ) : (
-              appName || "No Logo"
+              appName || ui("No Logo")
             )}
 
             {value ? (
               <button
                 type="button"
                 className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/75"
-                title={`Remove ${label.toLowerCase()} (clears URL)`}
+                title={ui("Remove {v0} (clears URL)", {v0: label.toLowerCase()})}
                 onClick={(event) => {
                   event.stopPropagation();
                   onRemove();
@@ -135,7 +138,7 @@ function LogoUploadField({
           </div>
 
           <div className="flex-1 text-muted-foreground">
-            <p className="font-medium text-foreground">{label}</p>
+            <p className="font-medium text-foreground">{ui(label)}</p>
             <p className="text-xs">{description}</p>
           </div>
 
@@ -150,7 +153,7 @@ function LogoUploadField({
             }}
           >
             <Upload size={16} className="mr-2" />
-            {isUploading ? "Uploading..." : "Upload New"}
+            {isUploading ? ui("Uploading...") : ui("Upload New")}
           </Button>
         </div>
 
@@ -180,6 +183,7 @@ function LogoUploadField({
 }
 
 export default function SystemSettingsPage() {
+  const ui = useUi();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<ManagedLogoSlot | null>(null);
@@ -233,7 +237,7 @@ export default function SystemSettingsPage() {
         setTimezone(data.settings.timezone ?? "UTC");
         setThemeText(JSON.stringify(data.settings.theme ?? {}, null, 2));
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load settings");
+        if (!cancelled) setError(ui(e instanceof Error ? e.message : "Failed to load settings"));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -242,14 +246,14 @@ export default function SystemSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [ui]);
 
   async function handleSave() {
     setSuccess(null);
     setError(null);
 
     if (themeJsonError || !parsedTheme) {
-      setError("Fix theme JSON before saving.");
+      setError(ui("Fix theme JSON before saving."));
       return;
     }
 
@@ -284,9 +288,9 @@ export default function SystemSettingsPage() {
       // Refresh sidebar branding immediately (no hard reload)
       window.dispatchEvent(new Event("branding:updated"));
 
-      setSuccess(message || "Saved.");
+      setSuccess(ui(message || "Saved."));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save settings");
+      setError(ui(e instanceof Error ? e.message : "Failed to save settings"));
     } finally {
       setIsSaving(false);
     }
@@ -323,9 +327,9 @@ export default function SystemSettingsPage() {
       // Refresh sidebar branding immediately (no hard reload)
       window.dispatchEvent(new Event("branding:updated"));
 
-      setSuccess(message || `${labelForSlot(slot)} uploaded.`);
+      setSuccess(message || ui("{v0} uploaded.", {v0: labelForSlot(slot)}));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to upload logo");
+      setError(ui(e instanceof Error ? e.message : "Failed to upload logo"));
     } finally {
       setUploadingSlot(null);
     }
@@ -345,7 +349,7 @@ export default function SystemSettingsPage() {
     const file = event.dataTransfer.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please drop an image file.");
+      setError(ui("Please drop an image file."));
       return;
     }
     void handleLogoSelected(slot, file);
@@ -358,19 +362,19 @@ export default function SystemSettingsPage() {
         <div className="flex items-center gap-3">
           <Settings className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">System Settings</h1>
-            <p className="text-muted-foreground">Configure global system settings</p>
+            <h1 className="text-2xl font-bold text-foreground">{ui("System Settings")}</h1>
+            <p className="text-muted-foreground">{ui("Configure global system settings")}</p>
           </div>
         </div>
         <Button className="flex items-center gap-2 shrink-0" onClick={handleSave} disabled={isLoading || isSaving || !!themeJsonError}>
           <Save size={18} />
-          {isSaving ? "Saving..." : "Save Changes"}
+          {isSaving ? ui("Saving...") : ui("Save Changes")}
         </Button>
       </div>
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
+          {ui(error)}
         </div>
       )}
       {success && (
@@ -385,11 +389,11 @@ export default function SystemSettingsPage() {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Palette className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Branding</h2>
+            <h2 className="text-lg font-semibold">{ui("Branding")}</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="appName">Application Name</Label>
+              <Label htmlFor="appName">{ui("Application Name")}</Label>
               <Input
                 id="appName"
                 value={appName}
@@ -400,8 +404,8 @@ export default function SystemSettingsPage() {
             </div>
             <LogoUploadField
               slot="top"
-              label="Big Logo"
-              description="Visible at the top of the sidebar when the sidebar is expanded."
+              label={ui("Big Logo")}
+              description={ui("Visible at the top of the sidebar when the sidebar is expanded.")}
               value={topLogoUrl}
               appName={appName}
               isLoading={isLoading}
@@ -411,7 +415,7 @@ export default function SystemSettingsPage() {
               onValueChange={setTopLogoUrl}
               onRemove={() => {
                 setTopLogoUrl("");
-                setSuccess("Big Logo removed (not saved). Click Save Changes to persist.");
+                setSuccess(ui("Big Logo removed (not saved). Click Save Changes to persist."));
               }}
               onPick={(slot, file) => void handleLogoSelected(slot, file)}
               onDrop={handleLogoDrop}
@@ -419,8 +423,8 @@ export default function SystemSettingsPage() {
             />
             <LogoUploadField
               slot="top-compact"
-              label="Small Logo"
-              description="Visible at the top of the sidebar when the sidebar is collapsed."
+              label={ui("Small Logo")}
+              description={ui("Visible at the top of the sidebar when the sidebar is collapsed.")}
               value={topCompactLogoUrl}
               appName={appName}
               isLoading={isLoading}
@@ -430,14 +434,14 @@ export default function SystemSettingsPage() {
               onValueChange={setTopCompactLogoUrl}
               onRemove={() => {
                 setTopCompactLogoUrl("");
-                setSuccess("Small Logo removed (not saved). Click Save Changes to persist.");
+                setSuccess(ui("Small Logo removed (not saved). Click Save Changes to persist."));
               }}
               onPick={(slot, file) => void handleLogoSelected(slot, file)}
               onDrop={handleLogoDrop}
               onDragStateChange={setDraggingSlot}
             />
             <div>
-              <Label htmlFor="themeJson">Theme JSON (CSS variables)</Label>
+              <Label htmlFor="themeJson">{ui("Theme JSON (CSS variables)")}</Label>
               <textarea
                 id="themeJson"
                 value={themeText}
@@ -460,8 +464,7 @@ export default function SystemSettingsPage() {
                     setThemeText(JSON.stringify(parsedTheme, null, 2));
                   }}
                 >
-                  Format JSON
-                </Button>
+                  {ui("Format JSON")}</Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -470,11 +473,10 @@ export default function SystemSettingsPage() {
                   onClick={() => {
                     if (!parsedTheme) return;
                     applyCssVars(parsedTheme);
-                    setSuccess("Preview applied (not saved).");
+                    setSuccess(ui("Preview applied (not saved)."));
                   }}
                 >
-                  Preview Theme
-                </Button>
+                  {ui("Preview Theme")}</Button>
               </div>
             </div>
           </div>
@@ -484,11 +486,11 @@ export default function SystemSettingsPage() {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Globe className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Localization</h2>
+            <h2 className="text-lg font-semibold">{ui("Localization")}</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="defaultLang">Default Language</Label>
+              <Label htmlFor="defaultLang">{ui("Default Language")}</Label>
               <select
                 id="defaultLang"
                 value={defaultLanguage}
@@ -496,12 +498,12 @@ export default function SystemSettingsPage() {
                 className="mt-1 w-full h-9 rounded-md border px-3 bg-background"
                 disabled={isLoading}
               >
-                <option value="en">English</option>
-                <option value="sr">Serbian (Latin)</option>
+                <option value="en">{ui("English")}</option>
+                <option value="sr">{ui("Serbian (Latin)")}</option>
               </select>
             </div>
             <div>
-              <Label htmlFor="timezone">Default Timezone</Label>
+              <Label htmlFor="timezone">{ui("Default Timezone")}</Label>
               <select
                 id="timezone"
                 value={timezone}
@@ -509,9 +511,9 @@ export default function SystemSettingsPage() {
                 className="mt-1 w-full h-9 rounded-md border px-3 bg-background"
                 disabled={isLoading}
               >
-                <option value="UTC">UTC</option>
-                <option value="Europe/Belgrade">Europe/Belgrade</option>
-                <option value="America/New_York">America/New York</option>
+                <option value="UTC">{ui("UTC")}</option>
+                <option value="Europe/Belgrade">{ui("Europe/Belgrade")}</option>
+                <option value="America/New_York">{ui("America/New York")}</option>
               </select>
             </div>
           </div>
@@ -521,20 +523,20 @@ export default function SystemSettingsPage() {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Bell className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Email Notifications</h2>
+            <h2 className="text-lg font-semibold">{ui("Email Notifications")}</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="smtpHost">SMTP Host</Label>
-              <Input id="smtpHost" placeholder="smtp.example.com" className="mt-1" />
+              <Label htmlFor="smtpHost">{ui("SMTP Host")}</Label>
+              <Input id="smtpHost" placeholder={ui("smtp.example.com")} className="mt-1" />
             </div>
             <div>
-              <Label htmlFor="smtpPort">SMTP Port</Label>
+              <Label htmlFor="smtpPort">{ui("SMTP Port")}</Label>
               <Input id="smtpPort" placeholder="587" className="mt-1" />
             </div>
             <div>
-              <Label htmlFor="senderEmail">Sender Email</Label>
-              <Input id="senderEmail" placeholder="noreply@example.com" className="mt-1" />
+              <Label htmlFor="senderEmail">{ui("Sender Email")}</Label>
+              <Input id="senderEmail" placeholder={ui("noreply@example.com")} className="mt-1" />
             </div>
           </div>
         </div>
@@ -543,25 +545,25 @@ export default function SystemSettingsPage() {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Shield className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Security</h2>
+            <h2 className="text-lg font-semibold">{ui("Security")}</h2>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-muted-foreground">Require 2FA for admin accounts</p>
+                <p className="font-medium">{ui("Two-Factor Authentication")}</p>
+                <p className="text-sm text-muted-foreground">{ui("Require 2FA for admin accounts")}</p>
               </div>
               <input type="checkbox" className="h-4 w-4" />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Session Timeout</p>
-                <p className="text-sm text-muted-foreground">Auto logout after inactivity</p>
+                <p className="font-medium">{ui("Session Timeout")}</p>
+                <p className="text-sm text-muted-foreground">{ui("Auto logout after inactivity")}</p>
               </div>
               <select className="h-9 rounded-md border px-3 bg-background">
-                <option value="30">30 minutes</option>
-                <option value="60">1 hour</option>
-                <option value="120">2 hours</option>
+                <option value="30">{ui("30 minutes")}</option>
+                <option value="60">{ui("1 hour")}</option>
+                <option value="120">{ui("2 hours")}</option>
               </select>
             </div>
           </div>

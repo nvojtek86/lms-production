@@ -1,3 +1,6 @@
+import {getCourseLocale} from "@/i18n/course";
+
+import {getUi} from "@/i18n/server";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
@@ -123,6 +126,7 @@ export default async function OrgCourseDetailPage({
 }: {
   params: Promise<{ orgId: string; courseId: string }>;
 }) {
+  let ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
 
@@ -153,6 +157,7 @@ export default async function OrgCourseDetailPage({
 
   const course = data as CourseRow;
   const courseId = course.id;
+  if (user.role === "member") ui = await getUi(await getCourseLocale(courseId));
   const courseSlug = typeof course.slug === "string" && course.slug.trim().length ? course.slug.trim() : null;
   const courseHrefKey = courseSlug ?? courseId;
 
@@ -277,18 +282,18 @@ export default async function OrgCourseDetailPage({
           <div>
             <h1 className="text-2xl font-bold text-foreground">{title}</h1>
             <p className="text-muted-foreground">
-              {course.is_published ? "Published" : "Draft"}
+              {course.is_published ? ui("Published") : ui("Draft")}
             </p>
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
           <Button variant="outline" asChild className="w-full md:w-auto">
-            <Link href={`/org/${orgSlug}/courses`}>Back</Link>
+            <Link href={`/org/${orgSlug}/courses`}>{ui("Back")}</Link>
           </Button>
           {canEdit ? (
             <Button asChild className="w-full md:w-auto">
-              <Link href={`/org/${orgSlug}/courses/${courseId}/edit-v2`}>Edit</Link>
+              <Link href={`/org/${orgSlug}/courses/${courseId}/edit-v2`}>{ui("Edit")}</Link>
             </Button>
           ) : null}
           {user.role === "member" ? (
@@ -318,7 +323,7 @@ export default async function OrgCourseDetailPage({
           {course.cover_image_url ? (
             <Image
               src={course.cover_image_url}
-              alt={`${title} cover`}
+              alt={ui("{v0} cover", {v0: title})}
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 900px"
@@ -335,7 +340,7 @@ export default async function OrgCourseDetailPage({
                   <iframe
                     className="absolute inset-0 h-full w-full"
                     src={introVideo.url}
-                    title="Course intro video"
+                    title={ui("Course intro video")}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                     referrerPolicy="strict-origin-when-cross-origin"
@@ -355,15 +360,13 @@ export default async function OrgCourseDetailPage({
             <div className="rounded-lg border bg-background p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <BarChart3 className="h-4 w-4 text-primary" />
-                Difficulty
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{difficultyLabel(course.difficulty_level ?? "all_levels")}</p>
+                {ui("Difficulty")}</div>
+              <p className="mt-2 text-sm text-muted-foreground">{ui(difficultyLabel(course.difficulty_level ?? "all_levels"))}</p>
             </div>
             <div className="rounded-lg border bg-background p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Clock className="h-4 w-4 text-primary" />
-                Total duration
-              </div>
+                {ui("Total duration")}</div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {(course.total_duration_hours ?? 0)}h {(course.total_duration_minutes ?? 0)}m
               </p>
@@ -371,15 +374,14 @@ export default async function OrgCourseDetailPage({
             <div className="rounded-lg border bg-background p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Layers className="h-4 w-4 text-primary" />
-                Curriculum
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{topics.length} topic(s)</p>
+                {ui("Curriculum")}</div>
+              <p className="mt-2 text-sm text-muted-foreground">{topics.length} {ui("topic(s)")}</p>
             </div>
           </div>
 
           {learnBullets.length ? (
             <div className="rounded-xl border bg-muted/10 p-4 sm:p-6">
-              <h2 className="text-lg font-semibold">What you’ll learn</h2>
+              <h2 className="text-lg font-semibold">{ui("What you’ll learn")}</h2>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                 {learnBullets.slice(0, 12).map((b, idx) => (
                   <div key={idx} className="flex items-start gap-2">
@@ -392,12 +394,12 @@ export default async function OrgCourseDetailPage({
           ) : null}
 
           <div>
-            <h2 className="text-lg font-semibold">About this course</h2>
+            <h2 className="text-lg font-semibold">{ui("About this course")}</h2>
             <div className="mt-3 prose prose-sm max-w-none text-foreground">
               {course.about_html?.trim() ? (
                 <div dangerouslySetInnerHTML={{ __html: course.about_html }} />
               ) : (
-                <p className="text-muted-foreground">No description yet.</p>
+                <p className="text-muted-foreground">{ui("No description yet.")}</p>
               )}
             </div>
           </div>
@@ -405,19 +407,19 @@ export default async function OrgCourseDetailPage({
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
               {user.role === "member" && !isEnrolled
-                ? "Preview the curriculum — items unlock after enrollment."
-                : "Curriculum overview."}
+                ? ui("Preview the curriculum — items unlock after enrollment.")
+                : ui("Curriculum overview.")}
             </p>
             <CourseContentPreview topics={contentTopics} locked={user.role === "member" && !isEnrolled} />
           </div>
 
           <div className="space-y-6">
             <div className="rounded-xl border bg-muted/10 p-4 sm:p-6">
-              <h2 className="text-lg font-semibold">Materials included</h2>
+              <h2 className="text-lg font-semibold">{ui("Materials included")}</h2>
               <p className="mt-3 text-sm whitespace-pre-wrap text-muted-foreground">{course.materials_included?.trim() || "—"}</p>
             </div>
             <div className="rounded-xl border bg-muted/10 p-4 sm:p-6">
-              <h2 className="text-lg font-semibold">Requirements</h2>
+              <h2 className="text-lg font-semibold">{ui("Requirements")}</h2>
               {requirementsBullets.length ? (
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                   {requirementsBullets.slice(0, 24).map((r, idx) => (

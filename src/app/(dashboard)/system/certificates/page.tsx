@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { createAdminSupabaseClient, getServerUser } from "@/lib/supabase/server";
 import { CertificatesTableV2, type CertificateRowV2 } from "@/features/certificates";
 import { redirect } from "next/navigation";
@@ -22,6 +24,7 @@ type CertificateRow = {
 };
 
 export default async function SystemCertificatesPage() {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
   if (user.role !== "super_admin") redirect("/unauthorized");
@@ -104,9 +107,9 @@ export default async function SystemCertificatesPage() {
       id: cert.id,
       userLabel,
       courseLabel,
-      issuedLabel: issued ? new Date(issued).toLocaleDateString() : "—",
+      issuedLabel: issued ? new Date(issued).toLocaleDateString(ui.locale) : "—",
       statusLabel: status,
-      expiresLabel: expires ? new Date(expires).toLocaleDateString() : null,
+      expiresLabel: expires ? new Date(expires).toLocaleDateString(ui.locale) : null,
       organizationLabel: orgLabel,
       canDownload,
       downloadHref,
@@ -118,13 +121,13 @@ export default async function SystemCertificatesPage() {
     <div className="space-y-6">
       {certError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load certificates: {certError.message}
+          {ui("Failed to load certificates: ")}{certError.message}
         </div>
       ) : null}
 
       <CertificatesTableV2
-        title="Certificates"
-        subtitle="Manage all certificates across organizations"
+        title={ui("Certificates")}
+        subtitle={ui("Manage all certificates across organizations")}
         rows={rows}
       />
     </div>

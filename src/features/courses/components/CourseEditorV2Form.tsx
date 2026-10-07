@@ -1,4 +1,7 @@
 "use client";
+import type {Locale} from "@/i18n/config";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -81,6 +84,8 @@ export type CourseTopic = {
 };
 
 export type CourseV2 = {
+  default_language?: Locale;
+  language_settings_available?: boolean;
   id: string;
   title: string | null;
   slug: string | null;
@@ -252,10 +257,10 @@ type SaveResultCourse = {
   status: "draft" | "published" | null;
 };
 
-function formatExpiresChip(iso: string): string {
+function formatExpiresChip(iso: string, locale = "en"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString(locale, { year: "numeric", month: "short", day: "2-digit" });
 }
 
 type LessonVideoProvider = "html5" | "youtube" | "vimeo";
@@ -703,6 +708,7 @@ function DetailsSection({
   allowOverflow?: boolean;
   children: React.ReactNode;
 }) {
+  const ui = useUi();
   const [open, setOpen] = useState(defaultOpen);
   const meta = SECTION_META[title] ?? { icon: "📄", accent: "#1b8755", headerFrom: "#f0faf6", headerTo: "#e8f5ed" };
 
@@ -749,7 +755,7 @@ function DetailsSection({
             {meta.icon}
           </span>
           <h2 style={{ fontWeight: 700, fontSize: "14px", color: "#1a1a1a", letterSpacing: "0.01em" }}>
-            {title}
+            {ui(title)}
           </h2>
         </div>
         <ChevronDown
@@ -824,6 +830,7 @@ function SortableTopicRow({
   onReorderItems: (topicId: string, orderedItemIds: string[]) => void;
   onDeleteItem: (topicId: string, itemId: string) => void;
 }) {
+  const ui = useUi();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: topic.id,
   });
@@ -861,7 +868,7 @@ function SortableTopicRow({
           <button
             type="button"
             className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
-            aria-label="Move chapter"
+            aria-label={ui("Move chapter")}
             {...attributes}
             {...listeners}
           >
@@ -874,13 +881,13 @@ function SortableTopicRow({
         </div>
 
         <div className="flex items-center gap-1">
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} title="Edit chapter">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} title={ui("Edit chapter")}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onDelete} title="Delete chapter">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onDelete} title={ui("Delete chapter")}>
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onToggle} title={expanded ? "Collapse chapter" : "Expand chapter"}>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onToggle} title={expanded ? ui("Collapse chapter") : ui("Expand chapter")}>
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -889,7 +896,7 @@ function SortableTopicRow({
       {expanded ? (
         <div className="px-3 py-3 space-y-3" style={{ background: "#fafffe" }}>
           {topic.items.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No content items yet for this chapter.</p>
+            <p className="text-xs text-muted-foreground">{ui("No content items yet for this chapter.")}</p>
           ) : (
             <div className="space-y-2">
               <DndContext
@@ -940,12 +947,10 @@ function SortableTopicRow({
           <div className="flex flex-wrap gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" onClick={onAddLesson}>
               <Plus className="h-4 w-4" />
-              Lesson
-            </Button>
+              {ui("Lesson")}</Button>
             <Button type="button" variant="outline" size="sm" onClick={onAddQuiz}>
               <Plus className="h-4 w-4" />
-              Quiz
-            </Button>
+              {ui("Quiz")}</Button>
           </div>
         </div>
       ) : null}
@@ -966,6 +971,7 @@ function SortableTopicItemRow({
   onEditQuizItem: (topicId: string, item: CourseTopicItem) => void;
   onDeleteItem: (topicId: string, itemId: string) => void;
 }) {
+  const ui = useUi();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -998,13 +1004,13 @@ function SortableTopicItemRow({
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
-          aria-label="Move item"
+          aria-label={ui("Move item")}
           {...attributes}
           {...listeners}
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <p className="text-sm font-medium truncate">{item.title?.trim() || "(untitled)"}</p>
+        <p className="text-sm font-medium truncate">{item.title?.trim() || ui("(untitled)")}</p>
         <span
           style={{
             fontSize: "10px",
@@ -1022,15 +1028,15 @@ function SortableTopicItemRow({
       </div>
       <div className="flex items-center gap-1">
         {item.item_type === "lesson" ? (
-          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditLessonItem(topicId, item)} title="Edit lesson">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditLessonItem(topicId, item)} title={ui("Edit lesson")}>
             <Pencil className="h-4 w-4" />
           </Button>
         ) : (
-          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditQuizItem(topicId, item)} title="Edit quiz">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditQuizItem(topicId, item)} title={ui("Edit quiz")}>
             <Pencil className="h-4 w-4" />
           </Button>
         )}
-        <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDeleteItem(topicId, item.id)} title="Delete item">
+        <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDeleteItem(topicId, item.id)} title={ui("Delete item")}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -1053,6 +1059,7 @@ function SortableLessonContentBlockRow({
   queue: InlineImageQueue;
   setQueue: (next: InlineImageQueue | ((prev: InlineImageQueue) => InlineImageQueue)) => void;
 }) {
+  const ui = useUi();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
   });
@@ -1101,8 +1108,8 @@ function SortableLessonContentBlockRow({
               border: "none",
               flexShrink: 0,
             }}
-            title="Drag to reorder"
-            aria-label="Drag to reorder"
+            title={ui("Drag to reorder")}
+            aria-label={ui("Drag to reorder")}
             {...attributes}
             {...listeners}
           >
@@ -1122,7 +1129,7 @@ function SortableLessonContentBlockRow({
           </span>
 
           <span style={{ fontWeight: 700, fontSize: "12px", color: "#1b6bb8", letterSpacing: "0.01em" }}>
-            Content block {index + 1}
+            {ui("Content block ")}{index + 1}
           </span>
         </div>
 
@@ -1130,8 +1137,8 @@ function SortableLessonContentBlockRow({
         <button
           type="button"
           onClick={onRemove}
-          title="Remove content block"
-          aria-label="Remove content block"
+          title={ui("Remove content block")}
+          aria-label={ui("Remove content block")}
           style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 28, height: 28, borderRadius: "7px",
@@ -1151,7 +1158,7 @@ function SortableLessonContentBlockRow({
         <RichTextEditorWithUploads
           value={block.html}
           onChange={onChangeHtml}
-          placeholder="Write lesson content here..."
+          placeholder={ui("Write lesson content here...")}
           minHeightClass="min-h-[220px]"
           queue={queue}
           setQueue={setQueue}
@@ -1184,6 +1191,7 @@ function StaticTopicRow({
   onEditQuizItem: (topicId: string, item: CourseTopicItem) => void;
   onDeleteItem: (topicId: string, itemId: string) => void;
 }) {
+  const ui = useUi();
   return (
     <div
       style={{
@@ -1216,13 +1224,13 @@ function StaticTopicRow({
         </div>
 
         <div className="flex items-center gap-1">
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} title="Edit chapter">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} title={ui("Edit chapter")}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onDelete} title="Delete chapter">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onDelete} title={ui("Delete chapter")}>
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onToggle} title={expanded ? "Collapse chapter" : "Expand chapter"}>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onToggle} title={expanded ? ui("Collapse chapter") : ui("Expand chapter")}>
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -1231,7 +1239,7 @@ function StaticTopicRow({
       {expanded ? (
         <div className="px-3 py-3 space-y-3" style={{ background: "#fafffe" }}>
           {topic.items.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No content items yet for this chapter.</p>
+            <p className="text-xs text-muted-foreground">{ui("No content items yet for this chapter.")}</p>
           ) : (
             <div className="space-y-2">
               {topic.items
@@ -1257,7 +1265,7 @@ function StaticTopicRow({
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-sm font-medium truncate">{item.title?.trim() || "(untitled)"}</p>
+                        <p className="text-sm font-medium truncate">{item.title?.trim() || ui("(untitled)")}</p>
                         <span
                           style={{
                             fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em",
@@ -1272,15 +1280,15 @@ function StaticTopicRow({
                       </div>
                       <div className="flex items-center gap-1">
                         {item.item_type === "lesson" ? (
-                          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditLessonItem(topic.id, item)} title="Edit lesson">
+                          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditLessonItem(topic.id, item)} title={ui("Edit lesson")}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                         ) : (
-                          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditQuizItem(topic.id, item)} title="Edit quiz">
+                          <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEditQuizItem(topic.id, item)} title={ui("Edit quiz")}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDeleteItem(topic.id, item.id)} title="Delete item">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDeleteItem(topic.id, item.id)} title={ui("Delete item")}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1293,12 +1301,10 @@ function StaticTopicRow({
           <div className="flex flex-wrap gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" onClick={onAddLesson}>
               <Plus className="h-4 w-4" />
-              Lesson
-            </Button>
+              {ui("Lesson")}</Button>
             <Button type="button" variant="outline" size="sm" onClick={onAddQuiz}>
               <Plus className="h-4 w-4" />
-              Quiz
-            </Button>
+              {ui("Quiz")}</Button>
           </div>
         </div>
       ) : null}
@@ -1313,6 +1319,7 @@ export function CourseEditorV2Form({
   initialCourse,
   initialTopics,
   memberOptions,
+  languageSettingsAvailable = initialCourse?.language_settings_available ?? false,
 }: {
   mode: "create" | "edit";
   orgSlug: string;
@@ -1320,7 +1327,9 @@ export function CourseEditorV2Form({
   initialCourse: CourseV2 | null;
   initialTopics: CourseTopic[];
   memberOptions: MemberOption[];
+  languageSettingsAvailable?: boolean;
 }) {
+  const ui = useUi();
   type MainEditorTab = "information" | "builder";
   const router = useRouter();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -1361,6 +1370,7 @@ export function CourseEditorV2Form({
   const [aboutHtml, setAboutHtml] = useState(initialCourse?.about_html ?? "");
   const [pendingCourseAboutInlineImages, setPendingCourseAboutInlineImages] = useState<InlineImageQueue>({});
   const [excerpt, setExcerpt] = useState(initialCourse?.excerpt ?? "");
+  const [defaultLanguage, setDefaultLanguage] = useState<Locale>(initialCourse?.default_language ?? "en");
   const [difficulty, setDifficulty] = useState<CourseV2["difficulty_level"]>(initialCourse?.difficulty_level ?? "all_levels");
   const [whatWillLearn, setWhatWillLearn] = useState(initialCourse?.what_will_learn ?? "");
   const [hours, setHours] = useState<number>(initialCourse?.total_duration_hours ?? 0);
@@ -1520,6 +1530,7 @@ export function CourseEditorV2Form({
     isSlugManuallyEdited: boolean;
     aboutHtml: string;
     excerpt: string;
+    defaultLanguage: Locale;
     difficulty: CourseV2["difficulty_level"];
     whatWillLearn: string;
     hours: number;
@@ -1539,6 +1550,7 @@ export function CourseEditorV2Form({
     isSlugManuallyEdited: Boolean(initialCourse?.slug?.trim()),
     aboutHtml: initialCourse?.about_html ?? "",
     excerpt: initialCourse?.excerpt ?? "",
+    defaultLanguage: initialCourse?.default_language ?? "en",
     difficulty: initialCourse?.difficulty_level ?? "all_levels",
     whatWillLearn: initialCourse?.what_will_learn ?? "",
     hours: initialCourse?.total_duration_hours ?? 0,
@@ -1589,6 +1601,7 @@ export function CourseEditorV2Form({
       isSlugManuallyEdited,
       aboutHtml,
       excerpt,
+      defaultLanguage,
       difficulty,
       whatWillLearn,
       hours,
@@ -1612,6 +1625,7 @@ export function CourseEditorV2Form({
   }, [
     aboutHtml,
     courseId,
+    defaultLanguage,
     difficulty,
     excerpt,
     hours,
@@ -1655,6 +1669,7 @@ export function CourseEditorV2Form({
       isSlugManuallyEdited: snap.isSlugManuallyEdited,
       aboutHtml: snap.aboutHtml,
       excerpt: snap.excerpt,
+      defaultLanguage: snap.defaultLanguage,
       difficulty: snap.difficulty,
       whatWillLearn: snap.whatWillLearn,
       hours: snap.hours,
@@ -1805,7 +1820,7 @@ export function CourseEditorV2Form({
       setCertPassingPercentInput(String(nextPassing));
       setCertPlacement(nextPlacement);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load certificate settings.");
+      toast.error(ui(e instanceof Error ? e.message : "Failed to load certificate settings."));
     } finally {
       setCertLoading(false);
     }
@@ -1850,11 +1865,11 @@ export function CourseEditorV2Form({
       });
 
       if (!(opts?.silent ?? false)) {
-        toast.success("Certificate settings saved.");
+        toast.success(ui("Certificate settings saved."));
       }
     } catch (e) {
       if (!(opts?.silent ?? false)) {
-        toast.error(e instanceof Error ? e.message : "Failed to save certificate settings.");
+        toast.error(ui(e instanceof Error ? e.message : "Failed to save certificate settings."));
       }
       throw e;
     } finally {
@@ -1904,9 +1919,9 @@ export function CourseEditorV2Form({
       setCertTplFile(null);
       setCertTplPreviewUrl(null);
       await loadCertificateSettingsAndTemplate(courseIdToUse);
-      toast.success("Certificate template uploaded.");
+      toast.success(ui("Certificate template uploaded."));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to upload certificate template.");
+      toast.error(ui(e instanceof Error ? e.message : "Failed to upload certificate template."));
     } finally {
       setCertTplUploading(false);
       setIsCertTplDragActive(false);
@@ -1916,17 +1931,17 @@ export function CourseEditorV2Form({
   function applyCertificateTemplateFile(file: File | null) {
     if (!file) return;
     if (!courseId) {
-      toast.error("Create the course draft first to upload a certificate template.");
+      toast.error(ui("Create the course draft first to upload a certificate template."));
       return;
     }
     const allowed = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
     if (!allowed.has(file.type)) {
-      toast.error("Invalid template type. Allowed: PDF, PNG, JPG, WebP.");
+      toast.error(ui("Invalid template type. Allowed: PDF, PNG, JPG, WebP."));
       return;
     }
     const maxBytes = 10 * 1024 * 1024;
     if (file.size > maxBytes) {
-      toast.error("Template is too large. Max size is 10MB.");
+      toast.error(ui("Template is too large. Max size is 10MB."));
       return;
     }
 
@@ -1951,9 +1966,9 @@ export function CourseEditorV2Form({
     try {
       await fetchJson<Record<string, unknown>>(`/api/courses/${courseIdToUse}/certificate-template`, { method: "DELETE" });
       await loadCertificateSettingsAndTemplate(courseIdToUse);
-      toast.success("Certificate template removed.");
+      toast.success(ui("Certificate template removed."));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to remove certificate template.");
+      toast.error(ui(e instanceof Error ? e.message : "Failed to remove certificate template."));
     } finally {
       setCertTplUploading(false);
     }
@@ -2101,6 +2116,7 @@ export function CourseEditorV2Form({
     setAboutHtml(snap.aboutHtml);
     setPendingCourseAboutInlineImages({});
     setExcerpt(snap.excerpt);
+    setDefaultLanguage(snap.defaultLanguage ?? "en");
     setDifficulty(snap.difficulty ?? "all_levels");
     setWhatWillLearn(snap.whatWillLearn);
     setHours(snap.hours ?? 0);
@@ -2266,6 +2282,7 @@ export function CourseEditorV2Form({
       slug: slug.trim() || undefined,
       about_html: (opts?.aboutHtmlOverride ?? aboutHtml),
       excerpt: excerpt.trim(),
+      ...(!languageSettingsAvailable ? {} : {default_language: defaultLanguage}),
       difficulty_level: difficulty ?? "all_levels",
       what_will_learn: whatWillLearn,
       total_duration_hours: Number.isFinite(hours) ? hours : 0,
@@ -2330,7 +2347,7 @@ export function CourseEditorV2Form({
 
   function openCsvImportModal() {
     if (!courseId) {
-      toast.error("Save the course first before importing member assignments.");
+      toast.error(ui("Save the course first before importing member assignments."));
       return;
     }
     setCsvImportOpen(true);
@@ -2343,7 +2360,7 @@ export function CourseEditorV2Form({
     setCsvPreviewLoading(true);
     setCsvImportFileName(file.name);
     setCsvImportPreview(null);
-    const t = toast.loading("Validating CSV…");
+    const t = toast.loading(ui("Validating CSV…"));
     try {
       const form = new FormData();
       form.append("file", file);
@@ -2352,9 +2369,9 @@ export function CourseEditorV2Form({
         { method: "POST", body: form }
       );
       setCsvImportPreview(data);
-      toast.success(message || "CSV preview ready.", { id: t });
+      toast.success(ui(message || "CSV preview ready."), { id: t });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to preview CSV import.", { id: t });
+      toast.error(ui(e instanceof Error ? e.message : "Failed to preview CSV import."), { id: t });
     } finally {
       setCsvPreviewLoading(false);
     }
@@ -2363,7 +2380,7 @@ export function CourseEditorV2Form({
   async function applyCsvImport() {
     if (!courseId || !csvImportPreview) return;
     setCsvApplyLoading(true);
-    const t = toast.loading("Applying CSV import…");
+    const t = toast.loading(ui("Applying CSV import…"));
     try {
       const { message } = await fetchJson<{
         course_id: string;
@@ -2380,9 +2397,9 @@ export function CourseEditorV2Form({
       setCsvImportOpen(false);
       setCsvImportPreview(null);
       setCsvImportFileName(null);
-      toast.success(message || "CSV import applied.", { id: t });
+      toast.success(ui(message || "CSV import applied."), { id: t });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to apply CSV import.", { id: t });
+      toast.error(ui(e instanceof Error ? e.message : "Failed to apply CSV import."), { id: t });
     } finally {
       setCsvApplyLoading(false);
     }
@@ -2390,7 +2407,7 @@ export function CourseEditorV2Form({
 
   function downloadAssignmentCsvTemplate() {
     if (!courseId) {
-      toast.error("Save the course first before exporting the CSV template.");
+      toast.error(ui("Save the course first before exporting the CSV template."));
       return;
     }
     window.open(`/api/org/courses/${courseId}/assignments/csv`, "_blank", "noopener,noreferrer");
@@ -2927,12 +2944,12 @@ export function CourseEditorV2Form({
   function applyVideoFile(file: File | null) {
     if (!file) return;
     if (file.type !== "video/mp4") {
-      toast.error("Invalid video type. Allowed: MP4.");
+      toast.error(ui("Invalid video type. Allowed: MP4."));
       return;
     }
     const maxBytes = 300 * 1024 * 1024;
     if (file.size > maxBytes) {
-      toast.error("Video is too large. Max size is 300MB.");
+      toast.error(ui("Video is too large. Max size is 300MB."));
       return;
     }
     setVideoFile(file);
@@ -2949,7 +2966,7 @@ export function CourseEditorV2Form({
     const uploaded = await uploadFileToSignedUrlWithRetry({
       file,
       contentType: file.type || "image/webp",
-      label: "Thumbnail",
+      label: ui("Thumbnail"),
       onProgress: reportUploadProgress,
       signUpload: async () => {
         const { data } = await fetchJson<{ bucket_id: string; object_name: string; token: string }>(
@@ -3017,7 +3034,7 @@ export function CourseEditorV2Form({
     canReport: boolean;
     reportPayload?: Record<string, unknown> | null;
   }) {
-    setError(opts.message);
+    setError(ui(opts.message));
     setErrorStep(opts.step ?? null);
     setErrorSupportId(opts.supportId ?? null);
     setErrorCanReport(opts.canReport);
@@ -3089,9 +3106,9 @@ export function CourseEditorV2Form({
       if (!errorSupportId && typeof data.support_id === "string") {
         setErrorSupportId(data.support_id);
       }
-      toast.success("Error reported to Support.");
+      toast.success(ui("Error reported to Support."));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to report error.");
+      toast.error(ui(e instanceof Error ? e.message : "Failed to report error."));
     } finally {
       setErrorReportSending(false);
     }
@@ -3102,14 +3119,14 @@ export function CourseEditorV2Form({
     const seq = thumbnailPrepareSeqRef.current + 1;
     thumbnailPrepareSeqRef.current = seq;
     if (!THUMBNAIL_ALLOWED_MIME.has(file.type)) {
-      toast.error("Invalid thumbnail type. Allowed: PNG, JPG, WebP.");
+      toast.error(ui("Invalid thumbnail type. Allowed: PNG, JPG, WebP."));
       return;
     }
     if (file.size > THUMBNAIL_MAX_BYTES) {
-      toast.error("Thumbnail is too large. Max size is 10MB.");
+      toast.error(ui("Thumbnail is too large. Max size is 10MB."));
       return;
     }
-    const toastId = toast.loading("Preparing thumbnail...");
+    const toastId = toast.loading(ui("Preparing thumbnail..."));
     try {
       const webpFile = await convertImageFileToThumbnailWebp(file);
       if (thumbnailPrepareSeqRef.current !== seq) {
@@ -3120,7 +3137,7 @@ export function CourseEditorV2Form({
       setThumbnailFile(webpFile);
       toast.dismiss(toastId);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to prepare thumbnail.", { id: toastId });
+      toast.error(ui(e instanceof Error ? e.message : "Failed to prepare thumbnail."), { id: toastId });
     }
   }
 
@@ -3200,7 +3217,8 @@ export function CourseEditorV2Form({
         isSlugManuallyEdited,
         aboutHtml: aboutFinal,
         excerpt,
-        difficulty,
+        defaultLanguage,
+      difficulty,
         whatWillLearn,
         hours,
         minutes,
@@ -3220,7 +3238,8 @@ export function CourseEditorV2Form({
         isSlugManuallyEdited,
         aboutHtml: aboutFinal,
         excerpt,
-        difficulty,
+        defaultLanguage,
+      difficulty,
         whatWillLearn,
         hours,
         minutes,
@@ -3369,7 +3388,8 @@ export function CourseEditorV2Form({
         isSlugManuallyEdited,
         aboutHtml: aboutFinal,
         excerpt,
-        difficulty,
+        defaultLanguage,
+      difficulty,
         whatWillLearn,
         hours,
         minutes,
@@ -3389,7 +3409,8 @@ export function CourseEditorV2Form({
         isSlugManuallyEdited,
         aboutHtml: aboutFinal,
         excerpt,
-        difficulty,
+        defaultLanguage,
+      difficulty,
         whatWillLearn,
         hours,
         minutes,
@@ -3527,7 +3548,8 @@ export function CourseEditorV2Form({
         isSlugManuallyEdited,
         aboutHtml: aboutFinal,
         excerpt,
-        difficulty,
+        defaultLanguage,
+      difficulty,
         whatWillLearn,
         hours,
         minutes,
@@ -3547,7 +3569,8 @@ export function CourseEditorV2Form({
         isSlugManuallyEdited,
         aboutHtml: aboutFinal,
         excerpt,
-        difficulty,
+        defaultLanguage,
+      difficulty,
         whatWillLearn,
         hours,
         minutes,
@@ -3636,7 +3659,7 @@ export function CourseEditorV2Form({
   async function deleteCourseHard() {
     if (!courseId) return;
     if (deleteCourseConfirmText !== "DELETE") {
-      toast.error('Type "DELETE" to confirm course deletion.');
+      toast.error(ui("Type \"DELETE\" to confirm course deletion."));
       return;
     }
 
@@ -3651,7 +3674,7 @@ export function CourseEditorV2Form({
       await fetchJson(`/api/v2/courses/${courseId}`, { method: "DELETE" });
       discardAllChanges();
       setDeleteCourseOpen(false);
-      toast.success("Course deleted. Issued certificates remain available.");
+      toast.success(ui("Course deleted. Issued certificates remain available."));
       router.push(backHref);
     } catch (e) {
       const info = normalizeStepError(e);
@@ -3703,7 +3726,7 @@ export function CourseEditorV2Form({
           },
         ]);
         setTopicExpanded(newTopicId, true);
-        toast.info("Chapter added locally. Click Save to apply changes.");
+        toast.info(ui("Chapter added locally. Click Save to apply changes."));
       } else if (topicModal.topicId) {
         setTopics((prev) =>
           prev.map((t) =>
@@ -3712,16 +3735,16 @@ export function CourseEditorV2Form({
               : t
           )
         );
-        toast.info("Chapter updated locally. Click Save to apply changes.");
+        toast.info(ui("Chapter updated locally. Click Save to apply changes."));
       }
       setTopicModal(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save chapter.");
+      setError(ui(e instanceof Error ? e.message : "Failed to save chapter."));
     }
   }
 
   async function deleteTopic(topicId: string) {
-    if (!confirm("Delete this chapter and all content inside it?")) return;
+    if (!confirm(ui("Delete this chapter and all content inside it?"))) return;
     setError(null);
     setIsBusy(true);
     try {
@@ -3730,16 +3753,16 @@ export function CourseEditorV2Form({
       if (!isTempId(topicId)) {
         setPendingDeletedTopicIds((prev) => (prev.includes(topicId) ? prev : [...prev, topicId]));
       }
-      toast.info("Chapter removed locally. Click Save to apply changes.");
+      toast.info(ui("Chapter removed locally. Click Save to apply changes."));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete chapter.");
+      setError(ui(e instanceof Error ? e.message : "Failed to delete chapter."));
     } finally {
       setIsBusy(false);
     }
   }
 
   async function deleteTopicItem(topicId: string, itemId: string) {
-    if (!confirm("Delete this content item?")) return;
+    if (!confirm(ui("Delete this content item?"))) return;
     setError(null);
     setIsBusy(true);
     try {
@@ -3747,9 +3770,9 @@ export function CourseEditorV2Form({
       if (!isTempId(itemId)) {
         setPendingDeletedItemIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]));
       }
-      toast.info("Item removed locally. Click Save to apply changes.");
+      toast.info(ui("Item removed locally. Click Save to apply changes."));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete item.");
+      setError(ui(e instanceof Error ? e.message : "Failed to delete item."));
     } finally {
       setIsBusy(false);
     }
@@ -3824,9 +3847,9 @@ export function CourseEditorV2Form({
       }));
 
       setItemModal(null);
-      toast.info("Lesson updated locally. Click Save to apply changes.");
+      toast.info(ui("Lesson updated locally. Click Save to apply changes."));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save lesson.");
+      setError(ui(e instanceof Error ? e.message : "Failed to save lesson."));
     }
   }
 
@@ -3906,12 +3929,12 @@ export function CourseEditorV2Form({
     if (!file) return;
     const allowed = new Set(["image/png", "image/jpeg", "image/webp"]);
     if (!allowed.has(file.type)) {
-      toast.error("Invalid feature image type. Allowed: PNG, JPG, WebP.");
+      toast.error(ui("Invalid feature image type. Allowed: PNG, JPG, WebP."));
       return;
     }
     const maxBytes = 10 * 1024 * 1024;
     if (file.size > maxBytes) {
-      toast.error("Feature image is too large. Max size is 10MB.");
+      toast.error(ui("Feature image is too large. Max size is 10MB."));
       return;
     }
     setItemModal((prev) => (prev && prev.itemType === "lesson" ? { ...prev, featureImageFile: file } : prev));
@@ -3947,12 +3970,12 @@ export function CourseEditorV2Form({
   function applyLessonVideoFile(file: File | null) {
     if (!file) return;
     if (file.type !== "video/mp4") {
-      toast.error("Invalid video type. Allowed: MP4.");
+      toast.error(ui("Invalid video type. Allowed: MP4."));
       return;
     }
     const maxBytes = 300 * 1024 * 1024;
     if (file.size > maxBytes) {
-      toast.error("Video is too large. Max size is 300MB.");
+      toast.error(ui("Video is too large. Max size is 300MB."));
       return;
     }
     setItemModal((prev) => (prev && prev.itemType === "lesson" ? { ...prev, videoFile: file } : prev));
@@ -3962,7 +3985,7 @@ export function CourseEditorV2Form({
     const maxBytesPerFile = 300 * 1024 * 1024;
     for (const f of files) {
       if (f.size > maxBytesPerFile) {
-        toast.error(`Attachment too large: ${f.name} (max 300MB).`);
+        toast.error(ui("Attachment too large: {v0} (max 300MB).", {v0: f.name}));
         return;
       }
     }
@@ -3981,7 +4004,7 @@ export function CourseEditorV2Form({
       next.push(file);
     }
     if (skipped > 0) {
-      toast.info(`${skipped} duplicate attachment${skipped === 1 ? " was" : "s were"} skipped.`);
+      toast.info(ui("{v0} duplicate attachment{v1} skipped.", {v0: skipped, v1: ui.locale === "sr-Latn" ? "" : (skipped === 1 ? " was" : "s were")}));
     }
     setItemModal({ ...itemModal, attachments: next });
   }
@@ -4025,29 +4048,27 @@ export function CourseEditorV2Form({
         style={{ boxShadow: "0 2px 16px rgba(27,135,85,0.1)", borderColor: "rgba(27,135,85,0.15)" }}
       >
         <div className="text-xl text-foreground font-semibold">
-          Course Builder
-        </div>
+          {ui("Course Builder")}</div>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             disabled={!canPreview}
-            title={!previewHref ? "Save the course first to enable preview." : hasUnsavedChanges ? "Save changes to preview the latest version." : "Preview course"}
+            title={!previewHref ? ui("Save the course first to enable preview.") : hasUnsavedChanges ? ui("Save changes to preview the latest version.") : ui("Preview course")}
             onClick={() => {
               if (!previewHref) {
-                toast.info("Save the course first to enable preview.");
+                toast.info(ui("Save the course first to enable preview."));
                 return;
               }
               if (hasUnsavedChanges) {
-                toast.info("You have unsaved changes. Save to preview the latest version.");
+                toast.info(ui("You have unsaved changes. Save to preview the latest version."));
                 return;
               }
               window.open(previewHref, "_blank", "noopener,noreferrer");
             }}
           >
             <ExternalLink className="h-4 w-4" />
-            Preview
-          </Button>
+            {ui("Preview")}</Button>
           <Button
             type="button"
             variant="outline"
@@ -4057,8 +4078,7 @@ export function CourseEditorV2Form({
             disabled={isBusy || !canSave}
           >
             {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save
-          </Button>
+            {ui("Save")}</Button>
           {status === "published" ? (
             <Button
               type="button"
@@ -4066,18 +4086,15 @@ export function CourseEditorV2Form({
               className="bg-green-600 text-white hover:bg-green-600 disabled:opacity-100 disabled:pointer-events-none"
             >
               <Check className="h-4 w-4" />
-              Published
-            </Button>
+              {ui("Published")}</Button>
           ) : (
             <Button type="button" onClick={() => void publishCourse()} disabled={isBusy || !canPublish}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Publish
-            </Button>
+              {ui("Publish")}</Button>
           )}
           {status === "published" ? (
             <Button type="button" variant="outline" disabled={isBusy} onClick={() => setConfirmUnpublishDraftOpen(true)}>
-              Unpublish
-            </Button>
+              {ui("Unpublish")}</Button>
           ) : null}
           {mode === "edit" && courseId ? (
             <Button
@@ -4091,15 +4108,14 @@ export function CourseEditorV2Form({
               }}
             >
               <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
+              {ui("Delete")}</Button>
           ) : null}
           <Button
             variant="ghost"
             type="button"
             size="icon-sm"
-            aria-label="Back"
-            title="Back"
+            aria-label={ui("Back")}
+            title={ui("Back")}
             onClick={() => {
               if (hasUnsavedChanges) {
                 setLeavePrompt({ href: backHref });
@@ -4117,11 +4133,11 @@ export function CourseEditorV2Form({
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <div>{error}</div>
-              {errorStep ? <div className="mt-1 text-xs text-muted-foreground">Step: {errorStep}</div> : null}
+              <div>{ui(error)}</div>
+              {errorStep ? <div className="mt-1 text-xs text-muted-foreground">{ui("Step: ")}{errorStep}</div> : null}
               {errorSupportId ? (
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Support ID: <span className="font-mono">{errorSupportId}</span>
+                  {ui("Support ID: ")}<span className="font-mono">{errorSupportId}</span>
                 </div>
               ) : null}
             </div>
@@ -4135,7 +4151,7 @@ export function CourseEditorV2Form({
                   onClick={() => void reportCurrentError()}
                   disabled={errorReportSending || errorReportSent}
                 >
-                  {errorReportSent ? "Reported" : (errorReportSending ? "Reporting..." : "Report error")}
+                  {errorReportSent ? ui("Reported") : (errorReportSending ? ui("Reporting...") : ui("Report error"))}
                 </Button>
               </div>
             ) : null}
@@ -4144,8 +4160,7 @@ export function CourseEditorV2Form({
       ) : null}
       {hasUnsavedChanges ? (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
-          You have unsaved changes. Click <span className="font-medium">Save</span> to apply them.
-        </div>
+          {ui("You have unsaved changes. Click ")}<span className="font-medium">{ui("Save")}</span> {ui("to apply them.")}</div>
       ) : null}
 
       <div
@@ -4187,8 +4202,8 @@ export function CourseEditorV2Form({
               opacity: 0.85,
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "3px" }}>📋 Course Information</div>
-            <div style={{ fontSize: "11px", opacity: 0.8 }}>General setup, metadata, access and publishing settings.</div>
+            <div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "3px" }}>{ui("📋 Course Information")}</div>
+            <div style={{ fontSize: "11px", opacity: 0.8 }}>{ui("General setup, metadata, access and publishing settings.")}</div>
           </button>
 
           {/* Course Builder Tab */}
@@ -4221,8 +4236,8 @@ export function CourseEditorV2Form({
               opacity: 0.85,
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "3px" }}>🏗️ Course Builder</div>
-            <div style={{ fontSize: "11px", opacity: 0.8 }}>Build chapters, lessons and quizzes in your learning flow.</div>
+            <div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "3px" }}>{ui("🏗️ Course Builder")}</div>
+            <div style={{ fontSize: "11px", opacity: 0.8 }}>{ui("Build chapters, lessons and quizzes in your learning flow.")}</div>
           </button>
         </div>
       </div>
@@ -4230,7 +4245,7 @@ export function CourseEditorV2Form({
       {activeMainTab === "information" ? <DetailsSection title="Course Info">
         <div className="space-y-6">
           <div>
-            <FieldLabel required>Course Title</FieldLabel>
+            <FieldLabel required>{ui("Course Title")}</FieldLabel>
             <Input
             value={title}
             onChange={(e) => {
@@ -4240,13 +4255,13 @@ export function CourseEditorV2Form({
                 setSlug(normalizeSlug(nextTitle));
               }
             }}
-              placeholder="Enter a clear course name (e.g. WordPress SEO Fundamentals)"
+              placeholder={ui("Enter a clear course name (e.g. WordPress SEO Fundamentals)")}
             />
-            <FieldHint>This is the main course title shown to learners in course listings and on the course page.</FieldHint>
+            <FieldHint>{ui("This is the main course title shown to learners in course listings and on the course page.")}</FieldHint>
           </div>
 
           <div>
-            <FieldLabel required>Course Slug</FieldLabel>
+            <FieldLabel required>{ui("Course Slug")}</FieldLabel>
             <Input
             value={slug}
             onChange={(e) => {
@@ -4261,23 +4276,23 @@ export function CourseEditorV2Form({
             }}
             placeholder="course-url-slug"
             />
-            <FieldHint>Lowercase letters, numbers and dashes only.</FieldHint>
+            <FieldHint>{ui("Lowercase letters, numbers and dashes only.")}</FieldHint>
           </div>
 
           <div className="text-sm">
-            <span className="text-muted-foreground">Permalink: </span>
-            <span className="font-medium break-all">{permalink || "Will be generated from course name"}</span>
+            <span className="text-muted-foreground">{ui("Permalink: ")}</span>
+            <span className="font-medium break-all">{permalink || ui("Will be generated from course name")}</span>
           </div>
 
           <div>
-            <FieldLabel>About Course</FieldLabel>
+            <FieldLabel>{ui("About Course")}</FieldLabel>
             <RichTextEditorWithUploads
               value={aboutHtml}
               onChange={(html) => {
                 setAboutHtml(html);
                 setPendingCourseAboutInlineImages((prev) => pruneQueueByHtml(prev ?? {}, html));
               }}
-              placeholder="Write a detailed course description for visitors before enrollment."
+              placeholder={ui("Write a detailed course description for visitors before enrollment.")}
               queue={pendingCourseAboutInlineImages}
               setQueue={(updater) => {
                 setPendingCourseAboutInlineImages((prev) => {
@@ -4286,21 +4301,21 @@ export function CourseEditorV2Form({
                 });
               }}
             />
-            <FieldHint>This detailed description is visible to users before they enroll in the course.</FieldHint>
+            <FieldHint>{ui("This detailed description is visible to users before they enroll in the course.")}</FieldHint>
           </div>
 
           <div>
-            <FieldLabel>Excerpt</FieldLabel>
+            <FieldLabel>{ui("Excerpt")}</FieldLabel>
             <Textarea
               value={excerpt}
               onChange={(e) => {
                 setExcerpt(e.target.value.slice(0, 200));
               }}
-              placeholder="Write a short summary shown in course lists."
+              placeholder={ui("Write a short summary shown in course lists.")}
               className="min-h-[90px]"
             />
             <div className="flex items-center justify-between">
-              <FieldHint>Short preview text shown under the course card image.</FieldHint>
+              <FieldHint>{ui("Short preview text shown under the course card image.")}</FieldHint>
               <p className="text-xs text-muted-foreground">{excerpt.length}/200</p>
             </div>
           </div>
@@ -4310,7 +4325,7 @@ export function CourseEditorV2Form({
       {activeMainTab === "information" ? <DetailsSection title="Video">
         <div className="space-y-6">
           <div>
-            <FieldLabel accent="#1b6bb8">Course Intro Video</FieldLabel>
+            <FieldLabel accent="#1b6bb8">{ui("Course Intro Video")}</FieldLabel>
             <select
               className="h-10 w-full rounded-md border bg-transparent px-3 text-sm"
               value={videoProvider}
@@ -4319,11 +4334,11 @@ export function CourseEditorV2Form({
                 setVideoFile(null);
               }}
             >
-              <option value="html5">HTML 5 (mp4)</option>
-              <option value="youtube">YouTube</option>
-              <option value="vimeo">Vimeo</option>
+              <option value="html5">{ui("HTML 5 (mp4)")}</option>
+              <option value="youtube">{ui("YouTube")}</option>
+              <option value="vimeo">{ui("Vimeo")}</option>
             </select>
-            <FieldHint>Select where intro video is sourced from (file upload or full external URL).</FieldHint>
+            <FieldHint>{ui("Select where intro video is sourced from (file upload or full external URL).")}</FieldHint>
           </div>
 
           {videoProvider === "html5" ? (
@@ -4354,14 +4369,13 @@ export function CourseEditorV2Form({
                   isVideoDragActive ? "border-primary bg-primary/5" : ""
                 )}
               >
-                <p className="text-sm font-medium">Drag & Drop Your Video</p>
-                <p className="mt-1 text-xs text-muted-foreground">File format: .mp4 • Max size: 300MB</p>
+                <p className="text-sm font-medium">{ui("Drag & Drop Your Video")}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{ui("File format: .mp4 • Max size: 300MB")}</p>
                 <div className="mt-4">
                   <Button type="button" variant="outline" size="sm" onClick={() => videoInputRef.current?.click()}>
-                    Browse file
-                  </Button>
+                    {ui("Browse file")}</Button>
                 </div>
-                {videoFile ? <p className="mt-3 text-xs text-muted-foreground">Selected: {videoFile.name}</p> : null}
+                {videoFile ? <p className="mt-3 text-xs text-muted-foreground">{ui("Selected: ")}{videoFile.name}</p> : null}
               </div>
               <Input
                 ref={videoInputRef}
@@ -4373,17 +4387,17 @@ export function CourseEditorV2Form({
             </div>
           ) : (
             <div>
-              <FieldLabel accent="#1b6bb8">External URL</FieldLabel>
+              <FieldLabel accent="#1b6bb8">{ui("External URL")}</FieldLabel>
               <div className="mt-2 rounded-md border border-dashed border-primary bg-muted/10 p-4">
                 <Input
                   value={videoUrl}
                   onChange={(e) => {
                     setVideoUrl(e.target.value);
                   }}
-                  placeholder={`Paste ${videoProvider === "youtube" ? "YouTube" : "Vimeo"} video URL`}
+                  placeholder={ui("Paste {v0} video URL", {v0: videoProvider === "youtube" ? "YouTube" : "Vimeo"})}
                 />
               </div>
-              <FieldHint>Provide the full share URL for the selected provider.</FieldHint>
+              <FieldHint>{ui("Provide the full share URL for the selected provider.")}</FieldHint>
             </div>
           )}
         </div>
@@ -4421,14 +4435,14 @@ export function CourseEditorV2Form({
             >
               {thumbnailObjectUrl || thumbnailUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumbnailObjectUrl ?? thumbnailUrl} alt="Course thumbnail preview" className="h-full w-full object-cover" />
+                <img src={thumbnailObjectUrl ?? thumbnailUrl} alt={ui("Course thumbnail preview")} className="h-full w-full object-cover" />
               ) : (
                 <div className="px-3 text-center">
                   <div className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border">
                     <ImageIcon className="h-5 w-5" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Drop or choose image</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Click here or drag file into this area</p>
+                  <p className="text-xs text-muted-foreground">{ui("Drop or choose image")}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{ui("Click here or drag file into this area")}</p>
                 </div>
               )}
 
@@ -4437,8 +4451,8 @@ export function CourseEditorV2Form({
                   type="button"
                   size="icon-sm"
                   variant="ghost"
-                  aria-label="Remove thumbnail"
-                  title="Remove thumbnail"
+                  aria-label={ui("Remove thumbnail")}
+                  title={ui("Remove thumbnail")}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -4461,12 +4475,10 @@ export function CourseEditorV2Form({
           <div className="space-y-3">
             <div className="text-sm text-muted-foreground">
               <div>
-                <span className="font-medium text-foreground">Size:</span> 700×430 pixels
-              </div>
+                <span className="font-medium text-foreground">{ui("Size:")}</span> {ui("700×430 pixels")}</div>
               <div>
-                <span className="font-medium text-foreground">File support:</span> PNG, JPG, WebP
-              </div>
-              <div className="text-xs">Maximum upload size: 10MB</div>
+                <span className="font-medium text-foreground">{ui("File support:")}</span> {ui("PNG, JPG, WebP")}</div>
+              <div className="text-xs">{ui("Maximum upload size: 10MB")}</div>
             </div>
           </div>
         </div>
@@ -4477,12 +4489,22 @@ export function CourseEditorV2Form({
           <div className="md:col-span-1 rounded-md border bg-muted/10 p-3">
             <div className="flex items-center gap-2 rounded-md bg-background border px-3 py-2 text-sm font-medium">
               <Settings className="h-4 w-4 text-muted-foreground" />
-              General
-            </div>
+              {ui("General")}</div>
           </div>
           <div className="md:col-span-2 space-y-6">
+            <div>
+              <label htmlFor="default-course-language" className="block text-sm font-medium mb-2">{ui("Default course language")}</label>
+              <select id="default-course-language" className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={defaultLanguage} disabled={isBusy || !languageSettingsAvailable}
+                onChange={e => setDefaultLanguage(e.target.value as Locale)}>
+                <option value="en">English</option>
+                <option value="sr-Latn">Srpski (latinica)</option>
+              </select>
+              <p className="mt-2 text-xs text-muted-foreground">{ui("Sets the course interface language. Learners can choose another language. Course content is not translated.")}</p>
+              {!languageSettingsAvailable ? <p role="status" className="mt-2 text-xs text-amber-700">{ui("Course language settings require the approved database migration.")}</p> : null}
+            </div>
             <div className="relative">
-              <FieldLabel accent="#b87216">Members</FieldLabel>
+              <FieldLabel accent="#b87216">{ui("Members")}</FieldLabel>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
@@ -4492,8 +4514,7 @@ export function CourseEditorV2Form({
                   onClick={downloadAssignmentCsvTemplate}
                 >
                   <FileSpreadsheet className="h-4 w-4" />
-                  Export CSV Template
-                </Button>
+                  {ui("Export CSV Template")}</Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -4502,16 +4523,15 @@ export function CourseEditorV2Form({
                   onClick={openCsvImportModal}
                 >
                   <Upload className="h-4 w-4" />
-                  Import CSV
-                </Button>
-                {!courseId ? <span className="text-xs text-muted-foreground">Save the course first to enable CSV import/export.</span> : null}
+                  {ui("Import CSV")}</Button>
+                {!courseId ? <span className="text-xs text-muted-foreground">{ui("Save the course first to enable CSV import/export.")}</span> : null}
               </div>
               <div className="mt-3 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
-                <p>Export the CSV template first, then update one row per user for this course.</p>
-                <p>* Do not rename or delete columns. Required columns are <code>user_id</code>, <code>email</code>, <code>full_name</code>, <code>course_id</code>, <code>course_name</code>, <code>assigned</code>, and <code>tfa</code>.</p>
-                <p>* <code>assigned=true</code> assigns or updates access. <code>assigned=false</code> removes access.</p>
-                <p>* Allowed <code>tfa</code> values are <code>unlimited</code>, <code>3m</code>, <code>1m</code>, and <code>1w</code>.</p>
-                <p>* <code>course_id</code> must not be changed. <code>course_name</code> is for admin reference only.</p>
+                <p>{ui("Export the CSV template first, then update one row per user for this course.")}</p>
+                <p>{ui("* Do not rename or delete columns. Required columns are ")}<code>user_id</code>, <code>email</code>, <code>full_name</code>, <code>course_id</code>, <code>course_name</code>, <code>assigned</code>{ui(", and ")}<code>tfa</code>.</p>
+                <p>* <code>assigned=true</code> {ui("assigns or updates access. ")}<code>assigned=false</code> {ui("removes access.")}</p>
+                <p>{ui("* Allowed ")}<code>tfa</code> {ui("values are ")}<code>unlimited</code>, <code>3m</code>, <code>1m</code>{ui(", and ")}<code>1w</code>.</p>
+                <p>* <code>course_id</code> {ui("must not be changed. ")}<code>course_name</code> {ui("is for admin reference only.")}</p>
               </div>
               <button
                 type="button"
@@ -4521,16 +4541,16 @@ export function CourseEditorV2Form({
                   setMembersOpen((v) => !v);
                 }}
               >
-                <span className="truncate">{selectedMemberIds.size > 0 ? `${selectedMemberIds.size} member(s) selected` : "Select members"}</span>
+                <span className="truncate">{selectedMemberIds.size > 0 ? ui("{v0} member(s) selected", {v0: selectedMemberIds.size}) : ui("Select members")}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
-              <FieldHint>Select which members should have access to this course (default: none selected).</FieldHint>
+              <FieldHint>{ui("Select which members should have access to this course (default: none selected).")}</FieldHint>
 
               {membersOpen ? (
                 <div className="absolute z-20 mt-2 w-full rounded-md border bg-card shadow-lg p-3 space-y-2">
-                  <Input value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search members..." />
+                  <Input value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder={ui("Search members...")} />
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-xs text-muted-foreground">Time for access (applied when selecting members)</div>
+                    <div className="text-xs text-muted-foreground">{ui("Time for access (applied when selecting members)")}</div>
                     <select
                       className="h-9 rounded-md border bg-background px-2 text-sm hover:cursor-pointer"
                       value={memberDefaultAccess}
@@ -4538,7 +4558,7 @@ export function CourseEditorV2Form({
                     >
                       {ACCESS_DURATION_KEYS.map((k) => (
                         <option key={k} value={k}>
-                          {accessKeyLabel(k)}
+                          {ui(accessKeyLabel(k))}
                         </option>
                       ))}
                     </select>
@@ -4567,11 +4587,10 @@ export function CourseEditorV2Form({
                         });
                       }}
                     />
-                    Select all in current search
-                  </label>
+                    {ui("Select all in current search")}</label>
                   <div className="max-h-56 overflow-auto space-y-1 border rounded-md p-2 bg-background">
                     {filteredMembers.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No members found.</p>
+                      <p className="text-xs text-muted-foreground">{ui("No members found.")}</p>
                     ) : (
                       filteredMembers.map((m) => (
                         <label key={m.id} className="flex items-center gap-2 text-sm rounded-md px-2 py-1 hover:bg-muted/10 cursor-pointer">
@@ -4610,12 +4629,12 @@ export function CourseEditorV2Form({
                                   : baselineIso;
 
                                 if (!iso) {
-                                  return <span className="text-[10px] text-muted-foreground">Unlimited</span>;
+                                  return <span className="text-[10px] text-muted-foreground">{ui("Unlimited")}</span>;
                                 }
 
                                 const ms = new Date(iso).getTime();
                                 const expired = Number.isFinite(ms) ? ms <= nowMs : false;
-                                const label = `${isNewOrChanged ? "Will expire" : expired ? "Expired" : "Expires"} ${formatExpiresChip(iso)}`;
+                                const label = `${ui(isNewOrChanged ? "Will expire" : expired ? "Expired" : "Expires")} ${formatExpiresChip(iso, ui.locale)}`;
                                 return (
                                   <span className={`text-[10px] ${expired ? "text-destructive" : "text-muted-foreground"}`}>
                                     {label}
@@ -4633,7 +4652,7 @@ export function CourseEditorV2Form({
                               >
                                 {ACCESS_DURATION_KEYS.map((k) => (
                                   <option key={k} value={k}>
-                                    {accessKeyLabel(k)}
+                                    {ui(accessKeyLabel(k))}
                                   </option>
                                 ))}
                               </select>
@@ -4648,7 +4667,7 @@ export function CourseEditorV2Form({
             </div>
 
             <div>
-              <FieldLabel accent="#b87216">Difficulty Level</FieldLabel>
+              <FieldLabel accent="#b87216">{ui("Difficulty Level")}</FieldLabel>
               <select
                 className="h-10 w-full rounded-md border bg-transparent px-3 text-sm"
                 value={difficulty ?? "all_levels"}
@@ -4656,12 +4675,12 @@ export function CourseEditorV2Form({
                   setDifficulty(e.target.value as CourseV2["difficulty_level"]);
                 }}
               >
-                <option value="all_levels">All Levels</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="expert">Expert</option>
+                <option value="all_levels">{ui("All Levels")}</option>
+                <option value="beginner">{ui("Beginner")}</option>
+                <option value="intermediate">{ui("Intermediate")}</option>
+                <option value="expert">{ui("Expert")}</option>
               </select>
-              <FieldHint>Defines the expected skill level for learners taking this course.</FieldHint>
+              <FieldHint>{ui("Defines the expected skill level for learners taking this course.")}</FieldHint>
             </div>
           </div>
         </div>
@@ -4698,7 +4717,7 @@ export function CourseEditorV2Form({
                         mode: "create",
                         topicId: topic.id,
                         itemId: null,
-                        lessonName: "Draft Lesson",
+                        lessonName: ui("Draft Lesson"),
                         contentBlocks: [{ id: makeBlockId(), html: "" }],
                         inlineImages: {},
                         featureImageFile: null,
@@ -4756,7 +4775,7 @@ export function CourseEditorV2Form({
                       mode: "create",
                       topicId: topic.id,
                       itemId: null,
-                      lessonName: "Draft Lesson",
+                      lessonName: ui("Draft Lesson"),
                       contentBlocks: [{ id: makeBlockId(), html: "" }],
                       inlineImages: {},
                       featureImageFile: null,
@@ -4819,27 +4838,26 @@ export function CourseEditorV2Form({
             }}>
               <Plus className="h-3.5 w-3.5 text-white" />
             </span>
-            Add new chapter
-          </button>
+            {ui("Add new chapter")}</button>
         </div>
       </DetailsSection> : null}
 
       {activeMainTab === "information" ? <DetailsSection title="Additional Data">
         <div className="space-y-6">
           <div>
-            <FieldLabel accent="#1e6b8c">What Will I Learn?</FieldLabel>
+            <FieldLabel accent="#1e6b8c">{ui("What Will I Learn?")}</FieldLabel>
             <Textarea
               value={whatWillLearn}
               onChange={(e) => {
                 setWhatWillLearn(e.target.value);
               }}
-              placeholder="Describe what learners will gain from this course."
+              placeholder={ui("Describe what learners will gain from this course.")}
             />
-            <FieldHint>Shown to help potential learners understand expected outcomes.</FieldHint>
+            <FieldHint>{ui("Shown to help potential learners understand expected outcomes.")}</FieldHint>
           </div>
 
           <div>
-            <FieldLabel accent="#1e6b8c">Total Course Duration</FieldLabel>
+            <FieldLabel accent="#1e6b8c">{ui("Total Course Duration")}</FieldLabel>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Input
@@ -4850,9 +4868,9 @@ export function CourseEditorV2Form({
                   onChange={(e) => {
                     setHours(Math.max(0, Number(e.target.value || 0)));
                   }}
-                  placeholder="Hours"
+                  placeholder={ui("Hours")}
                 />
-                <FieldHint>Total hours for this course.</FieldHint>
+                <FieldHint>{ui("Total hours for this course.")}</FieldHint>
               </div>
               <div>
                 <Input
@@ -4863,35 +4881,35 @@ export function CourseEditorV2Form({
                   onChange={(e) => {
                     setMinutes(Math.min(59, Math.max(0, Number(e.target.value || 0))));
                   }}
-                  placeholder="Minutes"
+                  placeholder={ui("Minutes")}
                 />
-                <FieldHint>Additional minutes for this course.</FieldHint>
+                <FieldHint>{ui("Additional minutes for this course.")}</FieldHint>
               </div>
             </div>
           </div>
 
           <div>
-            <FieldLabel accent="#1e6b8c">Materials Included</FieldLabel>
+            <FieldLabel accent="#1e6b8c">{ui("Materials Included")}</FieldLabel>
             <Textarea
               value={materialsIncluded}
               onChange={(e) => {
                 setMaterialsIncluded(e.target.value);
               }}
-              placeholder="Describe included materials, resources or downloads."
+              placeholder={ui("Describe included materials, resources or downloads.")}
             />
-            <FieldHint>Displayed on the course page so learners know what materials are included.</FieldHint>
+            <FieldHint>{ui("Displayed on the course page so learners know what materials are included.")}</FieldHint>
           </div>
 
           <div>
-            <FieldLabel accent="#1e6b8c">Requirements/Instructions</FieldLabel>
+            <FieldLabel accent="#1e6b8c">{ui("Requirements/Instructions")}</FieldLabel>
             <Textarea
               value={requirements}
               onChange={(e) => {
                 setRequirements(e.target.value);
               }}
-              placeholder="Add prerequisites or important instructions before learners start."
+              placeholder={ui("Add prerequisites or important instructions before learners start.")}
             />
-            <FieldHint>Use this field to list prerequisites, setup, or mandatory learner instructions.</FieldHint>
+            <FieldHint>{ui("Use this field to list prerequisites, setup, or mandatory learner instructions.")}</FieldHint>
           </div>
         </div>
       </DetailsSection> : null}
@@ -4901,8 +4919,7 @@ export function CourseEditorV2Form({
           <div className="space-y-6">
             {!courseId ? (
               <div className="rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
-                Create the course draft first to configure the certificate.
-              </div>
+                {ui("Create the course draft first to configure the certificate.")}</div>
             ) : (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4">
@@ -4923,22 +4940,21 @@ export function CourseEditorV2Form({
                       >
                         <Award className="h-4 w-4 text-white" />
                       </span>
-                      <div className="font-semibold text-foreground">Auto-grant certificates</div>
+                      <div className="font-semibold text-foreground">{ui("Auto-grant certificates")}</div>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      Certificates are auto-granted only when the passing grade is greater than 0 and both a template + name placement are configured.
-                    </div>
+                      {ui("Certificates are auto-granted only when the passing grade is greater than 0 and both a template + name placement are configured.")}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Status:</span>
+                    <span className="text-xs text-muted-foreground">{ui("Status:")}</span>
                     <span className="rounded-full border px-2 py-0.5 text-xs font-medium">
                       {certPassingPercent <= 0
-                        ? "Disabled (Passing Grade = 0)"
+                        ? ui("Disabled (Passing Grade = 0)")
                         : !certTemplate
-                          ? "Needs template"
+                          ? ui("Needs template")
                           : !certPlacement
-                            ? "Needs placement"
-                            : "Active"}
+                            ? ui("Needs placement")
+                            : ui("Active")}
                     </span>
                   </div>
                 </div>
@@ -4946,18 +4962,18 @@ export function CourseEditorV2Form({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   <div className="space-y-6">
                     <div>
-                      <FieldLabel>Certificate Title</FieldLabel>
+                      <FieldLabel>{ui("Certificate Title")}</FieldLabel>
                       <Input
                         value={certTitle}
                         onChange={(e) => setCertTitle(e.target.value)}
-                        placeholder="e.g. Certificate of Completion"
+                        placeholder={ui("e.g. Certificate of Completion")}
                         disabled={certLoading || certSaving}
                       />
-                      <FieldHint>Displayed in the Certificates area and used as the default generated file name.</FieldHint>
+                      <FieldHint>{ui("Displayed in the Certificates area and used as the default generated file name.")}</FieldHint>
                     </div>
 
                     <div>
-                      <FieldLabel>Course Passing Grade (%)</FieldLabel>
+                      <FieldLabel>{ui("Course Passing Grade (%)")}</FieldLabel>
                       <Input
                         type="text"
                         inputMode="numeric"
@@ -4982,20 +4998,19 @@ export function CourseEditorV2Form({
                         disabled={certLoading || certSaving}
                       />
                       <FieldHint>
-                        Calculated across all required quizzes using the learner’s best attempt for each quiz (points-weighted). Set 0 to disable auto-granting.
-                      </FieldHint>
+                        {ui("Calculated across all required quizzes using the learner’s best attempt for each quiz (points-weighted). Set 0 to disable auto-granting.")}</FieldHint>
                     </div>
 
                     <div className="rounded-lg border bg-muted/10 px-3 py-2 text-xs text-muted-foreground flex items-center gap-2">
                       {certAutoStatus === "saving" || certSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                       {certAutoStatus === "saved" ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
                       {certAutoStatus === "saving" || certSaving
-                        ? "Saving…"
+                        ? ui("Saving…")
                         : certAutoStatus === "saved"
-                          ? "Saved"
+                          ? ui("Saved")
                           : certAutoStatus === "error"
-                            ? "Couldn’t save certificate settings. Check your connection."
-                            : "Changes save automatically."}
+                            ? ui("Couldn’t save certificate settings. Check your connection.")
+                            : ui("Changes save automatically.")}
                     </div>
                   </div>
 
@@ -5003,12 +5018,12 @@ export function CourseEditorV2Form({
                     <div className="rounded-xl border bg-background p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="font-semibold text-foreground">Template file</div>
-                          <div className="text-xs text-muted-foreground">Upload a PDF or image template (max 10MB).</div>
+                          <div className="font-semibold text-foreground">{ui("Template file")}</div>
+                          <div className="text-xs text-muted-foreground">{ui("Upload a PDF or image template (max 10MB).")}</div>
                         </div>
                         {certTemplate ? (
                           <span className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">
-                            {certTemplate.mime_type === "application/pdf" ? "PDF" : "Image"}
+                            {certTemplate.mime_type === "application/pdf" ? ui("PDF") : ui("Image")}
                           </span>
                         ) : null}
                       </div>
@@ -5040,12 +5055,12 @@ export function CourseEditorV2Form({
                               "rounded-lg border overflow-hidden bg-muted/10 cursor-pointer transition-colors",
                               isCertTplDragActive ? "border-primary bg-primary/5" : null
                             )}
-                            title="Click or drop a file to replace"
+                            title={ui("Click or drop a file to replace")}
                           >
                             {certTplPreviewUrl || certTemplate.mime_type.startsWith("image/") ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                alt="Certificate template preview"
+                                alt={ui("Certificate template preview")}
                                 src={certTplPreviewUrl ?? `/api/courses/${courseId}/certificate-template?download=1`}
                                 className="h-[140px] w-full object-cover"
                               />
@@ -5059,8 +5074,7 @@ export function CourseEditorV2Form({
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-foreground truncate">{certTemplate.file_name}</div>
                             <div className="mt-1 text-xs text-muted-foreground">
-                              {certTemplate.mime_type} • {Math.round((certTemplate.size_bytes / (1024 * 1024)) * 10) / 10} MB
-                            </div>
+                              {certTemplate.mime_type} • {Math.round((certTemplate.size_bytes / (1024 * 1024)) * 10) / 10} {ui("MB")}</div>
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                               <Button
                                 type="button"
@@ -5070,14 +5084,13 @@ export function CourseEditorV2Form({
                                 onClick={() =>
                                   window.open(
                                     `/api/courses/${courseId}/certificate-template?download=1&preview=1`,
-                                    "_blank",
-                                    "noopener,noreferrer"
+                                    ui("_blank"),
+                                    ui("noopener,noreferrer")
                                   )
                                 }
                               >
                                 <Eye className="h-4 w-4" />
-                                Preview certificate
-                              </Button>
+                                {ui("Preview certificate")}</Button>
 
                               <Button
                                 type="button"
@@ -5085,8 +5098,7 @@ export function CourseEditorV2Form({
                                 className="gap-2"
                                 onClick={() => setCertPlacementOpen(true)}
                               >
-                                🧲 Place member name
-                              </Button>
+                                {ui("🧲 Place member name")}</Button>
 
                               <Button
                                 type="button"
@@ -5096,17 +5108,16 @@ export function CourseEditorV2Form({
                                 onClick={() => void deleteCertificateTemplate(courseId)}
                               >
                                 {certTplUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                Remove
-                              </Button>
+                                {ui("Remove")}</Button>
                             </div>
 
                             <div className="mt-3 text-xs">
                               {certPlacement ? (
                                 <span className="text-foreground">
-                                  Name placement set (page {certPlacement.page}, x {Math.round(certPlacement.xPct * 100)}%, y {Math.round(certPlacement.yPct * 100)}%).
+                                  {ui("Name placement set (page ")}{certPlacement.page}, x {Math.round(certPlacement.xPct * 100)}%, y {Math.round(certPlacement.yPct * 100)}%).
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">No name placement set yet. Click “Place member name”.</span>
+                                <span className="text-muted-foreground">{ui("No name placement set yet. Click “Place member name”.")}</span>
                               )}
                             </div>
                           </div>
@@ -5138,16 +5149,15 @@ export function CourseEditorV2Form({
                             isCertTplDragActive ? "border-primary bg-primary/5" : "bg-muted/10"
                           )}
                         >
-                          <div className="text-sm font-semibold text-foreground">Drag & drop your certificate template</div>
-                          <div className="mt-1 text-xs text-muted-foreground">PDF, PNG, JPG, WebP • Max 10MB</div>
+                          <div className="text-sm font-semibold text-foreground">{ui("Drag & drop your certificate template")}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{ui("PDF, PNG, JPG, WebP • Max 10MB")}</div>
                           <div className="mt-4 inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-xs font-semibold text-foreground">
                             <Upload className="h-4 w-4" />
-                            Browse file
-                          </div>
+                            {ui("Browse file")}</div>
                           {certTplUploading && certTplFile ? (
                             <div className="mt-3 text-xs text-muted-foreground flex items-center justify-center gap-2">
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              Uploading {certTplFile.name}…
+                              {ui("Uploading ")}{certTplFile.name}…
                             </div>
                           ) : null}
                         </div>
@@ -5183,8 +5193,7 @@ export function CourseEditorV2Form({
             {certLoading ? (
               <div className="text-xs text-muted-foreground flex items-center gap-2">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Loading certificate configuration…
-              </div>
+                {ui("Loading certificate configuration…")}</div>
             ) : null}
           </div>
         </DetailsSection>
@@ -5195,39 +5204,38 @@ export function CourseEditorV2Form({
           <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
             <div className="w-full max-w-xl rounded-lg border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <h3 className="font-semibold">{topicModal.mode === "create" ? "Add Chapter" : "Edit Chapter"}</h3>
+              <h3 className="font-semibold">{topicModal.mode === "create" ? ui("Add Chapter") : ui("Edit Chapter")}</h3>
               <Button type="button" size="icon-sm" variant="ghost" onClick={() => setTopicModal(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <FieldLabel required>Chapter Name</FieldLabel>
+                <FieldLabel required>{ui("Chapter Name")}</FieldLabel>
                 <Input
                   value={topicModal.title}
                   onChange={(e) => setTopicModal((prev) => (prev ? { ...prev, title: e.target.value } : prev))}
-                  placeholder="Name this chapter for your internal course structure"
+                  placeholder={ui("Name this chapter for your internal course structure")}
                 />
-                <FieldHint>This chapter name is visible to creators in the builder and helps organize course flow.</FieldHint>
+                <FieldHint>{ui("This chapter name is visible to creators in the builder and helps organize course flow.")}</FieldHint>
               </div>
               <div>
-                <FieldLabel>Chapter Summary</FieldLabel>
+                <FieldLabel>{ui("Chapter Summary")}</FieldLabel>
                 <Textarea
                   value={topicModal.summary}
                   onChange={(e) => setTopicModal((prev) => (prev ? { ...prev, summary: e.target.value } : prev))}
-                  placeholder="Write a short summary for this chapter"
+                  placeholder={ui("Write a short summary for this chapter")}
                   className="min-h-[120px]"
                 />
-                <FieldHint>Optional summary used in builder previews and internal planning.</FieldHint>
+                <FieldHint>{ui("Optional summary used in builder previews and internal planning.")}</FieldHint>
               </div>
             </div>
             <div className="flex items-center justify-between border-t px-4 py-3">
               <Button type="button" variant="outline" onClick={() => setTopicModal(null)}>
-                Cancel
-              </Button>
+                {ui("Cancel")}</Button>
               <Button type="button" onClick={() => void createOrUpdateTopic()} disabled={isBusy || topicModal.title.trim().length < 2}>
                 {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {topicModal.mode === "create" ? "Add Chapter" : "Save Chapter"}
+                {topicModal.mode === "create" ? ui("Add Chapter") : ui("Save Chapter")}
               </Button>
             </div>
             </div>
@@ -5291,7 +5299,7 @@ export function CourseEditorV2Form({
                 return { ...prev, [localItemId]: { ...existing, inlineImages: nextInline } };
               });
             }
-            toast.info("Quiz updated locally. Click Save to apply changes.");
+            toast.info(ui("Quiz updated locally. Click Save to apply changes."));
           }}
         />
       ) : itemModal ? (
@@ -5299,7 +5307,7 @@ export function CourseEditorV2Form({
           <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
             <div className="w-full max-w-4xl rounded-lg border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <h3 className="font-semibold">Lesson</h3>
+              <h3 className="font-semibold">{ui("Lesson")}</h3>
               <Button type="button" size="icon-sm" variant="ghost" onClick={cancelLessonModal}>
                 <X className="h-4 w-4" />
               </Button>
@@ -5307,19 +5315,19 @@ export function CourseEditorV2Form({
             <div className="p-4 space-y-6 max-h-[75vh] overflow-auto">
               <>
                   <div>
-                    <FieldLabel accent="#1b6bb8" required>Lesson Name</FieldLabel>
+                    <FieldLabel accent="#1b6bb8" required>{ui("Lesson Name")}</FieldLabel>
                     <Input
                       value={itemModal.lessonName}
                       onChange={(e) =>
                         setItemModal((prev) => (prev && prev.itemType === "lesson" ? { ...prev, lessonName: e.target.value } : prev))
                       }
-                      placeholder="Draft Lesson"
+                      placeholder={ui("Draft Lesson")}
                     />
-                    <FieldHint>Name shown to learners in the curriculum once enrolled.</FieldHint>
+                    <FieldHint>{ui("Name shown to learners in the curriculum once enrolled.")}</FieldHint>
                   </div>
 
                   <div>
-                    <FieldLabel accent="#1b6bb8">Lesson Content</FieldLabel>
+                    <FieldLabel accent="#1b6bb8">{ui("Lesson Content")}</FieldLabel>
                     <div className="mt-2 rounded-lg border bg-muted/10 p-4 space-y-3">
                       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onLessonBlocksDragEnd}>
                         <SortableContext
@@ -5360,17 +5368,15 @@ export function CourseEditorV2Form({
                       <div className="flex items-center justify-end">
                         <Button type="button" size="sm" onClick={addLessonContentBlock} className="gap-2">
                           <Plus className="h-4 w-4" />
-                          Add New Content
-                        </Button>
+                          {ui("Add New Content")}</Button>
                       </div>
                     </div>
                     <FieldHint>
-                      Add as many content blocks as you want. You can drag blocks to reorder, remove blocks, and use headings (H1–H6) inside each editor.
-                    </FieldHint>
+                      {ui("Add as many content blocks as you want. You can drag blocks to reorder, remove blocks, and use headings (H1–H6) inside each editor.")}</FieldHint>
                   </div>
 
                   <div>
-                    <FieldLabel accent="#7c3abd">Feature Image</FieldLabel>
+                    <FieldLabel accent="#7c3abd">{ui("Feature Image")}</FieldLabel>
                     <div className="mt-2 rounded-md border p-4 flex flex-col md:flex-row gap-4">
                       <div className="w-full md:w-[300px]">
                         {(() => {
@@ -5407,14 +5413,14 @@ export function CourseEditorV2Form({
                         >
                           {src ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={src} alt="Lesson feature image preview" className="h-full w-full object-cover" />
+                            <img src={src} alt={ui("Lesson feature image preview")} className="h-full w-full object-cover" />
                           ) : (
                             <div className="px-3 text-center">
                               <div className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border">
                                 <ImageIcon className="h-5 w-5" />
                               </div>
-                              <p className="text-xs text-muted-foreground">Drop or choose image</p>
-                              <p className="mt-1 text-[11px] text-muted-foreground">Click here or drag file into this area</p>
+                              <p className="text-xs text-muted-foreground">{ui("Drop or choose image")}</p>
+                              <p className="mt-1 text-[11px] text-muted-foreground">{ui("Click here or drag file into this area")}</p>
                             </div>
                           )}
 
@@ -5423,8 +5429,8 @@ export function CourseEditorV2Form({
                               type="button"
                               size="icon-sm"
                               variant="ghost"
-                              aria-label="Remove feature image"
-                              title="Remove feature image"
+                              aria-label={ui("Remove feature image")}
+                              title={ui("Remove feature image")}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -5452,20 +5458,18 @@ export function CourseEditorV2Form({
                       <div className="space-y-3">
                         <div className="text-sm text-muted-foreground">
                           <div>
-                            <span className="font-medium text-foreground">Size:</span> 700×430 pixels
-                          </div>
+                            <span className="font-medium text-foreground">{ui("Size:")}</span> {ui("700×430 pixels")}</div>
                           <div>
-                            <span className="font-medium text-foreground">File support:</span> PNG, JPG, WebP
-                          </div>
-                          <div className="text-xs">Maximum upload size: 10MB</div>
+                            <span className="font-medium text-foreground">{ui("File support:")}</span> {ui("PNG, JPG, WebP")}</div>
+                          <div className="text-xs">{ui("Maximum upload size: 10MB")}</div>
                         </div>
                       </div>
                     </div>
-                    <FieldHint>This image can be shown on the lesson header inside the learning experience.</FieldHint>
+                    <FieldHint>{ui("This image can be shown on the lesson header inside the learning experience.")}</FieldHint>
                   </div>
 
                   <div>
-                    <FieldLabel accent="#1b6bb8">Video Source</FieldLabel>
+                    <FieldLabel accent="#1b6bb8">{ui("Video Source")}</FieldLabel>
                     <div className="mt-2 space-y-3">
                       <select
                         className="h-10 w-full rounded-md border bg-transparent px-3 text-sm"
@@ -5478,15 +5482,15 @@ export function CourseEditorV2Form({
                           )
                         }
                       >
-                        <option value="html5">HTML 5 (mp4)</option>
-                        <option value="youtube">YouTube</option>
-                        <option value="vimeo">Vimeo</option>
+                        <option value="html5">{ui("HTML 5 (mp4)")}</option>
+                        <option value="youtube">{ui("YouTube")}</option>
+                        <option value="vimeo">{ui("Vimeo")}</option>
                       </select>
 
                       {itemModal.videoProvider === "html5" ? (
                         <div className="rounded-md border border-dashed border-primary bg-muted/10 p-10 text-center">
-                          <p className="text-sm font-medium">Drag & Drop Your Video</p>
-                          <p className="mt-1 text-xs text-muted-foreground">File format: .mp4 • Max size: 300MB</p>
+                          <p className="text-sm font-medium">{ui("Drag & Drop Your Video")}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{ui("File format: .mp4 • Max size: 300MB")}</p>
                           <div className="mt-4">
                             <Button
                               type="button"
@@ -5494,10 +5498,9 @@ export function CourseEditorV2Form({
                               size="sm"
                               onClick={() => (document.getElementById("lesson-video-input") as HTMLInputElement | null)?.click()}
                             >
-                              Browse file
-                            </Button>
+                              {ui("Browse file")}</Button>
                           </div>
-                          {itemModal.videoFile ? <p className="mt-3 text-xs text-muted-foreground">Selected: {itemModal.videoFile.name}</p> : null}
+                          {itemModal.videoFile ? <p className="mt-3 text-xs text-muted-foreground">{ui("Selected: ")}{itemModal.videoFile.name}</p> : null}
                           <Input
                             id="lesson-video-input"
                             type="file"
@@ -5516,16 +5519,16 @@ export function CourseEditorV2Form({
                             onChange={(e) =>
                               setItemModal((prev) => (prev && prev.itemType === "lesson" ? { ...prev, videoUrl: e.target.value } : prev))
                             }
-                            placeholder={`Paste ${itemModal.videoProvider === "youtube" ? "YouTube" : "Vimeo"} video URL`}
+                            placeholder={ui("Paste {v0} video URL", {v0: itemModal.videoProvider === "youtube" ? "YouTube" : "Vimeo"})}
                           />
                         </div>
                       )}
                     </div>
-                    <FieldHint>Select video source for this lesson. External URLs must be full YouTube/Vimeo links.</FieldHint>
+                    <FieldHint>{ui("Select video source for this lesson. External URLs must be full YouTube/Vimeo links.")}</FieldHint>
                   </div>
 
                   <div>
-                    <FieldLabel accent="#1b6bb8">Video playback time</FieldLabel>
+                    <FieldLabel accent="#1b6bb8">{ui("Video playback time")}</FieldLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <Input
@@ -5538,9 +5541,9 @@ export function CourseEditorV2Form({
                               prev && prev.itemType === "lesson" ? { ...prev, playbackHours: Math.max(0, Number(e.target.value || 0)) } : prev
                             )
                           }
-                          placeholder="Hours"
+                          placeholder={ui("Hours")}
                         />
-                        <FieldHint>Hours</FieldHint>
+                        <FieldHint>{ui("Hours")}</FieldHint>
                       </div>
                       <div>
                         <Input
@@ -5555,16 +5558,16 @@ export function CourseEditorV2Form({
                                 : prev
                             )
                           }
-                          placeholder="Minutes"
+                          placeholder={ui("Minutes")}
                         />
-                        <FieldHint>Minutes</FieldHint>
+                        <FieldHint>{ui("Minutes")}</FieldHint>
                       </div>
                     </div>
-                    <FieldHint>Displayed to learners so they know how long the video takes.</FieldHint>
+                    <FieldHint>{ui("Displayed to learners so they know how long the video takes.")}</FieldHint>
                   </div>
 
                   <div>
-                    <FieldLabel accent="#1b6bb8">Upload exercise files to the Lesson</FieldLabel>
+                    <FieldLabel accent="#1b6bb8">{ui("Upload exercise files to the Lesson")}</FieldLabel>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
                       <Input
                         id="lesson-attachments-input"
@@ -5584,12 +5587,11 @@ export function CourseEditorV2Form({
                         onClick={() => (document.getElementById("lesson-attachments-input") as HTMLInputElement | null)?.click()}
                       >
                         <Paperclip className="h-4 w-4" />
-                        Upload Attachments
-                      </Button>
+                        {ui("Upload Attachments")}</Button>
                       <p className="text-xs text-muted-foreground">
                         {itemModal.existingAttachments.length + itemModal.attachments.length
-                          ? `${itemModal.existingAttachments.length} existing, ${itemModal.attachments.length} new`
-                          : "No attachments"}
+                          ? ui("{v0} existing, {v1} new", {v0: itemModal.existingAttachments.length, v1: itemModal.attachments.length})
+                          : ui("No attachments")}
                       </p>
                     </div>
 
@@ -5597,7 +5599,7 @@ export function CourseEditorV2Form({
                       <div className="mt-3 space-y-3">
                         {itemModal.existingAttachments.length ? (
                           <div className="space-y-2">
-                            <p className="text-xs font-medium text-foreground">Existing attachments</p>
+                            <p className="text-xs font-medium text-foreground">{ui("Existing attachments")}</p>
                             {itemModal.existingAttachments.map((attachment) => {
                               const uploadedAt = formatAttachmentUploadedAt(attachment.uploaded_at);
                               return (
@@ -5610,7 +5612,7 @@ export function CourseEditorV2Form({
                                     <div className="min-w-0">
                                       <p className="truncate text-sm font-medium text-foreground">{attachment.file_name}</p>
                                       <p className="text-xs text-muted-foreground">
-                                        {formatAttachmentSize(attachment.size_bytes)} · {uploadedAt ? `Uploaded ${uploadedAt}` : "Upload date unavailable"}
+                                        {formatAttachmentSize(attachment.size_bytes)} · {uploadedAt ? ui("Uploaded {v0}", {v0: uploadedAt}) : ui("Upload date unavailable")}
                                       </p>
                                     </div>
                                   </div>
@@ -5620,8 +5622,8 @@ export function CourseEditorV2Form({
                                         href={`/api/v2/lesson-assets?path=${encodeURIComponent(attachment.storage_path)}`}
                                         target="_blank"
                                         rel="noreferrer"
-                                        aria-label={`Download ${attachment.file_name}`}
-                                        title="Download attachment"
+                                        aria-label={ui("Download {v0}", {v0: attachment.file_name})}
+                                        title={ui("Download attachment")}
                                       >
                                         <ExternalLink className="h-4 w-4" />
                                       </a>
@@ -5631,8 +5633,8 @@ export function CourseEditorV2Form({
                                       variant="ghost"
                                       size="icon-sm"
                                       onClick={() => removeExistingLessonAttachment(attachment.storage_path)}
-                                      aria-label={`Remove ${attachment.file_name}`}
-                                      title="Remove attachment"
+                                      aria-label={ui("Remove {v0}", {v0: attachment.file_name})}
+                                      title={ui("Remove attachment")}
                                     >
                                       <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
@@ -5645,7 +5647,7 @@ export function CourseEditorV2Form({
 
                         {itemModal.attachments.length ? (
                           <div className="space-y-2">
-                            <p className="text-xs font-medium text-foreground">New attachments</p>
+                            <p className="text-xs font-medium text-foreground">{ui("New attachments")}</p>
                             {itemModal.attachments.map((file) => {
                               const fileKey = attachmentFileKey(file);
                               return (
@@ -5658,9 +5660,9 @@ export function CourseEditorV2Form({
                                     <div className="min-w-0">
                                       <div className="flex items-center gap-2">
                                         <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
-                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">New</span>
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{ui("New")}</span>
                                       </div>
-                                      <p className="text-xs text-muted-foreground">{formatAttachmentSize(file.size)} · Pending upload</p>
+                                      <p className="text-xs text-muted-foreground">{formatAttachmentSize(file.size)} {ui("· Pending upload")}</p>
                                     </div>
                                   </div>
                                   <Button
@@ -5668,8 +5670,8 @@ export function CourseEditorV2Form({
                                     variant="ghost"
                                     size="icon-sm"
                                     onClick={() => removePendingLessonAttachment(fileKey)}
-                                    aria-label={`Remove ${file.name}`}
-                                    title="Remove attachment"
+                                    aria-label={ui("Remove {v0}", {v0: file.name})}
+                                    title={ui("Remove attachment")}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
@@ -5682,19 +5684,16 @@ export function CourseEditorV2Form({
                     ) : null}
 
                     <FieldHint>
-                      Attach PDFs, worksheets, or other exercise materials (max 300MB per file). Changes apply after Update Lesson and the main Save or Publish.
-                    </FieldHint>
+                      {ui("Attach PDFs, worksheets, or other exercise materials (max 300MB per file). Changes apply after Update Lesson and the main Save or Publish.")}</FieldHint>
                   </div>
               </>
             </div>
             <div className="flex items-center justify-between border-t px-4 py-3">
               <Button type="button" variant="outline" onClick={cancelLessonModal}>
-                Cancel
-              </Button>
+                {ui("Cancel")}</Button>
               <Button type="button" onClick={() => void saveLesson()} disabled={isBusy || itemModal.lessonName.trim().length < 2}>
                 {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Update Lesson
-              </Button>
+                {ui("Update Lesson")}</Button>
             </div>
             </div>
           </div>
@@ -5706,16 +5705,15 @@ export function CourseEditorV2Form({
           <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
             <div className="w-full max-w-lg rounded-lg border bg-card shadow-xl">
               <div className="border-b px-4 py-3">
-                <h3 className="font-semibold">Unsaved changes</h3>
+                <h3 className="font-semibold">{ui("Unsaved changes")}</h3>
               </div>
               <div className="p-4 space-y-2 text-sm text-muted-foreground">
-                <p>You have unsaved changes in this course.</p>
-                <p>Do you want to save before leaving this page?</p>
+                <p>{ui("You have unsaved changes in this course.")}</p>
+                <p>{ui("Do you want to save before leaving this page?")}</p>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t px-4 py-3">
                 <Button type="button" variant="outline" onClick={() => setLeavePrompt(null)}>
-                  Cancel
-                </Button>
+                  {ui("Cancel")}</Button>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     type="button"
@@ -5727,8 +5725,7 @@ export function CourseEditorV2Form({
                       router.push(href);
                     }}
                   >
-                    Don’t save
-                  </Button>
+                    {ui("Don’t save")}</Button>
                   <Button
                     type="button"
                     onClick={() => {
@@ -5741,7 +5738,7 @@ export function CourseEditorV2Form({
                       }
                     }}
                   >
-                    {status === "published" ? "Save & leave" : "Save draft & leave"}
+                    {status === "published" ? ui("Save & leave") : ui("Save draft & leave")}
                   </Button>
                 </div>
               </div>
@@ -5755,25 +5752,23 @@ export function CourseEditorV2Form({
           <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
             <div className="w-full max-w-lg rounded-lg border bg-card shadow-xl">
               <div className="border-b px-4 py-3">
-                <h3 className="font-semibold">Save draft (unpublish)</h3>
+                <h3 className="font-semibold">{ui("Save draft (unpublish)")}</h3>
               </div>
               <div className="p-4 space-y-2 text-sm text-muted-foreground">
                 <p>
-                  This course is currently <span className="font-medium text-foreground">Published</span>.
+                  {ui("This course is currently ")}<span className="font-medium text-foreground">{ui("Published")}</span>.
                 </p>
                 <p>
-                  Clicking <span className="font-medium text-foreground">Save Draft</span> will{" "}
-                  <span className="font-medium text-foreground">unpublish</span> the course and set it back to{" "}
-                  <span className="font-medium text-foreground">Draft</span>.
+                  {ui("Clicking ")}<span className="font-medium text-foreground">{ui("Save Draft")}</span> {ui("will")}{" "}
+                  <span className="font-medium text-foreground">{ui("unpublish")}</span> {ui("the course and set it back to")}{" "}
+                  <span className="font-medium text-foreground">{ui("Draft")}</span>.
                 </p>
                 <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-900">
-                  Learners will no longer be able to access this course until it is published again.
-                </div>
+                  {ui("Learners will no longer be able to access this course until it is published again.")}</div>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 border-t px-4 py-3">
                 <Button type="button" variant="outline" disabled={isBusy} onClick={() => setConfirmUnpublishDraftOpen(false)}>
-                  Cancel
-                </Button>
+                  {ui("Cancel")}</Button>
                 <Button
                   type="button"
                   disabled={isBusy}
@@ -5782,8 +5777,7 @@ export function CourseEditorV2Form({
                     void saveDraft();
                   }}
                 >
-                  Unpublish &amp; save draft
-                </Button>
+                  {ui("Unpublish & save draft")}</Button>
               </div>
             </div>
           </div>
@@ -5795,23 +5789,19 @@ export function CourseEditorV2Form({
           <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
             <div className="w-full max-w-lg rounded-lg border bg-card shadow-xl">
               <div className="border-b px-4 py-3">
-                <h3 className="font-semibold text-red-700">Permanently delete course</h3>
+                <h3 className="font-semibold text-red-700">{ui("Permanently delete course")}</h3>
               </div>
               <div className="p-4 space-y-4 text-sm text-muted-foreground">
                 <div className="space-y-2">
                   <p>
-                    This permanently deletes the course and unfinished learner progress.
-                  </p>
+                    {ui("This permanently deletes the course and unfinished learner progress.")}</p>
                   <p>
-                    Issued certificates will remain available to members.
-                  </p>
+                    {ui("Issued certificates will remain available to members.")}</p>
                   <p className="font-medium text-red-700">
-                    This cannot be undone.
-                  </p>
+                    {ui("This cannot be undone.")}</p>
                 </div>
                 <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-900">
-                  To confirm, type <span className="font-mono font-semibold">DELETE</span> in uppercase letters.
-                </div>
+                  {ui("To confirm, type ")}<span className="font-mono font-semibold">{ui("DELETE")}</span> {ui("in uppercase letters.")}</div>
                 <Input
                   value={deleteCourseConfirmText}
                   onChange={(e) => setDeleteCourseConfirmText(e.target.value)}
@@ -5830,8 +5820,7 @@ export function CourseEditorV2Form({
                     setDeleteCourseConfirmText("");
                   }}
                 >
-                  Cancel
-                </Button>
+                  {ui("Cancel")}</Button>
                 <Button
                   type="button"
                   disabled={isBusy || deleteCourseConfirmText !== "DELETE"}
@@ -5839,8 +5828,7 @@ export function CourseEditorV2Form({
                   onClick={() => void deleteCourseHard()}
                 >
                   {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Permanently delete course
-                </Button>
+                  {ui("Permanently delete course")}</Button>
               </div>
             </div>
           </div>
@@ -5901,12 +5889,12 @@ export function CourseEditorV2Form({
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-base font-semibold tracking-tight">{title}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{busyStep ?? "Starting…"}</p>
+                        <p className="text-base font-semibold tracking-tight">{ui(title)}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{ui(busyStep ?? "Starting…")}</p>
                         {uploadProgress ? (
                           <div className="mt-2">
                             <p className="text-xs text-muted-foreground truncate">
-                              Uploading {uploadProgress.label} — {uploadProgress.pct}%
+                              {ui("Uploading ")}{uploadProgress.label} — {uploadProgress.pct}%
                             </p>
                             <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden">
                               <div
@@ -5946,7 +5934,7 @@ export function CourseEditorV2Form({
                               {isDone ? <Check className="h-3.5 w-3.5" /> : isActive ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                             </div>
                             <span className={cn(isActive ? "font-medium text-foreground" : isDone ? "text-foreground" : "text-muted-foreground")}>
-                              {s}
+                              {ui(s)}
                             </span>
                           </div>
                         );
@@ -5954,7 +5942,7 @@ export function CourseEditorV2Form({
                     </div>
 
                     <p className="mt-5 text-xs text-muted-foreground">
-                      Please don’t close this tab while {busyAction === "delete_course" ? "deleting" : "saving"}.
+                      {ui("Please don’t close this tab while ")}{busyAction === "delete_course" ? ui("deleting") : ui("saving")}.
                     </p>
                   </>
                 );
@@ -5970,8 +5958,8 @@ export function CourseEditorV2Form({
             <div className="w-full max-w-4xl rounded-lg border bg-card shadow-xl">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
-                  <h3 className="font-semibold">Import Course Assignments CSV</h3>
-                  <p className="text-sm text-muted-foreground">Upload a CSV template for this course, preview changes, then apply them.</p>
+                  <h3 className="font-semibold">{ui("Import Course Assignments CSV")}</h3>
+                  <p className="text-sm text-muted-foreground">{ui("Upload a CSV template for this course, preview changes, then apply them.")}</p>
                 </div>
                 <Button type="button" size="icon-sm" variant="ghost" onClick={() => setCsvImportOpen(false)} disabled={csvPreviewLoading || csvApplyLoading}>
                   <X className="h-4 w-4" />
@@ -5987,17 +5975,15 @@ export function CourseEditorV2Form({
                       onClick={() => csvImportInputRef.current?.click()}
                     >
                       <Upload className="h-4 w-4" />
-                      {csvPreviewLoading ? "Validating..." : "Choose CSV File"}
+                      {csvPreviewLoading ? ui("Validating...") : ui("Choose CSV File")}
                     </Button>
                     <Button type="button" variant="outline" disabled={csvPreviewLoading || csvApplyLoading} onClick={downloadAssignmentCsvTemplate}>
                       <FileSpreadsheet className="h-4 w-4" />
-                      Download Fresh Template
-                    </Button>
-                    <span className="text-sm text-muted-foreground">{csvImportFileName ?? "No file selected"}</span>
+                      {ui("Download Fresh Template")}</Button>
+                    <span className="text-sm text-muted-foreground">{csvImportFileName ?? ui("No file selected")}</span>
                   </div>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Template includes instruction lines at the top. Required columns: <code>user_id</code>, <code>email</code>, <code>full_name</code>, <code>course_id</code>, <code>course_name</code>, <code>assigned</code>, <code>tfa</code>.
-                    Allowed TFA values: <code>unlimited</code>, <code>3m</code>, <code>1m</code>, <code>1w</code>.
+                    {ui("Template includes instruction lines at the top. Required columns: ")}<code>user_id</code>, <code>email</code>, <code>full_name</code>, <code>course_id</code>, <code>course_name</code>, <code>assigned</code>, <code>tfa</code>{ui(". Allowed TFA values: ")}<code>unlimited</code>, <code>3m</code>, <code>1m</code>, <code>1w</code>.
                   </p>
                   <input
                     ref={csvImportInputRef}
@@ -6016,12 +6002,12 @@ export function CourseEditorV2Form({
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
                       {[
-                        ["Rows", String(csvImportPreview.summary.total_rows)],
-                        ["Assign", String(csvImportPreview.summary.assign_count)],
-                        ["Update", String(csvImportPreview.summary.update_count)],
-                        ["Remove", String(csvImportPreview.summary.remove_count)],
-                        ["Unchanged", String(csvImportPreview.summary.unchanged_count)],
-                        ["Invalid", String(csvImportPreview.summary.invalid_rows)],
+                        [ui("Rows"), String(csvImportPreview.summary.total_rows)],
+                        [ui("Assign"), String(csvImportPreview.summary.assign_count)],
+                        [ui("Update"), String(csvImportPreview.summary.update_count)],
+                        [ui("Remove"), String(csvImportPreview.summary.remove_count)],
+                        [ui("Unchanged"), String(csvImportPreview.summary.unchanged_count)],
+                        [ui("Invalid"), String(csvImportPreview.summary.invalid_rows)],
                       ].map(([label, value]) => (
                         <div key={label} className="rounded-md border bg-background p-3">
                           <div className="text-xs text-muted-foreground">{label}</div>
@@ -6032,11 +6018,11 @@ export function CourseEditorV2Form({
 
                     {csvImportPreview.invalid_rows.length > 0 ? (
                       <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
-                        <div className="mb-2 text-sm font-medium text-destructive">Fix invalid rows before applying the import.</div>
+                        <div className="mb-2 text-sm font-medium text-destructive">{ui("Fix invalid rows before applying the import.")}</div>
                         <div className="max-h-48 overflow-auto space-y-2 text-sm">
                           {csvImportPreview.invalid_rows.map((row) => (
                             <div key={`${row.row_number}-${row.user_id}`} className="rounded border bg-background px-3 py-2">
-                              <div className="font-medium">Row {row.row_number} • {row.full_name || row.email || row.user_id}</div>
+                              <div className="font-medium">{ui("Row ")}{row.row_number} • {row.full_name || row.email || row.user_id}</div>
                               <div className="text-muted-foreground">{row.error}</div>
                             </div>
                           ))}
@@ -6046,19 +6032,19 @@ export function CourseEditorV2Form({
 
                     <div className="rounded-md border">
                       <div className="border-b px-4 py-3">
-                        <div className="font-medium">Preview</div>
-                        <div className="text-sm text-muted-foreground">These are the changes that will be applied to the course members list.</div>
+                        <div className="font-medium">{ui("Preview")}</div>
+                        <div className="text-sm text-muted-foreground">{ui("These are the changes that will be applied to the course members list.")}</div>
                       </div>
                       <div className="max-h-72 overflow-auto">
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 bg-card">
                             <tr className="border-b text-left">
-                              <th className="px-4 py-2">Row</th>
-                              <th className="px-4 py-2">Member</th>
-                              <th className="px-4 py-2">Email</th>
-                              <th className="px-4 py-2">Assigned</th>
-                              <th className="px-4 py-2">TFA</th>
-                              <th className="px-4 py-2">Action</th>
+                              <th className="px-4 py-2">{ui("Row")}</th>
+                              <th className="px-4 py-2">{ui("Member")}</th>
+                              <th className="px-4 py-2">{ui("Email")}</th>
+                              <th className="px-4 py-2">{ui("Assigned")}</th>
+                              <th className="px-4 py-2">{ui("TFA")}</th>
+                              <th className="px-4 py-2">{ui("Action")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -6067,7 +6053,7 @@ export function CourseEditorV2Form({
                                 <td className="px-4 py-2 text-muted-foreground">{row.row_number}</td>
                                 <td className="px-4 py-2">{row.full_name || "—"}</td>
                                 <td className="px-4 py-2">{row.email || "—"}</td>
-                                <td className="px-4 py-2">{row.assigned ? "Yes" : "No"}</td>
+                                <td className="px-4 py-2">{row.assigned ? ui("Yes") : ui("No")}</td>
                                 <td className="px-4 py-2">{row.tfa ? accessKeyLabel(row.tfa) : "—"}</td>
                                 <td className="px-4 py-2 capitalize">{row.action}</td>
                               </tr>
@@ -6081,16 +6067,14 @@ export function CourseEditorV2Form({
               </div>
               <div className="flex items-center justify-between border-t px-4 py-3">
                 <Button type="button" variant="outline" onClick={() => setCsvImportOpen(false)} disabled={csvPreviewLoading || csvApplyLoading}>
-                  Cancel
-                </Button>
+                  {ui("Cancel")}</Button>
                 <Button
                   type="button"
                   disabled={!csvImportPreview || csvImportPreview.invalid_rows.length > 0 || csvApplyLoading || csvPreviewLoading}
                   onClick={() => void applyCsvImport()}
                 >
                   {csvApplyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Apply Import
-                </Button>
+                  {ui("Apply Import")}</Button>
               </div>
             </div>
           </div>
@@ -6103,7 +6087,7 @@ export function CourseEditorV2Form({
             <div className="relative w-full max-w-sm rounded-2xl border bg-card shadow-2xl px-6 py-7 text-center">
               <button
                 type="button"
-                aria-label="Close"
+                aria-label={ui("Close")}
                 className="absolute right-3 top-3 rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                 onClick={() => setSuccessModal(null)}
               >
@@ -6114,7 +6098,7 @@ export function CourseEditorV2Form({
                 <Check className="h-8 w-8" />
               </div>
 
-              <h3 className="mt-5 text-2xl font-semibold tracking-tight">Success!</h3>
+              <h3 className="mt-5 text-2xl font-semibold tracking-tight">{ui("Success!")}</h3>
               <p className="mt-2 text-base font-medium text-foreground">{successModal.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{successModal.description}</p>
 
@@ -6125,8 +6109,7 @@ export function CourseEditorV2Form({
                   className="h-11 w-full rounded-full border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
                   onClick={() => setSuccessModal(null)}
                 >
-                  Continue
-                </Button>
+                  {ui("Continue")}</Button>
               </div>
             </div>
           </div>

@@ -1,4 +1,6 @@
 'use client'
+import {useUi} from "@/i18n/useUi";
+
 
 import { useState } from 'react';
 import { Button } from '@/components/core/button';
@@ -24,6 +26,7 @@ export const UserForm = ({
   enableOrgPicker = true,
   organizationLabel,
 }: UserFormProps) => {
+  const ui = useUi();
   const [formData, setFormData] = useState<Partial<UserFormData>>(initialData || {});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,20 +75,20 @@ export const UserForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Full Name (optional)</label>
+        <label className="block text-sm font-medium mb-1">{ui("Full Name (optional)")}</label>
         <input
           type="text"
           name="full_name"
           value={(formData.full_name as string) || ''}
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded-md"
-          placeholder="e.g. Nenad Lekic"
+          placeholder={ui("e.g. Nenad Lekic")}
         />
-        {errors.full_name && <p className="text-red-500 text-sm mt-1">{errors.full_name}</p>}
+        {errors.full_name && <p className="text-red-500 text-sm mt-1">{ui(errors.full_name)}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
+        <label className="block text-sm font-medium mb-1">{ui("Email")}</label>
         <input
           type="email"
           name="email"
@@ -94,29 +97,29 @@ export const UserForm = ({
           className="w-full px-3 py-2 border rounded-md"
           disabled={!!initialData?.email}
         />
-        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+        {errors.email && <p className="text-red-500 text-sm mt-1">{ui(errors.email)}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Role</label>
+        <label className="block text-sm font-medium mb-1">{ui("Role")}</label>
         <select
           name="role"
           value={formData.role || ''}
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded-md"
         >
-          <option value="">Select a role</option>
+          <option value="">{ui("Select a role")}</option>
           {(allowedRoles ?? ['member', 'organization_admin', 'system_admin']).map((role) => (
             <option key={role} value={role}>
-              {roleLabel(role)}
+              {ui(roleLabel(role))}
             </option>
           ))}
         </select>
-        {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role}</p>}
+        {errors.role && <p className="text-red-500 text-sm mt-1">{ui(errors.role)}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Organization (Required)</label>
+        <label className="block text-sm font-medium mb-1">{ui("Organization (Required)")}</label>
         {initialData?.organization_id ? (
           <>
             {/* Keep the real org id in state, but show a human-friendly label to org admins */}
@@ -137,22 +140,21 @@ export const UserForm = ({
               className="w-full px-3 py-2 border rounded-md"
               disabled={orgsLoading}
             >
-              <option value="">{orgsLoading ? 'Loading organizations...' : 'Select an organization'}</option>
+              <option value="">{orgsLoading ? ui("Loading organizations...") : ui("Select an organization")}</option>
               {organizations.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {(o.name?.trim()?.length ? o.name : o.slug?.trim()?.length ? o.slug : o.id) + (o.is_active === false ? " (inactive)" : "")}
+                  {(o.name?.trim()?.length ? o.name : o.slug?.trim()?.length ? o.slug : o.id) + (o.is_active === false ? ui(" (inactive)") : "")}
                 </option>
               ))}
             </select>
             {(formData.organization_id as string | null) && selectedOrgIsInactive ? (
               <div className="mt-2">
                 <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2 py-0.5 text-xs font-medium">
-                  Inactive org
-                </span>
+                  {ui("Inactive org")}</span>
               </div>
             ) : null}
             <p className="text-xs text-muted-foreground mt-1">
-              Required for <span className="font-medium">Member</span> / <span className="font-medium">Organization Admin</span>.
+              {ui("Required for ")}<span className="font-medium">{ui("Member")}</span> / <span className="font-medium">{ui("Organization Admin")}</span>.
             </p>
           </>
         ) : (
@@ -163,24 +165,23 @@ export const UserForm = ({
               value={(formData.organization_id as string) || ''}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
-              placeholder="Paste organization UUID"
+              placeholder={ui("Paste organization UUID")}
             />
             {orgsError ? (
               <p className="text-xs text-muted-foreground mt-1">
-                (Org list unavailable: {orgsError.message})
+                {ui("(Org list unavailable: ")}{orgsError.message})
               </p>
             ) : null}
           </>
         )}
-        {errors.organization_id && <p className="text-red-500 text-sm mt-1">{errors.organization_id}</p>}
+        {errors.organization_id && <p className="text-red-500 text-sm mt-1">{ui(errors.organization_id)}</p>}
       </div>
 
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
+          {ui("Cancel")}</Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Inviting...' : 'Invite User'}
+          {isSubmitting ? ui("Inviting...") : ui("Invite User")}
         </Button>
       </div>
     </form>

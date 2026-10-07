@@ -147,6 +147,7 @@ export const createCourseV2Schema = z.object({
 });
 
 export const patchCourseV2Schema = z.object({
+  default_language: z.enum(['en', 'sr-Latn']).optional(),
   title: courseTitleSchema.optional(),
   slug: z
     .string()

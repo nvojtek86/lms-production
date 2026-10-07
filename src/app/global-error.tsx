@@ -1,5 +1,7 @@
 'use client';
 
+import {createUiTranslator} from "@/i18n/ui";
+import {useState} from "react";
 import { useEffect } from "react";
 
 type GlobalErrorProps = {
@@ -8,6 +10,8 @@ type GlobalErrorProps = {
 };
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
+  const [locale] = useState(() => typeof document === "undefined" ? "en" : document.documentElement.lang);
+  const ui = createUiTranslator(locale);
   useEffect(() => {
     const payload = {
       type: "global-error",
@@ -26,12 +30,12 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-semibold">Something went wrong</h1>
+          <h1 className="text-2xl font-semibold">{ui("Something went wrong")}</h1>
           <p className="text-sm text-muted-foreground">
-            An unexpected error occurred. Try reloading the page or returning to the dashboard.
+            {ui("An unexpected error occurred. Try reloading the page or returning to the dashboard.")}
           </p>
           <div className="flex items-center justify-center gap-3">
             <button
@@ -39,14 +43,14 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               onClick={() => reset()}
               className="rounded-md bg-primary px-4 py-2 text-white hover:bg-primary/90 transition-colors"
             >
-              Try again
+              {ui("Try again")}
             </button>
             <button
               type="button"
               onClick={() => window.location.assign("/")}
               className="rounded-md border px-4 py-2 text-foreground hover:bg-muted/40 transition-colors"
             >
-              Go to login
+              {ui("Go to login")}
             </button>
           </div>
         </div>

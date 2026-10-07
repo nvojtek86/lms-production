@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
@@ -203,6 +205,7 @@ export function RichTextEditor({
   minHeightClass?: string;
   onInlineImageQueued?: (args: { uploadId: string; file: File; objectUrl: string }) => void;
 }) {
+  const ui = useUi();
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [textPaletteOpen, setTextPaletteOpen] = useState(false);
   const [bgPaletteOpen, setBgPaletteOpen] = useState(false);
@@ -407,8 +410,7 @@ export function RichTextEditor({
   if (!editor) {
     return (
       <div className={cn("rounded-md border p-3 text-sm text-muted-foreground", className)}>
-        Loading editor...
-      </div>
+        {ui("Loading editor...")}</div>
     );
   }
 
@@ -419,9 +421,9 @@ export function RichTextEditor({
           value={blockTag ?? "p"}
           onChange={(e) => applyBlockTag(e.target.value)}
           className="h-9 rounded-md border bg-background px-2 text-sm"
-          aria-label="Block type"
+          aria-label={ui("Block type")}
         >
-          <option value="p">Paragraph</option>
+          <option value="p">{ui("Paragraph")}</option>
           <option value="h1">H1</option>
           <option value="h2">H2</option>
           <option value="h3">H3</option>
@@ -439,8 +441,8 @@ export function RichTextEditor({
               setBgPaletteOpen(false);
               setTextPaletteOpen((v) => !v);
             }}
-            title="Text color"
-            aria-label="Text color"
+            title={ui("Text color")}
+            aria-label={ui("Text color")}
           >
             <Palette className="h-4 w-4" />
           </Button>
@@ -448,15 +450,14 @@ export function RichTextEditor({
             className="ml-0.5 inline-flex h-3.5 w-3.5 rounded-sm border align-middle"
             data-rt-swatch="text"
             data-token={textSwatchToken ?? undefined}
-            title={textSwatchToken ?? "No text color"}
+            title={textSwatchToken ?? ui("No text color")}
           />
           {textPaletteOpen ? (
             <div className="absolute z-50 mt-2 w-[260px] rounded-md border bg-card p-2 shadow-lg">
               <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="text-xs font-semibold text-muted-foreground">Text color</div>
+                <div className="text-xs font-semibold text-muted-foreground">{ui("Text color")}</div>
                 <Button type="button" size="sm" variant="ghost" onClick={() => { applyTextColor(null); setTextPaletteOpen(false); }}>
-                  Clear
-                </Button>
+                  {ui("Clear")}</Button>
               </div>
               <div className="grid grid-cols-10 gap-1">
                 {COLOR_TOKENS.map((t) => (
@@ -487,8 +488,8 @@ export function RichTextEditor({
               setTextPaletteOpen(false);
               setBgPaletteOpen((v) => !v);
             }}
-            title="Highlight"
-            aria-label="Highlight"
+            title={ui("Highlight")}
+            aria-label={ui("Highlight")}
           >
             <Highlighter className="h-4 w-4" />
           </Button>
@@ -496,15 +497,14 @@ export function RichTextEditor({
             className="ml-0.5 inline-flex h-3.5 w-3.5 rounded-sm border align-middle"
             data-rt-swatch="bg"
             data-token={bgSwatchToken ?? undefined}
-            title={bgSwatchToken ?? "No highlight"}
+            title={bgSwatchToken ?? ui("No highlight")}
           />
           {bgPaletteOpen ? (
             <div className="absolute z-50 mt-2 w-[260px] rounded-md border bg-card p-2 shadow-lg">
               <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="text-xs font-semibold text-muted-foreground">Highlight</div>
+                <div className="text-xs font-semibold text-muted-foreground">{ui("Highlight")}</div>
                 <Button type="button" size="sm" variant="ghost" onClick={() => { applyBg(null); setBgPaletteOpen(false); }}>
-                  Clear
-                </Button>
+                  {ui("Clear")}</Button>
               </div>
               <div className="grid grid-cols-10 gap-1">
                 {COLOR_TOKENS.map((t) => (
@@ -533,7 +533,7 @@ export function RichTextEditor({
           onClick={() => {
             editor.chain().focus().toggleInfoCallout().run();
           }}
-          title="Info callout"
+          title={ui("Info callout")}
         >
           <Info className="h-4 w-4" />
         </Button>
@@ -609,7 +609,7 @@ export function RichTextEditor({
             if (!url.trim()) return;
             editor.chain().focus().setImage({ src: url.trim() }).run();
           }}
-          title="Insert image"
+          title={ui("Insert image")}
         >
           <ImageIcon className="h-4 w-4" />
         </Button>

@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, ExternalLink, FileText, X } from "lucide-react";
@@ -50,13 +52,14 @@ type AttemptDetails = {
   course: { id: string; title: string; slug: string | null };
 };
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale = "en"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString(locale, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAttemptRow[] }) {
+  const ui = useUi();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerMounted = useMountedForAnimation(drawerOpen, 220);
@@ -68,12 +71,12 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
   const courseOptions = useMemo(() => {
     const uniq = new Map<string, string>();
     for (const r of rows) uniq.set(r.course_id, r.course_title);
-    const opts: Array<{ value: string; label: string }> = [{ value: "all", label: "All courses" }];
+    const opts: Array<{ value: string; label: string }> = [{ value: "all", label: ui("All courses") }];
     for (const [id, title] of Array.from(uniq.entries()).sort((a, b) => a[1].localeCompare(b[1]))) {
       opts.push({ value: id, label: title });
     }
     return opts;
-  }, [rows]);
+  }, [rows, ui]);
   const [courseFilter, setCourseFilter] = useState<string>("all");
 
   const filtered = useMemo(() => {
@@ -109,8 +112,8 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
     <div className="space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div className="space-y-1">
-          <div className="text-lg font-semibold text-foreground">Attempt history</div>
-          <HelpText>Tip: click any row to open attempt details.</HelpText>
+          <div className="text-lg font-semibold text-foreground">{ui("Attempt history")}</div>
+          <HelpText>{ui("Tip: click any row to open attempt details.")}</HelpText>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <FilterSelect
@@ -118,9 +121,9 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
             value={statusFilter}
             onChange={setStatusFilter}
             options={[
-              { value: "all", label: "All statuses" },
-              { value: "passed", label: "Passed" },
-              { value: "failed", label: "Failed" },
+              { value: "all", label: ui("All statuses") },
+              { value: "passed", label: ui("Passed") },
+              { value: "failed", label: ui("Failed") },
             ]}
             className="min-w-[180px]"
           />
@@ -140,12 +143,12 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
           <table className="min-w-max w-full">
             <thead className="bg-muted/50 border-b">
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Course</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Quiz</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Attempt</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Score</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Date</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Course")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Quiz")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Attempt")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Score")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Status")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Date")}</th>
                 <th className="px-6 py-3 w-10" />
               </tr>
             </thead>
@@ -153,8 +156,7 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-10 text-center text-sm text-muted-foreground">
-                    No quiz attempts yet.
-                  </td>
+                    {ui("No quiz attempts yet.")}</td>
                 </tr>
               ) : (
                 filtered.map((r) => (
@@ -176,8 +178,7 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
                         {r.score_percent}%
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {r.earned_points}/{r.total_points} pts
-                      </div>
+                        {r.earned_points}/{r.total_points} {ui("pts")}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -186,10 +187,10 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
                           r.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                         )}
                       >
-                        {r.passed ? "Passed" : "Failed"}
+                        {r.passed ? ui("Passed") : ui("Failed")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{formatTime(r.graded_at)}</td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">{formatTime(r.graded_at, ui.locale)}</td>
                     <td className="px-6 py-4 text-right">
                       <ChevronRight className="inline-block h-4 w-4 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
                     </td>
@@ -204,7 +205,7 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
       {/* Mobile cards */}
       <div className="lg:hidden space-y-3">
         {filtered.length === 0 ? (
-          <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">No quiz attempts yet.</div>
+          <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">{ui("No quiz attempts yet.")}</div>
         ) : (
           filtered.map((r) => (
             <button
@@ -221,14 +222,13 @@ export function MyQuizzesClient({ orgId, rows }: { orgId: string; rows: MyQuizAt
                   <div className="text-xs text-muted-foreground">{r.course_title}</div>
                   <div className="mt-2 text-sm text-foreground font-semibold truncate">{r.quiz_title}</div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    Attempt {typeof r.attempt_number === "number" ? `#${r.attempt_number}` : "—"} • {formatTime(r.graded_at)}
+                    {ui("Attempt ")}{typeof r.attempt_number === "number" ? `#${r.attempt_number}` : "—"} • {formatTime(r.graded_at, ui.locale)}
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className={cn("text-lg font-bold", r.passed ? "text-green-600" : "text-red-600")}>{r.score_percent}%</div>
                   <div className="text-[11px] text-muted-foreground">
-                    {r.earned_points}/{r.total_points} pts
-                  </div>
+                    {r.earned_points}/{r.total_points} {ui("pts")}</div>
                 </div>
               </div>
             </button>
@@ -270,6 +270,7 @@ function QuizAttemptDetailsDrawer({
   orgId: string;
   onClose: () => void;
 }) {
+  const ui = useUi();
   const [entered, setEntered] = useState(false);
   useEffect(() => {
     const t = window.setTimeout(() => setEntered(true), 0);
@@ -300,10 +301,10 @@ function QuizAttemptDetailsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-16 px-6 flex items-center justify-between">
-          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">Quiz Attempt</div>
+          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">{ui("Quiz Attempt")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={onClose}
           >
@@ -320,16 +321,15 @@ function QuizAttemptDetailsDrawer({
                 <div className="text-sm text-muted-foreground">{active.course_title}</div>
                 <div className="text-xl font-semibold text-foreground">{active.quiz_title}</div>
                 <div className="text-sm text-muted-foreground">
-                  Attempt {typeof active.attempt_number === "number" ? `#${active.attempt_number}` : "—"} • {formatTime(active.graded_at)}
+                  {ui("Attempt ")}{typeof active.attempt_number === "number" ? `#${active.attempt_number}` : "—"} • {formatTime(active.graded_at, ui.locale)}
                 </div>
               </div>
               <div className="shrink-0 text-right">
                 <div className={cn("text-3xl font-bold", active.passed ? "text-green-700" : "text-amber-800")}>{active.score_percent}%</div>
                 <div className="text-sm text-muted-foreground">
-                  {active.earned_points}/{active.total_points} pts
-                </div>
+                  {active.earned_points}/{active.total_points} {ui("pts")}</div>
                 {typeof details?.result?.passing_grade_percent === "number" ? (
-                  <div className="text-xs text-muted-foreground">Passing: {details.result.passing_grade_percent}%</div>
+                  <div className="text-xs text-muted-foreground">{ui("Passing: ")}{details.result.passing_grade_percent}%</div>
                 ) : null}
               </div>
             </div>
@@ -341,28 +341,27 @@ function QuizAttemptDetailsDrawer({
                   active.passed ? "bg-emerald-100 text-emerald-800" : "bg-amber-200/60 text-amber-900"
                 )}
               >
-                {active.passed ? "Passed" : "Failed"}
+                {active.passed ? ui("Passed") : ui("Failed")}
               </span>
               <Button variant="outline" asChild className="gap-2">
                 <a href={courseHref} target="_blank" rel="noreferrer">
-                  Open course <ExternalLink className="h-4 w-4" />
+                  {ui("Open course ")}<ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
             </div>
           </div>
 
           {loading ? (
-            <div className="rounded-xl border bg-muted/10 p-5 text-sm text-muted-foreground">Loading attempt details…</div>
+            <div className="rounded-xl border bg-muted/10 p-5 text-sm text-muted-foreground">{ui("Loading attempt details…")}</div>
           ) : error ? (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">{error}</div>
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">{ui(error)}</div>
           ) : details ? (
             <>
               {details.quiz.summary_html?.trim() ? (
                 <div className="rounded-2xl border bg-card p-5">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <FileText className="h-4 w-4 text-primary" />
-                    Quiz summary
-                  </div>
+                    {ui("Quiz summary")}</div>
                   <div className="mt-3 prose prose-base max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: details.quiz.summary_html }} />
                 </div>
               ) : null}
@@ -375,7 +374,7 @@ function QuizAttemptDetailsDrawer({
                     <div key={q.id} className="rounded-2xl border bg-card p-5 space-y-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="font-semibold text-foreground">
-                          Q{idx + 1} • {(q.title ?? "").trim() || "Question"}
+                          Q{idx + 1} • {(q.title ?? "").trim() || ui("Question")}
                         </div>
                         <span
                           className={cn(
@@ -383,7 +382,7 @@ function QuizAttemptDetailsDrawer({
                             isCorrect ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
                           )}
                         >
-                          {isCorrect ? "Correct answer" : "Incorrect answer"}
+                          {isCorrect ? ui("Correct answer") : ui("Incorrect answer")}
                         </span>
                       </div>
                       {q.description_html?.trim() ? (
@@ -392,7 +391,7 @@ function QuizAttemptDetailsDrawer({
 
                       {details.quiz.settings.feedback_mode === "reveal" && q.answer_explanation_html?.trim() ? (
                         <div className="rounded-xl border bg-muted/10 p-4">
-                          <div className="text-sm font-semibold text-foreground">Explanation</div>
+                          <div className="text-sm font-semibold text-foreground">{ui("Explanation")}</div>
                           <div className="mt-2 prose prose-base max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: q.answer_explanation_html }} />
                         </div>
                       ) : null}
@@ -402,7 +401,7 @@ function QuizAttemptDetailsDrawer({
               </div>
             </>
           ) : (
-            <div className="rounded-xl border bg-muted/10 p-5 text-sm text-muted-foreground">No details found.</div>
+            <div className="rounded-xl border bg-muted/10 p-5 text-sm text-muted-foreground">{ui("No details found.")}</div>
           )}
         </div>
       </div>

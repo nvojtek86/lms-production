@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { FileText, Download } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ export default async function AuditLogsPage({
 }: {
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) return null;
   if (user.role !== "super_admin") return null;
@@ -462,21 +465,20 @@ export default async function AuditLogsPage({
         <div className="flex items-center gap-3">
           <FileText className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
-            <p className="text-muted-foreground">Track all system activities and changes</p>
+            <h1 className="text-2xl font-bold text-foreground">{ui("Audit Logs")}</h1>
+            <p className="text-muted-foreground">{ui("Track all system activities and changes")}</p>
           </div>
         </div>
         <Button variant="outline" className="flex items-center gap-2 shrink-0" asChild>
           <a href="/api/audit/export?max=50000">
             <Download size={18} />
-            Export Logs
-          </a>
+            {ui("Export Logs")}</a>
         </Button>
       </div>
 
       {loadError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load audit logs: {loadError.message}
+          {ui("Failed to load audit logs: ")}{loadError.message}
         </div>
       ) : null}
 
@@ -486,20 +488,19 @@ export default async function AuditLogsPage({
           <table className="min-w-max w-full">
           <thead className="bg-muted/50">
             <tr>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Timestamp</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Action</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Details</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">User</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Target</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Subject</th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Timestamp")}</th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Action")}</th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Details")}</th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("User")}</th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Target")}</th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Subject")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
-                  No audit logs yet.
-                </td>
+                  {ui("No audit logs yet.")}</td>
               </tr>
             ) : (
               rows.map((log) => (
@@ -535,10 +536,10 @@ export default async function AuditLogsPage({
       <p className="text-sm text-muted-foreground">
         {total > 0 ? (
           <span>
-            Showing {fromIdx + 1}–{Math.min(fromIdx + rows.length, total)} of {total}
+            {ui("Showing ")}{fromIdx + 1}–{Math.min(fromIdx + rows.length, total)} {ui("of ")}{total}
           </span>
         ) : (
-          <span>Showing 0 results</span>
+          <span>{ui("Showing 0 results")}</span>
         )}
       </p>
 
@@ -553,11 +554,10 @@ export default async function AuditLogsPage({
             <>
               {prevDisabled ? (
                 <Button variant="outline" disabled>
-                  Prev
-                </Button>
+                  {ui("Prev")}</Button>
               ) : (
                 <Button asChild variant="outline">
-                      <Link href={pageHref(current - 1)}>Prev</Link>
+                      <Link href={pageHref(current - 1)}>{ui("Prev")}</Link>
                 </Button>
               )}
 
@@ -581,11 +581,10 @@ export default async function AuditLogsPage({
 
               {nextDisabled ? (
                 <Button variant="outline" disabled>
-                  Next
-                </Button>
+                  {ui("Next")}</Button>
               ) : (
                 <Button asChild variant="outline">
-                      <Link href={pageHref(current + 1)}>Next</Link>
+                      <Link href={pageHref(current + 1)}>{ui("Next")}</Link>
                 </Button>
               )}
             </>

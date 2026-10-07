@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
@@ -45,10 +47,10 @@ function pickCoverGradient(seed: string) {
   return gradients[hash % gradients.length];
 }
 
-function formatShortDate(iso: string): string {
+function formatShortDate(iso: string, locale = "en"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString(locale, { year: "numeric", month: "short", day: "2-digit" });
 }
 
 function accessPill(expiresAtIso: string | null): { label: string; className: string } {
@@ -66,6 +68,7 @@ function accessPill(expiresAtIso: string | null): { label: string; className: st
 }
 
 export default async function StudentMyCoursesPage({ params }: { params: Promise<{ orgId: string }> }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
 
@@ -182,12 +185,12 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "completed":
-        return { label: "Completed", class: "bg-green-100 text-green-800" };
+        return { label: ui("Completed"), class: "bg-green-100 text-green-800" };
       case "in_progress":
         // Member is actively enrolled and has started (visited progress exists).
-        return { label: "Enrolling", class: "bg-blue-100 text-blue-800" };
+        return { label: ui("Enrolling"), class: "bg-blue-100 text-blue-800" };
       default:
-        return { label: "Not Started", class: "bg-gray-100 text-gray-800" };
+        return { label: ui("Not Started"), class: "bg-gray-100 text-gray-800" };
     }
   };
 
@@ -205,8 +208,8 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
       <div className="flex items-center gap-3">
         <BookOpen className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Courses</h1>
-          <p className="text-muted-foreground">Track your learning progress</p>
+          <h1 className="text-2xl font-bold text-foreground">{ui("My Courses")}</h1>
+          <p className="text-muted-foreground">{ui("Track your learning progress")}</p>
         </div>
       </div>
 
@@ -217,7 +220,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
               <Play className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">In Progress</p>
+              <p className="text-sm text-muted-foreground">{ui("In Progress")}</p>
               <p className="text-2xl font-bold text-foreground">{inProgressCount}</p>
             </div>
           </div>
@@ -228,7 +231,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-sm text-muted-foreground">{ui("Completed")}</p>
               <p className="text-2xl font-bold text-foreground">{completedCount}</p>
             </div>
           </div>
@@ -239,7 +242,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
               <BookOpen className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-sm text-muted-foreground">{ui("Total")}</p>
               <p className="text-2xl font-bold text-foreground">{courses.length}</p>
             </div>
           </div>
@@ -249,8 +252,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {courses.length === 0 ? (
           <div className="col-span-full rounded-lg border bg-card p-10 text-center text-muted-foreground">
-            You have not started any courses yet.
-          </div>
+            {ui("You have not started any courses yet.")}</div>
         ) : (
           courses.map((course) => {
             const status = derivedStatus(course.id);
@@ -276,7 +278,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
                   {coverUrl ? (
                     <Image
                       src={coverUrl}
-                      alt={`${title} cover`}
+                      alt={ui("{v0} cover", {v0: title})}
                       fill
                       className="object-cover"
                       sizes="(max-width: 1024px) 100vw, 520px"
@@ -287,7 +289,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
                     <div className="h-9 w-9 rounded-lg bg-white/15 ring-1 ring-white/20 backdrop-blur flex items-center justify-center">
                       <BookOpen className="h-5 w-5" />
                     </div>
-                    <span className="text-xs font-medium tracking-wide uppercase">My course</span>
+                    <span className="text-xs font-medium tracking-wide uppercase">{ui("My course")}</span>
                   </div>
                 </div>
 
@@ -295,8 +297,8 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="text-lg font-semibold text-foreground truncate">{title}</h3>
-                      <p className="mt-1 text-xs font-medium text-foreground/70">{orgMeta?.label ?? "Organization"}</p>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{excerpt || "No excerpt yet."}</p>
+                      <p className="mt-1 text-xs font-medium text-foreground/70">{orgMeta?.label ?? ui("Organization")}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{excerpt || ui("No excerpt yet.")}</p>
                     </div>
                     <div className="shrink-0 flex flex-wrap items-center justify-end gap-2">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}`}>
@@ -310,7 +312,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
 
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">Progress</span>
+                      <span className="text-muted-foreground">{ui("Progress")}</span>
                       <span className="font-medium text-foreground">
                         {done}/{total} • {progress}%
                       </span>
@@ -323,8 +325,7 @@ export default async function StudentMyCoursesPage({ params }: { params: Promise
                   <Button className="w-full gap-2" asChild>
                     <Link href={`/org/${courseOrgKey}/courses/${(course.slug ?? "").trim() || course.id}/learn`}>
                       <Play className="h-4 w-4" />
-                      Continue Learning
-                    </Link>
+                      {ui("Continue Learning")}</Link>
                   </Button>
                 </div>
               </article>

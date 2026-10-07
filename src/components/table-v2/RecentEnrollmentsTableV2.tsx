@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, CalendarDays, ChevronRight, Clock, Building2, User, X, BadgeCheck, BadgeX } from "lucide-react";
@@ -26,13 +28,14 @@ export type RecentEnrollmentItemV2 = {
 };
 
 function ResultPill({ result }: { result: EnrollmentResultV2 }) {
+  const ui = useUi();
   const r = result ?? "not_certified";
   const label = r === "certified" ? "Certified" : "Not certified";
   const cls =
     r === "certified"
       ? "bg-green-100 text-green-800"
       : "bg-gray-100 text-gray-800";
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{ui(label)}</span>;
 }
 
 export function RecentEnrollmentsTableV2({
@@ -46,6 +49,7 @@ export function RecentEnrollmentsTableV2({
   emptySubtitle?: string;
   tip?: string;
 }) {
+  const ui = useUi();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerMounted = useMountedForAnimation(drawerOpen, 220);
@@ -65,9 +69,9 @@ export function RecentEnrollmentsTableV2({
           <table className="min-w-max w-full">
             <thead className="bg-background border-b">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap">Time</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">User</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Course</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Time")}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">{ui("User")}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">{ui("Course")}</th>
                 <th className="px-4 py-3 w-10" />
               </tr>
             </thead>
@@ -99,7 +103,7 @@ export function RecentEnrollmentsTableV2({
                       <div className="font-medium text-foreground">{it.course}</div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className="sr-only">Open details</span>
+                      <span className="sr-only">{ui("Open details")}</span>
                       <ChevronRight className="inline-block h-4 w-4 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
                     </td>
                   </tr>
@@ -168,6 +172,7 @@ function RecentEnrollmentDetailsDrawer({
   item: RecentEnrollmentItemV2;
   onClose: () => void;
 }) {
+  const ui = useUi();
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
@@ -196,10 +201,10 @@ function RecentEnrollmentDetailsDrawer({
       >
         {/* Header */}
         <div className="h-16 px-6 flex items-center justify-between">
-          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">Enrollment Details</div>
+          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">{ui("Enrollment Details")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={onClose}
           >
@@ -216,8 +221,7 @@ function RecentEnrollmentDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <User className="h-4 w-4" />
-                  User
-                </span>
+                  {ui("User")}</span>
                 <span className="text-foreground text-right break-all">{item.user}</span>
               </div>
 
@@ -225,8 +229,7 @@ function RecentEnrollmentDetailsDrawer({
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
-                    Organization
-                  </span>
+                    {ui("Organization")}</span>
                   <span className="text-foreground text-right">{item.organization}</span>
                 </div>
               ) : null}
@@ -234,16 +237,14 @@ function RecentEnrollmentDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <BookOpen className="h-4 w-4" />
-                  Course
-                </span>
+                  {ui("Course")}</span>
                 <span className="text-foreground text-right wrap-break-word">{item.course}</span>
               </div>
 
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <CalendarDays className="h-4 w-4" />
-                  Time
-                </span>
+                  {ui("Time")}</span>
                 <span className="text-foreground text-right">
                   <LocalDateTime iso={item.timeIso} fallback={item.time} />
                 </span>
@@ -252,8 +253,7 @@ function RecentEnrollmentDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <ResultIcon className="h-4 w-4" />
-                  Certificate
-                </span>
+                  {ui("Certificate")}</span>
                 <div className="text-right space-y-1">
                   <ResultPill result={item.result} />
                   <div className="text-xs text-muted-foreground">{resultLabel}</div>
@@ -264,18 +264,18 @@ function RecentEnrollmentDetailsDrawer({
 
           {/* Info */}
           <div className="space-y-3">
-            <div className="text-xl font-semibold text-foreground">Info</div>
+            <div className="text-xl font-semibold text-foreground">{ui("Info")}</div>
             <div className="rounded-xl border bg-background p-5 space-y-3 text-sm">
               {item.enrollmentStatus ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Enrollment status</span>
+                  <span className="text-muted-foreground">{ui("Enrollment status")}</span>
                   <span className="text-foreground text-right">{item.enrollmentStatus}</span>
                 </div>
               ) : null}
 
               {item.enrolledAt ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Enrolled</span>
+                  <span className="text-muted-foreground">{ui("Enrolled")}</span>
                   <span className="text-foreground text-right">
                     <LocalDateTime iso={item.enrolledAt} />
                   </span>
@@ -284,7 +284,7 @@ function RecentEnrollmentDetailsDrawer({
 
               {item.certificateIssuedAt ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Certificate issued</span>
+                  <span className="text-muted-foreground">{ui("Certificate issued")}</span>
                   <span className="text-foreground text-right">
                     <LocalDateTime iso={item.certificateIssuedAt} />
                   </span>

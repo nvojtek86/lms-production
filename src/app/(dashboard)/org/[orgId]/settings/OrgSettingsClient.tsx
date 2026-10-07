@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useRef, useState } from "react";
 import { Pencil, Settings } from "lucide-react";
@@ -20,6 +22,7 @@ function normalizeOrgName(input: string): string {
 }
 
 export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, callerRole, initialLogoUrl }: Props) {
+  const ui = useUi();
   const canRenameOrg = callerRole === "organization_admin";
 
   const [orgName, setOrgName] = useState<string>(initialOrgName ?? "");
@@ -40,7 +43,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
     setError(null);
     setSuccess(null);
     setIsSavingOrgName(true);
-    const t = toast.loading("Updating organization name…");
+    const t = toast.loading(ui("Updating organization name…"));
     try {
       const { data: body, message } = await fetchJson<{ organization: { id: string; name: string; slug: string | null } }>(
         "/api/me/organization",
@@ -54,12 +57,12 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
       setOrgName(saved);
       setOrgNameInput(saved);
       setIsEditingOrgName(false);
-      setSuccess(message || "Organization name updated.");
-      toast.success(message || "Organization name updated.", { id: t });
+      setSuccess(ui(message || "Organization name updated."));
+      toast.success(ui(message || "Organization name updated."), { id: t });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to update organization name";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsSavingOrgName(false);
     }
@@ -69,7 +72,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
     setError(null);
     setSuccess(null);
     setIsUploading(true);
-    const t = toast.loading("Uploading organization logo…");
+    const t = toast.loading(ui("Uploading organization logo…"));
     try {
       const form = new FormData();
       form.append("file", file);
@@ -78,12 +81,12 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
         body: form,
       });
       if (body.logo_url) setLogoUrl(String(body.logo_url));
-      setSuccess(message || "Logo uploaded.");
-      toast.success(message || "Organization logo uploaded.", { id: t });
+      setSuccess(ui(message || "Logo uploaded."));
+      toast.success(ui(message || "Organization logo uploaded."), { id: t });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to upload logo";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsUploading(false);
     }
@@ -93,16 +96,16 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
     setError(null);
     setSuccess(null);
     setIsRemoving(true);
-    const t = toast.loading("Removing organization logo…");
+    const t = toast.loading(ui("Removing organization logo…"));
     try {
       const { message } = await fetchJson<{ logo_url: null }>(`/api/organizations/${orgId}/logo`, { method: "DELETE" });
       setLogoUrl("");
-      setSuccess(message || "Logo removed.");
-      toast.success(message || "Organization logo removed.", { id: t });
+      setSuccess(ui(message || "Logo removed."));
+      toast.success(ui(message || "Organization logo removed."), { id: t });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to remove logo";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsRemoving(false);
     }
@@ -119,13 +122,13 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
 
     const allowed = new Set(["image/png", "image/webp", "image/svg+xml"]);
     if (!allowed.has(file.type)) {
-      setError("Please drop a PNG, WebP, or SVG file.");
-      toast.error("Please drop a PNG, WebP, or SVG file.");
+      setError(ui("Please drop a PNG, WebP, or SVG file."));
+      toast.error(ui("Please drop a PNG, WebP, or SVG file."));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setError("File too large (max 2MB).");
-      toast.error("File too large (max 2MB).");
+      setError(ui("File too large (max 2MB)."));
+      toast.error(ui("File too large (max 2MB)."));
       return;
     }
 
@@ -138,14 +141,14 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
       <div className="flex items-center gap-3">
         <Settings className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Organization Settings</h1>
-          <p className="text-muted-foreground">Manage settings for your organization</p>
+          <h1 className="text-2xl font-bold text-foreground">{ui("Organization Settings")}</h1>
+          <p className="text-muted-foreground">{ui("Manage settings for your organization")}</p>
         </div>
       </div>
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
+          {ui(error)}
         </div>
       )}
       {success && (
@@ -158,10 +161,9 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <div className="space-y-3">
             <div>
-              <Label>Organization name</Label>
+              <Label>{ui("Organization name")}</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                This name is displayed to admins and members. It does not change the organization URL/slug.
-              </p>
+                {ui("This name is displayed to admins and members. It does not change the organization URL/slug.")}</p>
             </div>
 
             {isEditingOrgName ? (
@@ -171,14 +173,14 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
                   onChange={(e) => setOrgNameInput(e.target.value)}
                   disabled={isSavingOrgName}
                   className="h-10 w-full md:w-[420px] rounded-md border bg-background px-3 text-sm"
-                  placeholder="e.g. Acme Inc."
+                  placeholder={ui("e.g. Acme Inc.")}
                 />
                 <Button
                   type="button"
                   disabled={isSavingOrgName || normalizeOrgName(orgNameInput).length < 2}
                   onClick={() => void saveOrgName(orgNameInput)}
                 >
-                  {isSavingOrgName ? "Saving..." : "Save"}
+                  {isSavingOrgName ? ui("Saving...") : ui("Save")}
                 </Button>
                 <Button
                   type="button"
@@ -189,8 +191,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
                     setOrgNameInput(orgName);
                   }}
                 >
-                  Cancel
-                </Button>
+                  {ui("Cancel")}</Button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -204,8 +205,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
                   onClick={() => setIsEditingOrgName(true)}
                 >
                   <Pencil className="h-4 w-4" />
-                  Rename
-                </Button>
+                  {ui("Rename")}</Button>
               </div>
             )}
           </div>
@@ -215,35 +215,32 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
       <div className="bg-card border rounded-lg p-6 shadow-sm">
         <div className="space-y-4">
           <div>
-            <Label>Organization Logo</Label>
+            <Label>{ui("Organization Logo")}</Label>
             <p className="text-sm text-muted-foreground mt-1">
-              This logo will be shown on the organization dashboard for admins and members in this organization.
-            </p>
+              {ui("This logo will be shown on the organization dashboard for admins and members in this organization.")}</p>
           </div>
 
           {/* Current logo preview */}
           <div className="rounded-md border bg-background p-4">
-            <div className="text-sm font-medium text-foreground mb-3">Current logo</div>
+            <div className="text-sm font-medium text-foreground mb-3">{ui("Current logo")}</div>
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
-                alt="Current organization logo"
+                alt={ui("Current organization logo")}
                 className="h-20 w-48 object-contain rounded-md border bg-muted/30"
               />
             ) : (
               <div className="h-20 w-48 rounded-md border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground text-center px-2">
-                No logo uploaded
-              </div>
+                {ui("No logo uploaded")}</div>
             )}
           </div>
 
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-sm font-medium text-foreground">Logo upload</div>
+              <div className="text-sm font-medium text-foreground">{ui("Logo upload")}</div>
               <div className="text-xs text-muted-foreground">
-                Drag & drop a logo here, or click to browse. PNG / WebP / SVG, max 2MB.
-              </div>
+                {ui("Drag & drop a logo here, or click to browse. PNG / WebP / SVG, max 2MB.")}</div>
             </div>
             <Button
               type="button"
@@ -251,7 +248,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
               disabled={!logoUrl || isUploading || isRemoving}
               onClick={() => void removeLogo()}
             >
-              {isRemoving ? "Removing..." : "Remove"}
+              {isRemoving ? ui("Removing...") : ui("Remove")}
             </Button>
           </div>
 
@@ -261,7 +258,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
             }`}
             role="button"
             tabIndex={0}
-            aria-label="Upload organization logo"
+            aria-label={ui("Upload organization logo")}
             onClick={() => inputRef.current?.click()}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -286,7 +283,7 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={logoUrl}
-                  alt="Organization logo"
+                  alt={ui("Organization logo")}
                   className="h-14 w-14 rounded-md object-contain border bg-background"
                 />
               ) : (
@@ -296,9 +293,9 @@ export default function OrgSettingsClient({ orgId, orgLabel, initialOrgName, cal
               )}
 
               <div className="min-w-0">
-                <div className="font-medium text-foreground">Drag & drop a logo here, or click to browse</div>
-                <div className="text-xs text-muted-foreground">PNG / WebP / SVG, max 2MB.</div>
-                {isUploading ? <div className="mt-1 text-xs text-muted-foreground">Uploading…</div> : null}
+                <div className="font-medium text-foreground">{ui("Drag & drop a logo here, or click to browse")}</div>
+                <div className="text-xs text-muted-foreground">{ui("PNG / WebP / SVG, max 2MB.")}</div>
+                {isUploading ? <div className="mt-1 text-xs text-muted-foreground">{ui("Uploading…")}</div> : null}
               </div>
 
               <input

@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { notFound } from "next/navigation";
 import { createAdminSupabaseClient, createServerSupabaseClient, getServerUser } from "@/lib/supabase/server";
 import { getUserOrganizationMemberships } from "@/lib/organizations/memberships";
@@ -24,6 +26,7 @@ type CertificateRow = {
 };
 
 export default async function CertificatesPage({ params }: { params: Promise<{ orgId: string }> }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) return null;
 
@@ -149,9 +152,9 @@ export default async function CertificatesPage({ params }: { params: Promise<{ o
       id: cert.id,
       userLabel,
       courseLabel,
-      issuedLabel: issued ? new Date(issued).toLocaleDateString() : "—",
+      issuedLabel: issued ? new Date(issued).toLocaleDateString(ui.locale) : "—",
       statusLabel: status,
-      expiresLabel: expires ? new Date(expires).toLocaleDateString() : null,
+      expiresLabel: expires ? new Date(expires).toLocaleDateString(ui.locale) : null,
       organizationLabel: certificateOrgLabel,
       canDownload,
       downloadHref,
@@ -163,13 +166,13 @@ export default async function CertificatesPage({ params }: { params: Promise<{ o
     <div className="space-y-6">
       {certError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load certificates: {certError.message}
+          {ui("Failed to load certificates: ")}{certError.message}
         </div>
       ) : null}
 
       <CertificatesTableV2
-        title="Certificates"
-        subtitle={user.role === "member" ? "All active organizations" : `Organization: ${orgLabel}`}
+        title={ui("Certificates")}
+        subtitle={user.role === "member" ? ui("All active organizations") : ui("Organization: {v0}", {v0: orgLabel})}
         rows={rows}
       />
     </div>

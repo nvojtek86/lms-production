@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -90,6 +92,7 @@ export default async function SystemReportsPage({
 }: {
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) return null;
   if (user.role !== "super_admin") return null;
@@ -193,29 +196,28 @@ export default async function SystemReportsPage({
         <div className="flex items-center gap-3">
           <BarChart3 className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">System Reports</h1>
+            <h1 className="text-2xl font-bold text-foreground">{ui("System Reports")}</h1>
             <p className="text-muted-foreground">
-              Centralized API success/error messages (super_admin only).
-            </p>
+              {ui("Centralized API success/error messages (super_admin only).")}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant={filter === "all" ? "default" : "outline"} className="shrink-0">
-            <Link href={filterHref("all")}>All</Link>
+            <Link href={filterHref("all")}>{ui("All")}</Link>
           </Button>
           <Button asChild variant={filter === "errors" ? "default" : "outline"} className="shrink-0">
-            <Link href={filterHref("errors")}>Errors</Link>
+            <Link href={filterHref("errors")}>{ui("Errors")}</Link>
           </Button>
           <Button asChild variant={filter === "success" ? "default" : "outline"} className="shrink-0">
-            <Link href={filterHref("success")}>Success</Link>
+            <Link href={filterHref("success")}>{ui("Success")}</Link>
           </Button>
         </div>
       </div>
 
       {loadError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load system reports: {loadError.message}
+          {ui("Failed to load system reports: ")}{loadError.message}
         </div>
       ) : null}
 
@@ -224,20 +226,19 @@ export default async function SystemReportsPage({
           <table className="min-w-max w-full">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Timestamp</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Result</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">API</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Message</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">User</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Details</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Timestamp")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Result")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("API")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Message")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("User")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Details")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
-                    No system report entries yet.
-                  </td>
+                    {ui("No system report entries yet.")}</td>
                 </tr>
               ) : (
                 rows.map((r) => {
@@ -249,10 +250,10 @@ export default async function SystemReportsPage({
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeClass(r.action ?? null)}`}>
-                          {r.action === "api_error" ? "Error" : r.action === "api_success" ? "Success" : (r.action ?? "—")}
+                          {r.action === "api_error" ? ui("Error") : r.action === "api_success" ? ui("Success") : (r.action ?? "—")}
                         </span>
                         {typeof api.status === "number" ? (
-                          <div className="mt-1 text-xs text-muted-foreground">HTTP {api.status}{api.code ? ` • ${api.code}` : ""}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{ui("HTTP ")}{api.status}{api.code ? ` • ${api.code}` : ""}</div>
                         ) : null}
                       </td>
                       <td className="px-6 py-4 text-sm text-foreground">
@@ -263,7 +264,7 @@ export default async function SystemReportsPage({
                         <div>{api.publicMessage}</div>
                         {api.internalMessage ? (
                           <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                            Internal: {api.internalMessage}
+                            {ui("Internal: ")}{api.internalMessage}
                           </div>
                         ) : null}
                       </td>
@@ -272,7 +273,7 @@ export default async function SystemReportsPage({
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         <details>
-                          <summary className="cursor-pointer select-none">View</summary>
+                          <summary className="cursor-pointer select-none">{ui("View")}</summary>
                           <pre className="mt-2 max-w-[680px] overflow-auto rounded-md border bg-muted/20 p-3 text-xs">
 {JSON.stringify(api.rawMeta, null, 2)}
                           </pre>
@@ -290,10 +291,10 @@ export default async function SystemReportsPage({
       <p className="text-sm text-muted-foreground">
         {total > 0 ? (
           <span>
-            Showing {fromIdx + 1}–{Math.min(fromIdx + rows.length, total)} of {total}
+            {ui("Showing ")}{fromIdx + 1}–{Math.min(fromIdx + rows.length, total)} {ui("of ")}{total}
           </span>
         ) : (
-          <span>Showing 0 results</span>
+          <span>{ui("Showing 0 results")}</span>
         )}
       </p>
 
@@ -308,11 +309,10 @@ export default async function SystemReportsPage({
             <>
               {prevDisabled ? (
                 <Button variant="outline" disabled>
-                  Prev
-                </Button>
+                  {ui("Prev")}</Button>
               ) : (
                 <Button asChild variant="outline">
-                  <Link href={pageHref(current - 1)}>Prev</Link>
+                  <Link href={pageHref(current - 1)}>{ui("Prev")}</Link>
                 </Button>
               )}
 
@@ -336,11 +336,10 @@ export default async function SystemReportsPage({
 
               {nextDisabled ? (
                 <Button variant="outline" disabled>
-                  Next
-                </Button>
+                  {ui("Next")}</Button>
               ) : (
                 <Button asChild variant="outline">
-                  <Link href={pageHref(current + 1)}>Next</Link>
+                  <Link href={pageHref(current + 1)}>{ui("Next")}</Link>
                 </Button>
               )}
             </>
@@ -349,18 +348,17 @@ export default async function SystemReportsPage({
       </div>
 
       <div className="pt-2">
-        <h2 className="text-xl font-semibold text-foreground">Support reports</h2>
+        <h2 className="text-xl font-semibold text-foreground">{ui("Support reports")}</h2>
         <p className="text-sm text-muted-foreground">
-          User-submitted error reports from the app (stored in <span className="font-mono">support_reports</span>).
+          {ui("User-submitted error reports from the app (stored in ")}<span className="font-mono">{ui("support_reports")}</span>).
         </p>
       </div>
 
       {supportError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load support reports: {supportError.message}
+          {ui("Failed to load support reports: ")}{supportError.message}
           <div className="mt-1 text-xs text-muted-foreground">
-            Make sure the <span className="font-mono">support_reports</span> SQL was applied in this environment.
-          </div>
+            {ui("Make sure the ")}<span className="font-mono">{ui("support_reports")}</span> {ui("SQL was applied in this environment.")}</div>
         </div>
       ) : null}
 
@@ -369,20 +367,19 @@ export default async function SystemReportsPage({
           <table className="min-w-max w-full">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Timestamp</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Support ID</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Step</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Reporter</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Details</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Timestamp")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Support ID")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Step")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Reporter")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Status")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Details")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {supportRows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
-                    No support reports yet.
-                  </td>
+                    {ui("No support reports yet.")}</td>
                 </tr>
               ) : (
                 supportRows.map((r) => {
@@ -400,7 +397,7 @@ export default async function SystemReportsPage({
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {r.reporter_email ? `${r.reporter_email}${r.reporter_role ? ` (${r.reporter_role})` : ""}` : "—"}
                         {r.organization_id ? (
-                          <div className="mt-1 font-mono text-xs text-muted-foreground">org: {r.organization_id}</div>
+                          <div className="mt-1 font-mono text-xs text-muted-foreground">{ui("org: ")}{r.organization_id}</div>
                         ) : null}
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -409,17 +406,17 @@ export default async function SystemReportsPage({
                             resolved ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"
                           }`}
                         >
-                          {resolved ? "Resolved" : "Open"}
+                          {resolved ? ui("Resolved") : ui("Open")}
                         </span>
                         {resolved && r.resolved_at ? (
                           <div className="mt-1 text-xs text-muted-foreground">
-                            at <LocalDateTime iso={r.resolved_at} />
+                            {ui("at ")}<LocalDateTime iso={r.resolved_at} />
                           </div>
                         ) : null}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         <details>
-                          <summary className="cursor-pointer select-none">View</summary>
+                          <summary className="cursor-pointer select-none">{ui("View")}</summary>
                           <pre className="mt-2 max-w-[680px] overflow-auto rounded-md border bg-muted/20 p-3 text-xs">
 {JSON.stringify(
   {
@@ -443,19 +440,18 @@ export default async function SystemReportsPage({
       </div>
 
       <div className="pt-2">
-        <h2 className="text-xl font-semibold text-foreground">Unauthenticated API events</h2>
+        <h2 className="text-xl font-semibold text-foreground">{ui("Unauthenticated API events")}</h2>
         <p className="text-sm text-muted-foreground">
-          These are API success/error messages where no authenticated caller could be attributed (logged to{" "}
-          <span className="font-mono">unauth_api_events</span>).
+          {ui("These are API success/error messages where no authenticated caller could be attributed (logged to")}{" "}
+          <span className="font-mono">{ui("unauth_api_events")}</span>).
         </p>
       </div>
 
       {unauthError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load unauthenticated events: {unauthError.message}
+          {ui("Failed to load unauthenticated events: ")}{unauthError.message}
           <div className="mt-1 text-xs text-muted-foreground">
-            If this is a new environment, make sure the migration creating <span className="font-mono">unauth_api_events</span> was applied.
-          </div>
+            {ui("If this is a new environment, make sure the migration creating ")}<span className="font-mono">{ui("unauth_api_events")}</span> {ui("was applied.")}</div>
         </div>
       ) : null}
 
@@ -464,20 +460,19 @@ export default async function SystemReportsPage({
           <table className="min-w-max w-full">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Timestamp</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Result</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">API</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Message</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Client</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Details</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Timestamp")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Result")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("API")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Message")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Client")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Details")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {unauthRows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
-                    No unauthenticated API events yet.
-                  </td>
+                    {ui("No unauthenticated API events yet.")}</td>
                 </tr>
               ) : (
                 unauthRows.map((r) => (
@@ -487,11 +482,11 @@ export default async function SystemReportsPage({
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${unauthBadgeClass(r.outcome)}`}>
-                        {r.outcome === "error" ? "Error" : r.outcome === "success" ? "Success" : "—"}
+                        {r.outcome === "error" ? ui("Error") : r.outcome === "success" ? ui("Success") : "—"}
                       </span>
                       {typeof r.status === "number" ? (
                         <div className="mt-1 text-xs text-muted-foreground">
-                          HTTP {r.status}{r.code ? ` • ${r.code}` : ""}
+                          {ui("HTTP ")}{r.status}{r.code ? ` • ${r.code}` : ""}
                         </div>
                       ) : null}
                     </td>
@@ -503,7 +498,7 @@ export default async function SystemReportsPage({
                       <div>{r.public_message ?? "—"}</div>
                       {r.internal_message ? (
                         <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                          Internal: {r.internal_message}
+                          {ui("Internal: ")}{r.internal_message}
                         </div>
                       ) : null}
                     </td>
@@ -513,7 +508,7 @@ export default async function SystemReportsPage({
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
                       <details>
-                        <summary className="cursor-pointer select-none">View</summary>
+                        <summary className="cursor-pointer select-none">{ui("View")}</summary>
                         <pre className="mt-2 max-w-[680px] overflow-auto rounded-md border bg-muted/20 p-3 text-xs">
 {JSON.stringify(
   {

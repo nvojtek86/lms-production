@@ -1,3 +1,4 @@
+import {getCourseLanguage} from "@/i18n/course";
 import { notFound, redirect } from "next/navigation";
 import { createAdminSupabaseClient, getServerUser } from "@/lib/supabase/server";
 import { resolveOrgKey } from "@/lib/organizations/resolveOrgKey";
@@ -44,8 +45,10 @@ export default async function OrgCourseNewV2Page({ params }: { params: Promise<{
     })
     .filter((m): m is { id: string; label: string } => typeof m.id === "string" && typeof m.label === "string");
 
+  const languageSettings = await getCourseLanguage("00000000-0000-0000-0000-000000000000");
   return (
     <CourseEditorV2Form
+      languageSettingsAvailable={languageSettings.available}
       mode="create"
       orgSlug={orgSlug}
       backHref={`/org/${orgSlug}/courses`}

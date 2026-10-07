@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
@@ -43,6 +45,7 @@ export function CertificateAwardModal({
   courseTitle: string;
   certificatesHref: string;
 }) {
+  const ui = useUi();
   if (!certificate) return null;
 
   return (
@@ -91,7 +94,7 @@ export function CertificateAwardModal({
             <button
               type="button"
               className="absolute right-4 top-4 z-10 inline-flex size-10 items-center justify-center rounded-full border bg-background/90 text-muted-foreground shadow-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Close certificate celebration"
+              aria-label={ui("Close certificate celebration")}
             >
               <X className="size-5" />
             </button>
@@ -104,20 +107,18 @@ export function CertificateAwardModal({
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800">
                 <Sparkles className="size-4" aria-hidden="true" />
-                Course completed
-              </div>
+                {ui("Course completed")}</div>
               <Dialog.Title className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                Congratulations — you earned a certificate!
-              </Dialog.Title>
+                {ui("Congratulations — you earned a certificate!")}</Dialog.Title>
               <Dialog.Description className="text-sm leading-6 text-muted-foreground sm:text-base">
-                You completed <span className="font-semibold text-foreground">{courseTitle}</span> with a course score of{" "}
+                {ui("You completed ")}<span className="font-semibold text-foreground">{courseTitle}</span> {ui("with a course score of")}{" "}
                 <span className="font-semibold text-emerald-700">{certificate.course_score_percent}%</span>.
               </Dialog.Description>
             </div>
 
             <div className="overflow-hidden rounded-2xl border bg-muted/20 shadow-inner">
               <iframe
-                title={`Certificate for ${courseTitle}`}
+                title={ui("Certificate for {v0}", {v0: courseTitle})}
                 src={certificate.download_url}
                 className="h-[42vh] min-h-72 w-full bg-white"
               />
@@ -127,15 +128,13 @@ export function CertificateAwardModal({
               <Button variant="outline" asChild className="gap-2">
                 <a href={certificate.download_url} target="_blank" rel="noreferrer">
                   <Download className="size-4" />
-                  Open certificate
-                  <ExternalLink className="size-3.5" />
+                  {ui("Open certificate")}<ExternalLink className="size-3.5" />
                 </a>
               </Button>
               <Button asChild className="gap-2">
                 <Link href={certificatesHref}>
                   <Award className="size-4" />
-                  View My Certificates
-                </Link>
+                  {ui("View My Certificates")}</Link>
               </Button>
             </div>
           </div>

@@ -1,4 +1,6 @@
 'use client';
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -27,6 +29,7 @@ function normalizeFullName(input: string): string {
 }
 
 export function ProfileForm() {
+  const ui = useUi();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -104,7 +107,7 @@ export function ProfileForm() {
           (typeof orgSlugRaw === "string" && orgSlugRaw.trim().length ? orgSlugRaw.trim() : null);
         setOrganizationDisplay(nextOrg);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load profile");
+        if (!cancelled) setError(ui(e instanceof Error ? e.message : "Failed to load profile"));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -114,7 +117,7 @@ export function ProfileForm() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [ui]);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,7 +146,7 @@ export function ProfileForm() {
     setError(null);
     setSuccess(null);
     setIsSaving(true);
-    const t = toast.loading("Saving profile…");
+    const t = toast.loading(ui("Saving profile…"));
     try {
       const name = normalizeFullName(fullName);
 
@@ -163,8 +166,8 @@ export function ProfileForm() {
       }
 
       const finalMsg = profileMessage || "Saved.";
-      setSuccess(finalMsg);
-      toast.success(finalMsg, { id: t });
+      setSuccess(ui(finalMsg));
+      toast.success(ui(finalMsg), { id: t });
       setIsEditingInfo(false);
 
       // Let the rest of the app refresh user state + server components.
@@ -172,8 +175,8 @@ export function ProfileForm() {
       router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to save";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsSaving(false);
     }
@@ -184,15 +187,15 @@ export function ProfileForm() {
     setError(null);
     setSuccess(null);
     setIsSendingReset(true);
-    const t = toast.loading("Sending reset password link…");
+    const t = toast.loading(ui("Sending reset password link…"));
     try {
       const { message } = await fetchJson<{ ok: true }>("/api/me/password-reset", { method: "POST" });
-      toast.success(message || "Reset password link sent.", { id: t });
-      setSuccess(message || "Reset password link sent.");
+      toast.success(ui(message || "Reset password link sent."), { id: t });
+      setSuccess(ui(message || "Reset password link sent."));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to send reset password link";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsSendingReset(false);
     }
@@ -204,7 +207,7 @@ export function ProfileForm() {
     setError(null);
     setSuccess(null);
     setIsUploadingAvatar(true);
-    const t = toast.loading("Uploading profile photo…");
+    const t = toast.loading(ui("Uploading profile photo…"));
     try {
       const form = new FormData();
       form.append("file", fileToUpload);
@@ -212,14 +215,14 @@ export function ProfileForm() {
 
       setAvatarUrl(body.avatar_url ?? null);
       setAvatarFile(null);
-      setSuccess(message || "Avatar updated.");
-      toast.success(message || "Profile photo updated.", { id: t });
+      setSuccess(ui(message || "Avatar updated."));
+      toast.success(ui(message || "Profile photo updated."), { id: t });
       window.dispatchEvent(new Event("profile:updated"));
       router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to upload avatar";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -234,7 +237,7 @@ export function ProfileForm() {
     const file = event.dataTransfer.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please drop an image file.");
+      setError(ui("Please drop an image file."));
       return;
     }
     setAvatarFile(file);
@@ -245,20 +248,20 @@ export function ProfileForm() {
     setError(null);
     setSuccess(null);
     setIsRemovingAvatar(true);
-    const t = toast.loading("Removing profile photo…");
+    const t = toast.loading(ui("Removing profile photo…"));
     try {
       const { message } = await fetchJson<{ avatar_url: null }>("/api/me/avatar", { method: "DELETE" });
 
       setAvatarUrl(null);
       setAvatarFile(null);
-      setSuccess(message || "Avatar removed.");
-      toast.success(message || "Profile photo removed.", { id: t });
+      setSuccess(ui(message || "Avatar removed."));
+      toast.success(ui(message || "Profile photo removed."), { id: t });
       window.dispatchEvent(new Event("profile:updated"));
       router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to remove avatar";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsRemovingAvatar(false);
     }
@@ -268,7 +271,7 @@ export function ProfileForm() {
     setError(null);
     setSuccess(null);
     setIsSettingPreset(true);
-    const t = toast.loading("Setting preset avatar…");
+    const t = toast.loading(ui("Setting preset avatar…"));
     try {
       const { data: body, message } = await fetchJson<{ avatar_url: string | null }>("/api/me/avatar-preset", {
         method: "POST",
@@ -277,15 +280,15 @@ export function ProfileForm() {
       });
       setAvatarUrl(body.avatar_url ?? null);
       setAvatarFile(null);
-      setSuccess(message || "Avatar updated.");
-      toast.success(message || "Profile photo updated.", { id: t });
+      setSuccess(ui(message || "Avatar updated."));
+      toast.success(ui(message || "Profile photo updated."), { id: t });
       setIsPresetPickerOpen(false);
       window.dispatchEvent(new Event("profile:updated"));
       router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to set avatar preset";
-      setError(msg);
-      toast.error(msg, { id: t });
+      setError(ui(msg));
+      toast.error(ui(msg), { id: t });
     } finally {
       setIsSettingPreset(false);
     }
@@ -317,13 +320,13 @@ export function ProfileForm() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
-        <p className="text-muted-foreground">Update your account details.</p>
+        <h1 className="text-2xl font-bold text-foreground">{ui("My Profile")}</h1>
+        <p className="text-muted-foreground">{ui("Update your account details.")}</p>
       </div>
 
       {error ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
+          {ui(error)}
         </div>
       ) : null}
       {success ? (
@@ -338,7 +341,7 @@ export function ProfileForm() {
           <div className="flex items-center gap-4">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="Avatar" className="h-16 w-16 rounded-full object-cover border" />
+              <img src={avatarUrl} alt={ui("Avatar")} className="h-16 w-16 rounded-full object-cover border" />
             ) : (
               <div className="h-16 w-16 rounded-full border flex items-center justify-center text-sm text-muted-foreground">
                 —
@@ -359,8 +362,8 @@ export function ProfileForm() {
         <div className="rounded-lg border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-foreground">Profile photo</h2>
-              <p className="text-sm text-muted-foreground">Upload a photo or choose a preset avatar.</p>
+              <h2 className="text-base font-semibold text-foreground">{ui("Profile photo")}</h2>
+              <p className="text-sm text-muted-foreground">{ui("Upload a photo or choose a preset avatar.")}</p>
             </div>
             <Button
               type="button"
@@ -368,7 +371,7 @@ export function ProfileForm() {
               disabled={!avatarUrl || isLoading || isSaving || isUploadingAvatar || isRemovingAvatar || isSettingPreset}
               onClick={handleRemoveAvatar}
             >
-              {isRemovingAvatar ? "Removing..." : "Remove"}
+              {isRemovingAvatar ? ui("Removing...") : ui("Remove")}
             </Button>
           </div>
 
@@ -378,7 +381,7 @@ export function ProfileForm() {
             }`}
             role="button"
             tabIndex={0}
-            aria-label="Upload profile photo"
+            aria-label={ui("Upload profile photo")}
             onClick={() => avatarInputRef.current?.click()}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -403,7 +406,7 @@ export function ProfileForm() {
             <div className="flex items-center gap-4">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="Avatar" className="h-14 w-14 rounded-full object-cover border bg-background" />
+                <img src={avatarUrl} alt={ui("Avatar")} className="h-14 w-14 rounded-full object-cover border bg-background" />
               ) : (
                 <div className="h-14 w-14 rounded-full border flex items-center justify-center text-xs text-muted-foreground bg-background">
                   —
@@ -412,13 +415,11 @@ export function ProfileForm() {
 
               <div className="min-w-0">
                 <div className="font-medium text-foreground">
-                  Drag & drop a photo here, or click to browse
-                </div>
+                  {ui("Drag & drop a photo here, or click to browse")}</div>
                 <div className="text-xs text-muted-foreground">
-                  PNG / JPG / WebP, max 2MB.
-                </div>
+                  {ui("PNG / JPG / WebP, max 2MB.")}</div>
                 {isUploadingAvatar ? (
-                  <div className="mt-1 text-xs text-muted-foreground">Uploading…</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{ui("Uploading…")}</div>
                 ) : null}
               </div>
 
@@ -444,15 +445,15 @@ export function ProfileForm() {
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="h-0 flex-1 border-t border-dashed border-muted-foreground/40" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">OR</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{ui("OR")}</span>
               <div className="h-0 flex-1 border-t border-dashed border-muted-foreground/40" />
             </div>
 
-            <Label>Preset avatar</Label>
+            <Label>{ui("Preset avatar")}</Label>
             {isLoadingPresets ? (
-              <div className="text-sm text-muted-foreground">Loading presets…</div>
+              <div className="text-sm text-muted-foreground">{ui("Loading presets…")}</div>
             ) : presetAvatars.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No preset avatars available.</div>
+              <div className="text-sm text-muted-foreground">{ui("No preset avatars available.")}</div>
             ) : (
               <div ref={presetPickerRef} className="relative">
                 {(() => {
@@ -469,27 +470,27 @@ export function ProfileForm() {
                         }`}
                         disabled={isDisabled}
                         onClick={() => setIsPresetPickerOpen((v) => !v)}
-                        aria-label="Choose a preset avatar"
+                        aria-label={ui("Choose a preset avatar")}
                         aria-expanded={isPresetPickerOpen}
                       >
                         <span className="inline-flex items-center gap-3">
                           {previewUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={previewUrl} alt="Preset avatar" className="h-10 w-10 rounded-full object-cover border" />
+                            <img src={previewUrl} alt={ui("Preset avatar")} className="h-10 w-10 rounded-full object-cover border" />
                           ) : (
                             <div className="h-10 w-10 rounded-full border flex items-center justify-center text-xs text-muted-foreground">
                               —
                             </div>
                           )}
                           <span className="text-sm text-muted-foreground">
-                            {isPresetPickerOpen ? "Close presets" : "Choose preset"}
+                            {isPresetPickerOpen ? ui("Close presets") : ui("Choose preset")}
                           </span>
                         </span>
                         <ChevronDown
                           className={`h-4 w-4 text-muted-foreground transition-transform ${isPresetPickerOpen ? "rotate-180" : ""}`}
                         />
                       </button>
-                      <p className="mt-1 text-xs text-muted-foreground">Click to choose a preset.</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{ui("Click to choose a preset.")}</p>
 
                       {isPresetPickerOpen ? (
                         <div className="absolute z-20 mt-2 w-[415px] max-w-[90vw] rounded-lg border bg-background shadow-lg p-3">
@@ -506,7 +507,7 @@ export function ProfileForm() {
                                   disabled={isDisabled}
                                   onClick={() => handleSetPreset(p.name)}
                                   title={p.name}
-                                  aria-label={`Use preset avatar ${p.name}`}
+                                  aria-label={ui("Use preset avatar {v0}", {v0: p.name})}
                                 >
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img src={p.url} alt={p.name} className="h-10 w-10 rounded-full object-cover" />
@@ -515,8 +516,7 @@ export function ProfileForm() {
                             })}
                           </div>
                           <p className="mt-2 text-xs text-muted-foreground">
-                            Presets are built-in (no upload needed).
-                          </p>
+                            {ui("Presets are built-in (no upload needed).")}</p>
                         </div>
                       ) : null}
                     </>
@@ -531,8 +531,8 @@ export function ProfileForm() {
         <div className="rounded-lg border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-foreground">Personal information</h2>
-              <p className="text-sm text-muted-foreground">Update your name. Email and role are read-only.</p>
+              <h2 className="text-base font-semibold text-foreground">{ui("Personal information")}</h2>
+              <p className="text-sm text-muted-foreground">{ui("Update your name. Email and role are read-only.")}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -541,7 +541,7 @@ export function ProfileForm() {
                 disabled={isLoading || isSaving || isUploadingAvatar || isRemovingAvatar || isSettingPreset || isSendingReset}
                 onClick={() => void handleSendResetPassword()}
               >
-                {isSendingReset ? "Sending…" : "Reset Password"}
+                {isSendingReset ? ui("Sending…") : ui("Reset Password")}
               </Button>
               <Button
                 type="button"
@@ -549,18 +549,18 @@ export function ProfileForm() {
                 disabled={isLoading || isSaving}
                 onClick={() => setIsEditingInfo((v) => !v)}
               >
-                {isEditingInfo ? "Close" : "Edit"}
+                {isEditingInfo ? ui("Close") : ui("Edit")}
               </Button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{ui("Email")}</Label>
               <Input id="email" value={email} disabled />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{ui("Role")}</Label>
               <Input id="role" value={role} disabled />
             </div>
           </div>
@@ -568,22 +568,21 @@ export function ProfileForm() {
           {role === "organization_admin" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="orgName">Organization name</Label>
+                <Label htmlFor="orgName">{ui("Organization name")}</Label>
                 <div className="rounded-md border bg-background px-3 py-2 text-sm text-foreground">
                   {organizationDisplay ?? "—"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  To rename your organization, go to Settings.
-                </p>
+                  {ui("To rename your organization, go to Settings.")}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fullName">Administrator&apos;s Full Name (optional)</Label>
+                <Label htmlFor="fullName">{ui("Administrator's Full Name (optional)")}</Label>
                 {isEditingInfo ? (
                   <Input
                     id="fullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. John Smith"
+                    placeholder={ui("e.g. John Smith")}
                     disabled={isLoading || isSaving}
                     className="border-primary/40 ring-1 ring-primary/15 focus-visible:ring-2 focus-visible:ring-primary/25 transition-shadow"
                   />
@@ -593,19 +592,18 @@ export function ProfileForm() {
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This is used for greetings like “Welcome back, John Smith”.
-                </p>
+                  {ui("This is used for greetings like “Welcome back, John Smith”.")}</p>
               </div>
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name (optional)</Label>
+              <Label htmlFor="fullName">{ui("Full Name (optional)")}</Label>
               {isEditingInfo ? (
                 <Input
                   id="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. John Smith"
+                  placeholder={ui("e.g. John Smith")}
                   disabled={isLoading || isSaving}
                   className="border-primary/40 ring-1 ring-primary/15 focus-visible:ring-2 focus-visible:ring-primary/25 transition-shadow"
                 />
@@ -615,8 +613,7 @@ export function ProfileForm() {
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                This is used for greetings like “Welcome back, John Smith”.
-              </p>
+                {ui("This is used for greetings like “Welcome back, John Smith”.")}</p>
             </div>
           )}
 
@@ -633,10 +630,9 @@ export function ProfileForm() {
                   setIsEditingInfo(false);
                 }}
               >
-                Cancel
-              </Button>
+                {ui("Cancel")}</Button>
               <Button type="button" disabled={isLoading || isSaving || !isDirty} onClick={handleSave}>
-                {isSaving ? "Saving..." : "Save"}
+                {isSaving ? ui("Saving...") : ui("Save")}
               </Button>
             </div>
           ) : null}

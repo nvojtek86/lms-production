@@ -1,4 +1,6 @@
 'use client';
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -10,6 +12,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useSearchParams } from "next/navigation";
 
 export function LoginForm() {
+  const ui = useUi();
   const searchParams = useSearchParams();
   const notice = searchParams.get('notice');
   const [username, setUsername] = useState("");
@@ -40,7 +43,7 @@ export function LoginForm() {
     // Only hard-fail after a longer timeout (covers slow networks/browsers like Firefox).
     hardFailTimerRef.current = window.setTimeout(() => {
       setIsLoading(false);
-      setError("Sign-in is taking too long. Please try again.");
+      setError(ui("Sign-in is taking too long. Please try again."));
     }, 60_000);
   }
 
@@ -104,7 +107,7 @@ export function LoginForm() {
     });
 
     if (authError) {
-      setError("Invalid email or password.");
+      setError(ui("Invalid email or password."));
       setPassword("");
       return;
     }
@@ -184,7 +187,7 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
+    setError(ui(""));
     setSwitchPrompt(null);
     setIsLoading(true);
     startWatchdog();
@@ -202,7 +205,7 @@ export function LoginForm() {
 
     // Friendly validation (prevents Supabase 400 + noisy console errors)
     if (!email || !pwd) {
-      setError("Please enter your email and password.");
+      setError(ui("Please enter your email and password."));
       setIsLoading(false);
       clearWatchdog();
       return;
@@ -226,7 +229,7 @@ export function LoginForm() {
       await doSignIn(email, pwd);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to login";
-      setError(errorMessage);
+      setError(ui(errorMessage));
       // Clear password on unexpected errors for security
       setPassword("");
     } finally {
@@ -240,27 +243,25 @@ export function LoginForm() {
     <div className="w-full max-w-md space-y-8">
       {/* Title */}
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-primary">Login</h1>
+        <h1 className="text-4xl font-bold text-primary">{ui("Login")}</h1>
       </div>
 
       {notice === 'invite-only' && (
         <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-center text-foreground">
-          This LMS is <span className="font-medium">invite-only</span>. Please contact your administrator to receive an invitation email.
-        </div>
+          {ui("This LMS is ")}<span className="font-medium">{ui("invite-only")}</span>{ui(". Please contact your administrator to receive an invitation email.")}</div>
       )}
 
       {notice === 'disabled' && (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-center text-foreground">
-          Your account is currently <span className="font-medium">disabled</span>. Please contact your administrator if you believe this is a mistake.
-        </div>
+          {ui("Your account is currently ")}<span className="font-medium">{ui("disabled")}</span>{ui(". Please contact your administrator if you believe this is a mistake.")}</div>
       )}
 
       {switchPrompt ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <div className="font-medium">Switch account required</div>
+          <div className="font-medium">{ui("Switch account required")}</div>
           <div className="mt-1">
-            You’re currently signed in as <span className="font-medium">{switchPrompt.currentEmail}</span>. To sign in as{" "}
-            <span className="font-medium">{switchPrompt.targetEmail}</span>, click <span className="font-medium">Switch account</span>.
+            {ui("You’re currently signed in as ")}<span className="font-medium">{switchPrompt.currentEmail}</span>{ui(". To sign in as")}{" "}
+            <span className="font-medium">{switchPrompt.targetEmail}</span>{ui(", click ")}<span className="font-medium">{ui("Switch account")}</span>.
           </div>
           <div className="mt-3 flex items-center justify-end gap-2">
             <Button
@@ -272,8 +273,7 @@ export function LoginForm() {
                 setSwitchPrompt(null);
               }}
             >
-              Cancel
-            </Button>
+              {ui("Cancel")}</Button>
             <Button
               type="button"
               disabled={isLoading}
@@ -283,7 +283,7 @@ export function LoginForm() {
                   setSwitchPrompt(null);
                   return;
                 }
-                setError("");
+                setError(ui(""));
                 setIsLoading(true);
                 startWatchdog();
                 try {
@@ -293,15 +293,14 @@ export function LoginForm() {
                   await doSignIn(creds.email, creds.password);
                 } catch (e) {
                   const msg = e instanceof Error ? e.message : "Failed to switch account";
-                  setError(msg);
+                  setError(ui(msg));
                 } finally {
                   setIsLoading(false);
                   clearWatchdog();
                 }
               }}
             >
-              Switch account
-            </Button>
+              {ui("Switch account")}</Button>
           </div>
         </div>
       ) : null}
@@ -309,7 +308,7 @@ export function LoginForm() {
       {/* Error Message */}
       {error && (
         <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm text-center">
-          {error}
+          {ui(error)}
         </div>
       )}
 
@@ -317,13 +316,13 @@ export function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Username/Email Field */}
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{ui("Email")}</Label>
           <div className="relative">
             <Input
               id="email"
               name="email"
               type="email"
-              placeholder="Enter your email"
+              placeholder={ui("Enter your email")}
               autoComplete="email"
               autoCapitalize="none"
               inputMode="email"
@@ -340,13 +339,13 @@ export function LoginForm() {
 
         {/* Password Field */}
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{ui("Password")}</Label>
           <div className="relative">
             <Input
               id="password"
               name="password"
               type="password"
-              placeholder="Enter your password"
+              placeholder={ui("Enter your password")}
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -365,13 +364,12 @@ export function LoginForm() {
           className="w-full h-11"
           disabled={isLoading || !!switchPrompt}
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? ui("Signing in...") : ui("Sign In")}
         </Button>
 
         {isLoading && slowNotice ? (
           <div className="text-xs text-muted-foreground text-center">
-            Still signing you in… (this can take up to a minute on slow networks/browsers)
-          </div>
+            {ui("Still signing you in… (this can take up to a minute on slow networks/browsers)")}</div>
         ) : null}
       </form>
 
@@ -381,14 +379,12 @@ export function LoginForm() {
           href="/forgot-password" 
           className="text-sm text-primary hover:underline block"
         >
-          Forgot password?
-        </Link>
+          {ui("Forgot password?")}</Link>
         <Link 
           href="/support" 
           className="text-sm text-primary hover:underline block"
         >
-          Contact Support
-        </Link>
+          {ui("Contact Support")}</Link>
       </div>
     </div>
   );

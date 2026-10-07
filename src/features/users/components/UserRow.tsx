@@ -1,4 +1,6 @@
 'use client'
+import {useUi} from "@/i18n/useUi";
+
 
 import { Button } from '@/components/core/button';
 import type { ApiUser } from '../api/users.api';
@@ -41,6 +43,7 @@ export const UserRow = ({
   onEnable,
   onPasswordSetupLink,
 }: UserRowProps) => {
+  const ui = useUi();
   const [selectedRole, setSelectedRole] = useState<Role>(user.role);
   const [isSaving, setIsSaving] = useState(false);
   const [isDisabling, setIsDisabling] = useState(false);
@@ -125,7 +128,7 @@ export const UserRow = ({
           ) : (
             <span
               className="inline-flex h-5 w-5 items-center justify-center rounded border border-red-600 bg-red-50 text-xs font-bold text-red-700"
-              title="Not selectable"
+              title={ui("Not selectable")}
             >
               X
             </span>
@@ -143,11 +146,10 @@ export const UserRow = ({
       <td className="px-4 py-3">
         {isTargetSuperAdmin ? (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-900 text-white">
-            super_admin
-          </span>
+            {ui("super_admin")}</span>
         ) : !canEditRole ? (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-            {roleLabel(user.role)}
+            {ui(roleLabel(user.role))}
           </span>
         ) : (
           <div className="flex items-center gap-2">
@@ -159,7 +161,7 @@ export const UserRow = ({
             >
               {roleOptions.map((r) => (
                 <option key={r} value={r}>
-                  {roleLabel(r)}
+                  {ui(roleLabel(r))}
                 </option>
               ))}
             </select>
@@ -170,18 +172,18 @@ export const UserRow = ({
                 disabled={isSaving || bulkMode}
                 onClick={async () => {
                   setIsSaving(true);
-                  const t = toast.loading("Saving role…");
+                  const t = toast.loading(ui("Saving role…"));
                   try {
                     const res = await onChangeRole(user.id, selectedRole);
-                    toast.success(res.message || "Role updated.", { id: t });
+                    toast.success(ui(res.message || "Role updated."), { id: t });
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Failed to update role", { id: t });
+                    toast.error(ui(e instanceof Error ? e.message : "Failed to update role"), { id: t });
                   } finally {
                     setIsSaving(false);
                   }
                 }}
               >
-                {isSaving ? 'Saving…' : 'Save'}
+                {isSaving ? ui("Saving…") : ui("Save")}
               </Button>
             )}
           </div>
@@ -197,17 +199,16 @@ export const UserRow = ({
                 className="px-2 py-1 text-xs border rounded-md bg-white hover:cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={isAssigningOrg || bulkMode}
               >
-                <option value="">Select an organization</option>
+                <option value="">{ui("Select an organization")}</option>
                 {(organizations ?? []).map((o) => (
                   <option key={o.id} value={o.id}>
-                    {(o.name?.trim()?.length ? o.name : o.slug?.trim()?.length ? o.slug : o.id) + (o.is_active === false ? " (inactive)" : "")}
+                    {(o.name?.trim()?.length ? o.name : o.slug?.trim()?.length ? o.slug : o.id) + (o.is_active === false ? ui(" (inactive)") : "")}
                   </option>
                 ))}
               </select>
               {selectedOrgId && selectedOrgIsInactive ? (
                 <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2 py-0.5 text-xs font-medium whitespace-nowrap">
-                  Inactive org
-                </span>
+                  {ui("Inactive org")}</span>
               ) : null}
               <Button
                 size="sm"
@@ -216,23 +217,23 @@ export const UserRow = ({
                 onClick={async () => {
                   if (!selectedOrgId) return;
                   setIsAssigningOrg(true);
-                  const t = toast.loading("Assigning organization…");
+                  const t = toast.loading(ui("Assigning organization…"));
                   try {
                     const res = await onAssignOrganization(user.id, selectedOrgId);
-                    toast.success(res.message || "Organization assigned.", { id: t });
+                    toast.success(ui(res.message || "Organization assigned."), { id: t });
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Failed to assign organization", { id: t });
+                    toast.error(ui(e instanceof Error ? e.message : "Failed to assign organization"), { id: t });
                   } finally {
                     setIsAssigningOrg(false);
                   }
                 }}
               >
-                {isAssigningOrg ? "Saving…" : "Save"}
+                {isAssigningOrg ? ui("Saving…") : ui("Save")}
               </Button>
             </div>
           ) : (
             <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-              {orgDisplay ? `Org: ${orgDisplay}` : 'No org'}
+              {orgDisplay ? ui("Org: {v0}", {v0: orgDisplay}) : ui("No org")}
             </span>
           )}
         </td>
@@ -247,12 +248,12 @@ export const UserRow = ({
                 : "bg-green-100 text-green-700"
           }`}
         >
-          {!isEnabled ? "Disabled" : isPending ? "Pending" : "Active"}
+          {!isEnabled ? ui("Disabled") : isPending ? ui("Pending") : ui("Active")}
         </span>
       </td>
       <td className="px-4 py-3">
         {isTargetSuperAdmin ? (
-          <span className="text-xs text-muted-foreground">Protected</span>
+          <span className="text-xs text-muted-foreground">{ui("Protected")}</span>
         ) : (
           <div className="flex gap-2">
             {canSendSetupLink ? (
@@ -262,18 +263,18 @@ export const UserRow = ({
                 disabled={isResending || bulkMode}
                 onClick={async () => {
                   setIsResending(true);
-                  const t = toast.loading("Sending setup link…");
+                  const t = toast.loading(ui("Sending setup link…"));
                   try {
                     const res = await onPasswordSetupLink(user.id);
-                    toast.success(res.message || "Setup link sent.", { id: t });
+                    toast.success(ui(res.message || "Setup link sent."), { id: t });
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
+                    toast.error(ui(e instanceof Error ? e.message : "Failed to send setup link"), { id: t });
                   } finally {
                     setIsResending(false);
                   }
                 }}
               >
-                {isResending ? "Sending…" : "Setup link"}
+                {isResending ? ui("Sending…") : ui("Setup link")}
               </Button>
             ) : null}
 
@@ -284,20 +285,20 @@ export const UserRow = ({
                 className="bg-red-600 text-white hover:bg-red-700"
                 disabled={isDisabling || bulkMode}
                 onClick={async () => {
-                  if (!confirm('Disable this user? They will no longer be able to log in.')) return;
+                  if (!confirm(ui("Disable this user? They will no longer be able to log in."))) return;
                   setIsDisabling(true);
-                  const t = toast.loading("Disabling user…");
+                  const t = toast.loading(ui("Disabling user…"));
                   try {
                     const res = await onDisable(user.id);
-                    toast.success(res.message || "User disabled.", { id: t });
+                    toast.success(ui(res.message || "User disabled."), { id: t });
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Failed to disable user", { id: t });
+                    toast.error(ui(e instanceof Error ? e.message : "Failed to disable user"), { id: t });
                   } finally {
                     setIsDisabling(false);
                   }
                 }}
               >
-                {isDisabling ? 'Disabling…' : 'Disable'}
+                {isDisabling ? ui("Disabling…") : ui("Disable")}
               </Button>
             ) : (
               <Button
@@ -306,20 +307,20 @@ export const UserRow = ({
                 className="border-green-600 text-green-700 hover:bg-green-50"
                 disabled={isEnabling || bulkMode}
                 onClick={async () => {
-                  if (!confirm("Enable this user? They will be able to log in again.")) return;
+                  if (!confirm(ui("Enable this user? They will be able to log in again."))) return;
                   setIsEnabling(true);
-                  const t = toast.loading("Enabling user…");
+                  const t = toast.loading(ui("Enabling user…"));
                   try {
                     const res = await onEnable(user.id);
-                    toast.success(res.message || "User enabled.", { id: t });
+                    toast.success(ui(res.message || "User enabled."), { id: t });
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Failed to enable user", { id: t });
+                    toast.error(ui(e instanceof Error ? e.message : "Failed to enable user"), { id: t });
                   } finally {
                     setIsEnabling(false);
                   }
                 }}
               >
-                {isEnabling ? "Enabling…" : "Enable"}
+                {isEnabling ? ui("Enabling…") : ui("Enable")}
               </Button>
             )}
           </div>
