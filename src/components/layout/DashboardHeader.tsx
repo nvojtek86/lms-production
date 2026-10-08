@@ -1,5 +1,8 @@
 'use client';
+import {useUi} from "@/i18n/useUi";
 
+
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useAuth } from "@/lib/hooks/useAuth";
 import Link from "next/link";
 import { Bell, BookOpen, ChevronDown, LogOut, Palette, Settings, User } from "lucide-react";
@@ -22,19 +25,18 @@ type NotificationItem = {
   metadata: Record<string, unknown>;
 };
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale = "en"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString(locale, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 export function DashboardHeader() {
+  const ui = useUi();
   const { user, dbUser } = useAuth();
   const router = useRouter();
   const [avatarError, setAvatarError] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
-  const [language, setLanguage] = useState<"EN" | "SR" | "FR">("EN");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isLoggedIn = !!user && !!dbUser?.role;
 
@@ -75,7 +77,6 @@ export function DashboardHeader() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const notifRef = useRef<HTMLDivElement | null>(null);
-  const languageMenuRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const profileHref = useMemo(() => {
@@ -231,27 +232,7 @@ export function DashboardHeader() {
   }, [profileMenuOpen]);
 
   // Close language menu on outside click / escape
-  useEffect(() => {
-    if (!languageMenuOpen) return;
 
-    const onMouseDown = (e: MouseEvent) => {
-      const el = languageMenuRef.current;
-      if (!el) return;
-      if (e.target instanceof Node && el.contains(e.target)) return;
-      setLanguageMenuOpen(false);
-    };
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLanguageMenuOpen(false);
-    };
-
-    document.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [languageMenuOpen]);
 
   const handleLogout = useCallback(async () => {
     if (isLoggingOut) return;
@@ -282,7 +263,7 @@ export function DashboardHeader() {
               <button
                 type="button"
                 className="relative flex items-center gap-2 text-sm text-foreground hover:text-secondary transition-colors hover:cursor-pointer"
-                aria-label="Notifications"
+                aria-label={ui("Notifications")}
                 aria-haspopup="menu"
                 aria-expanded={notifOpen}
                 onClick={() => setNotifOpen((v) => !v)}
@@ -301,7 +282,7 @@ export function DashboardHeader() {
                   className="absolute right-0 mt-3 w-[360px] rounded-lg border bg-background shadow-lg overflow-hidden z-50"
                 >
                   <div className="px-4 py-3 border-b flex items-center justify-between">
-                    <div className="font-medium text-foreground">Notifications</div>
+                    <div className="font-medium text-foreground">{ui("Notifications")}</div>
                     <button
                       type="button"
                       className="text-xs text-muted-foreground hover:text-foreground"
@@ -317,8 +298,7 @@ export function DashboardHeader() {
                       }}
                       disabled={unreadCount === 0 || notifLoading}
                     >
-                      Mark all read
-                    </button>
+                      {ui("Mark all read")}</button>
                   </div>
 
                   {notifError ? (
@@ -329,9 +309,9 @@ export function DashboardHeader() {
 
                   <div className="max-h-[420px] overflow-auto">
                     {notifLoading ? (
-                      <div className="px-4 py-6 text-sm text-muted-foreground">Loading…</div>
+                      <div className="px-4 py-6 text-sm text-muted-foreground">{ui("Loading…")}</div>
                     ) : notifications.length === 0 ? (
-                      <div className="px-4 py-6 text-sm text-muted-foreground">No notifications yet.</div>
+                      <div className="px-4 py-6 text-sm text-muted-foreground">{ui("No notifications yet.")}</div>
                     ) : (
                       notifications.map((n) => {
                         const isUnread = !n.read_at;
@@ -365,12 +345,12 @@ export function DashboardHeader() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   {isUnread ? <span className="h-2 w-2 rounded-full bg-primary" /> : <span className="h-2 w-2 rounded-full bg-transparent" />}
-                                  <div className="font-medium text-sm text-foreground truncate">{n.title}</div>
+                                  <div className="font-medium text-sm text-foreground truncate">{ui(n.title)}</div>
                                 </div>
                                 {n.body ? (
-                                  <div className="mt-1 text-sm text-muted-foreground line-clamp-2">{n.body}</div>
+                                  <div className="mt-1 text-sm text-muted-foreground line-clamp-2">{ui(n.body)}</div>
                                 ) : null}
-                                <div className="mt-1 text-xs text-muted-foreground">{formatTime(n.created_at)}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{formatTime(n.created_at, ui.locale)}</div>
                               </div>
                             </div>
                           </button>
@@ -385,55 +365,7 @@ export function DashboardHeader() {
 
           {/* Language (only if logged in) */}
           {isLoggedIn ? (
-            <div ref={languageMenuRef} className="relative">
-              <button
-                type="button"
-                className="flex items-center gap-1 px-3 py-2 min-h-[42px] min-w-[64px] text-sm text-foreground hover:cursor-pointer border-l border-r border-gray-200"
-                aria-label="Change language"
-                aria-haspopup="menu"
-                aria-expanded={languageMenuOpen}
-                onClick={() => setLanguageMenuOpen((v) => !v)}
-              >
-                <span className="tabular-nums">{language}</span>
-                <ChevronDown
-                  size={16}
-                  className={`transition-transform ${languageMenuOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {languageMenuOpen ? (
-                <div
-                  role="menu"
-                  className="absolute right-0 mt-3 w-[180px] rounded-lg border bg-background shadow-lg overflow-hidden z-50"
-                >
-                  {[
-                    { code: "EN" as const, label: "English" },
-                    { code: "SR" as const, label: "Serbian" },
-                    { code: "FR" as const, label: "French" },
-                  ].map((opt) => {
-                    const active = opt.code === language;
-                    return (
-                      <button
-                        key={opt.code}
-                        type="button"
-                        role="menuitem"
-                        className={`group w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                          active ? "bg-primary text-white font-medium hover:text-white hover:bg-primary" : "text-foreground hover:text-white hover:bg-primary/90"
-                        }`}
-                        onClick={() => {
-                          setLanguage(opt.code);
-                          setLanguageMenuOpen(false);
-                          // TODO: Implement actual language switching/i18n
-                        }}
-                      >
-                        <span className={`tabular-nums ${active ? "text-white" : "text-foreground group-hover:text-white"}`}>{opt.code}</span>
-                        <span className={`${active ? "text-white" : "text-foreground group-hover:text-white"}`}>{opt.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
+            <LanguageSwitcher />
           ) : null}
 
           {/* User Profile (only if logged in) */}
@@ -442,7 +374,7 @@ export function DashboardHeader() {
               <button 
                 type="button"
                 className="min-w-[160px] max-w-[280px] flex flex-row items-center gap-2 px-2 py-1 text-sm text-foreground hover:cursor-pointer"
-                aria-label="Open profile menu"
+                aria-label={ui("Open profile menu")}
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
                 onClick={() => setProfileMenuOpen((v) => !v)}
@@ -451,7 +383,7 @@ export function DashboardHeader() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={dbUser.avatar_url}
-                    alt="Avatar"
+                    alt={ui("Avatar")}
                     className="h-8 w-8 shrink-0 rounded-full object-cover"
                     onError={() => setAvatarError(true)}
                   />
@@ -480,7 +412,7 @@ export function DashboardHeader() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={dbUser.avatar_url}
-                          alt="Avatar"
+                          alt={ui("Avatar")}
                           className="h-10 w-10 rounded-full object-cover border bg-background"
                           onError={() => setAvatarError(true)}
                         />
@@ -492,7 +424,7 @@ export function DashboardHeader() {
                       <div className="min-w-0">
                         <div className="font-medium text-white truncate">{displayName}</div>
                         {roleLabel ? (
-                          <div className="text-xs text-white truncate">{roleLabel}</div>
+                          <div className="text-xs text-white truncate">{ui(roleLabel)}</div>
                         ) : null}
                       </div>
                     </div>
@@ -507,7 +439,7 @@ export function DashboardHeader() {
                         onClick={() => setProfileMenuOpen(false)}
                       >
                         <User size={18} className="text-muted-foreground group-hover:text-white" />
-                        <span>Profile</span>
+                        <span>{ui("Profile")}</span>
                       </Link>
                     ) : null}
 
@@ -521,7 +453,7 @@ export function DashboardHeader() {
                       }}
                     >
                       <Settings size={18} className="text-muted-foreground group-hover:text-white" />
-                      <span>Settings</span>
+                      <span>{ui("Settings")}</span>
                     </Link>
 
                     <Link
@@ -534,7 +466,7 @@ export function DashboardHeader() {
                       }}
                     >
                       <Palette size={18} className="text-muted-foreground group-hover:text-white" />
-                      <span>Theme</span>
+                      <span>{ui("Theme")}</span>
                     </Link>
 
                     {coursesHref ? (
@@ -562,7 +494,7 @@ export function DashboardHeader() {
                       disabled={isLoggingOut}
                     >
                       <LogOut size={18} className="text-muted-foreground group-hover:text-white" />
-                      <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                      <span>{isLoggingOut ? ui("Logging out...") : ui("Logout")}</span>
                     </button>
                   </div>
                 </div>

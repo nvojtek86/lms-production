@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { LayoutDashboard, Building2, Users, BookOpen, Award, FileText } from "lucide-react";
 import Link from "next/link";
 import { createAdminSupabaseClient, getServerUser } from "@/lib/supabase/server";
@@ -63,6 +65,7 @@ export default async function AdminDashboardPage({
 }
 
 async function AdminDashboardContent(props: { searchParams?: Promise<SearchParams> | SearchParams }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) {
     return null;
@@ -99,16 +102,16 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
 
   const stats: Stat[] = [
     {
-      label: "Organizations (Active / Inactive)",
+      label: ui("Organizations (Active / Inactive)"),
       value: `${activeOrgsCount} / ${orgsInactive.count}`,
       icon: Building2,
       color: "bg-blue-500",
       error: orgsCountError,
     },
-    { label: "Total Users", value: String(usersTotal.count), icon: Users, color: "bg-green-500", error: usersTotal.error },
-    { label: "Active Users", value: String(usersActive.count), icon: Users, color: "bg-emerald-500", error: usersActive.error },
-    { label: "Courses", value: String(courses.count), icon: BookOpen, color: "bg-purple-500", error: courses.error },
-    { label: "Certificates", value: String(certificates.count), icon: Award, color: "bg-amber-500", error: certificates.error },
+    { label: ui("Total Users"), value: String(usersTotal.count), icon: Users, color: "bg-green-500", error: usersTotal.error },
+    { label: ui("Active Users"), value: String(usersActive.count), icon: Users, color: "bg-emerald-500", error: usersActive.error },
+    { label: ui("Courses"), value: String(courses.count), icon: BookOpen, color: "bg-purple-500", error: courses.error },
+    { label: ui("Certificates"), value: String(certificates.count), icon: Award, color: "bg-amber-500", error: certificates.error },
   ];
 
   const { count: activityCountRaw, error: activityCountError } = await admin
@@ -528,11 +531,11 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
       <div className="flex items-center gap-3">
         <LayoutDashboard className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Super Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">{ui("Super Admin Dashboard")}</h1>
           <p className="text-muted-foreground">
             {user.full_name && user.full_name.trim().length > 0
-              ? `Welcome back, Super Admin ${user.full_name.trim()}`
-              : "Welcome back, Super Admin"}
+              ? ui("Welcome back, Super Admin {v0}", {v0: user.full_name.trim()})
+              : ui("Welcome back, Super Admin")}
           </p>
         </div>
       </div>
@@ -552,7 +555,7 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
                   <p className="text-3xl font-bold text-foreground mt-1">{stat.value}</p>
                   {stat.error ? (
                     <p className="mt-1 text-xs text-destructive">
-                      {stat.error.includes("relation") ? "Missing table / schema" : stat.error}
+                      {stat.error.includes("relation") ? ui("Missing table / schema") : stat.error}
                     </p>
                   ) : null}
                 </div>
@@ -569,17 +572,16 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
       <div className="bg-card border rounded-lg p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Recent Activity
-        </h2>
+          {ui("Recent Activity")}</h2>
 
         {auditLoadError ? (
           <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            Failed to load audit logs: {auditLoadError}
+            {ui("Failed to load audit logs: ")}{auditLoadError}
           </div>
         ) : auditRows.length === 0 ? (
           <div className="text-muted-foreground text-center py-8">
-            <p>No recent activity yet.</p>
-            <p className="text-sm mt-2">Once you start inviting users and changing settings, logs will show here.</p>
+            <p>{ui("No recent activity yet.")}</p>
+            <p className="text-sm mt-2">{ui("Once you start inviting users and changing settings, logs will show here.")}</p>
           </div>
         ) : (
           <>
@@ -601,18 +603,18 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
                   meta: row.metadata ?? null,
                 };
               })}
-              emptyTitle="No recent activity yet."
-              emptySubtitle="Once you start inviting users and changing settings, logs will show here."
+              emptyTitle={ui("No recent activity yet.")}
+              emptySubtitle={ui("Once you start inviting users and changing settings, logs will show here.")}
             />
 
             <div className="mt-4 flex items-center justify-between gap-3 text-sm">
               <div className="text-muted-foreground">
                 {activityTotalCount > 0 ? (
                   <span>
-                    Showing {activityFromIdx + 1}–{Math.min(activityFromIdx + auditRows.length, activityTotalCount)} of {activityTotalCount}
+                    {ui("Showing ")}{activityFromIdx + 1}–{Math.min(activityFromIdx + auditRows.length, activityTotalCount)} {ui("of ")}{activityTotalCount}
                   </span>
                 ) : (
-                  <span>Showing 0 results</span>
+                  <span>{ui("Showing 0 results")}</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -626,11 +628,10 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
                     <>
                       {prevDisabled ? (
                         <Button variant="outline" disabled>
-                          Prev
-                        </Button>
+                          {ui("Prev")}</Button>
                       ) : (
                         <Button asChild variant="outline">
-                          <Link href={activityHref(activityCurrent - 1)}>Prev</Link>
+                          <Link href={activityHref(activityCurrent - 1)}>{ui("Prev")}</Link>
                         </Button>
                       )}
 
@@ -654,11 +655,10 @@ async function AdminDashboardContent(props: { searchParams?: Promise<SearchParam
 
                       {nextDisabled ? (
                         <Button variant="outline" disabled>
-                          Next
-                        </Button>
+                          {ui("Next")}</Button>
                       ) : (
                         <Button asChild variant="outline">
-                          <Link href={activityHref(activityCurrent + 1)}>Next</Link>
+                          <Link href={activityHref(activityCurrent + 1)}>{ui("Next")}</Link>
                         </Button>
                       )}
                     </>

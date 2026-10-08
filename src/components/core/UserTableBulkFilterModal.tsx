@@ -1,4 +1,6 @@
 'use client'
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect } from "react";
 import { Button } from "@/components/core/button";
@@ -20,6 +22,7 @@ export function UserTableBulkFilterModal({
   onConfirm: () => void | Promise<void>;
   isConfirming?: boolean;
 }) {
+  const ui = useUi();
   useEffect(() => {
     if (!open) return;
 
@@ -48,16 +51,15 @@ export function UserTableBulkFilterModal({
         className="relative w-full max-w-lg mx-4 rounded-lg border bg-white shadow-lg"
       >
         <div className="p-5 border-b">
-          <h3 className="text-lg font-semibold">Confirm bulk move</h3>
+          <h3 className="text-lg font-semibold">{ui("Confirm bulk move")}</h3>
           <p className="mt-1 text-sm text-gray-600">
-            Move <span className="font-medium">{selectedCount}</span>{" "}
-            {selectedCount === 1 ? "user" : "users"} to{" "}
+            {ui("Move ")}<span className="font-medium">{selectedCount}</span>{" "}
+            {selectedCount === 1 ? ui("user") : ui("users")} {ui("to")}{" "}
             <span className="font-medium">{targetOrganizationLabel}</span>?
           </p>
           {targetOrgIsInactive ? (
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              These users will be disabled (org is inactive).
-            </div>
+              {ui("These users will be disabled (org is inactive).")}</div>
           ) : null}
         </div>
 
@@ -67,10 +69,9 @@ export function UserTableBulkFilterModal({
             disabled={!!isConfirming}
             onClick={onCancel}
           >
-            Cancel
-          </Button>
+            {ui("Cancel")}</Button>
           <Button disabled={!!isConfirming} onClick={onConfirm}>
-            {isConfirming ? "Applying…" : "Confirm"}
+            {isConfirming ? ui("Applying…") : ui("Confirm")}
           </Button>
         </div>
       </div>

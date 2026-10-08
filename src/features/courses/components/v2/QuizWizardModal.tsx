@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -336,10 +338,11 @@ const STEP_SHADOWS = [
 const STEP_ICONS = ["📋", "❓", "⚙️"];
 
 function Stepper({ step }: { step: 1 | 2 | 3 }) {
+  const ui = useUi();
   const steps = [
-    { n: 1, label: "Quiz Info" },
-    { n: 2, label: "Questions" },
-    { n: 3, label: "Settings" },
+    { n: 1, label: ui("Quiz Info") },
+    { n: 2, label: ui("Questions") },
+    { n: 3, label: ui("Settings") },
   ] as const;
 
   return (
@@ -358,7 +361,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
           return (
             <div
               key={s.n}
-              title={done ? "Completed step" : active ? "Current step" : "Upcoming step"}
+              title={done ? ui("Completed step") : active ? ui("Current step") : ui("Upcoming step")}
               style={active ? {
                 background: STEP_GRADIENTS[idx],
                 backgroundSize: "200% 200%",
@@ -385,11 +388,11 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
-                <span style={{ fontWeight: 700, fontSize: "13px" }}>{STEP_ICONS[idx]} {s.label}</span>
+                <span style={{ fontWeight: 700, fontSize: "13px" }}>{STEP_ICONS[idx]} {ui(s.label)}</span>
                 {done ? <Check className="h-3.5 w-3.5" /> : null}
               </div>
               <div style={{ fontSize: "10px", marginTop: "2px", opacity: 0.82 }}>
-                {done ? "Completed" : active ? "In progress" : "Not started"}
+                {done ? ui("Completed") : active ? ui("In progress") : ui("Not started")}
               </div>
             </div>
           );
@@ -410,6 +413,7 @@ function Toggle({
   label: string;
   disabled?: boolean;
 }) {
+  const ui = useUi();
   return (
     <label className={cn("flex items-center gap-2 text-sm select-none", disabled && "opacity-60")}>
       <button
@@ -430,7 +434,7 @@ function Toggle({
           )}
         />
       </button>
-      <span>{label}</span>
+      <span>{ui(label)}</span>
     </label>
   );
 }
@@ -456,6 +460,7 @@ function SortableOptionRow({
   onCloseEdit?: () => void;
   children?: React.ReactNode;
 }) {
+  const ui = useUi();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: option.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -490,7 +495,7 @@ function SortableOptionRow({
             <button
               type="button"
               onClick={onToggleSelected}
-              title={selectionMode === "multi" ? "Toggle correct" : "Mark as correct"}
+              title={selectionMode === "multi" ? ui("Toggle correct") : ui("Mark as correct")}
               style={{
                 width: 22, height: 22, flexShrink: 0,
                 border: selected ? "2px solid #1b6bb8" : "2px solid #aaa",
@@ -514,12 +519,12 @@ function SortableOptionRow({
             <div style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: "13px", color: "#1b5fa0", letterSpacing: "0.01em", display: "flex", alignItems: "center", gap: "5px" }}>
                 <Pencil style={{ width: 12, height: 12, flexShrink: 0 }} />
-                <span className="truncate">{option.title?.trim() || "(new option)"}</span>
+                <span className="truncate">{option.title?.trim() || ui("(new option)")}</span>
               </div>
               <div style={{ fontSize: "11px", color: "#7b8fa8", marginTop: "2px" }}>
-                {option.display_format === "only_text" ? "Only text" : option.display_format === "only_image" ? "Only image" : "Text & image"}
-                {option.image_data_url ? " · has image" : ""}
-                {selected ? " · ✓ correct" : ""}
+                {option.display_format === "only_text" ? ui("Only text") : option.display_format === "only_image" ? ui("Only image") : ui("Text & image")}
+                {option.image_data_url ? ui(" · has image") : ""}
+                {selected ? ui(" · ✓ correct") : ""}
               </div>
             </div>
           </div>
@@ -534,7 +539,7 @@ function SortableOptionRow({
                 background: "rgba(27,107,184,0.1)", border: "none",
                 cursor: "grab", color: "#1b6bb8",
               }}
-              title="Drag to reorder"
+              title={ui("Drag to reorder")}
               {...attributes}
               {...listeners}
             >
@@ -550,7 +555,7 @@ function SortableOptionRow({
                 background: "rgba(220,38,38,0.08)", border: "none",
                 cursor: "pointer", color: "#dc2626",
               }}
-              title="Delete option"
+              title={ui("Delete option")}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -564,7 +569,7 @@ function SortableOptionRow({
                 background: "rgba(0,0,0,0.06)", border: "none",
                 cursor: "pointer", color: "#555",
               }}
-              title="Collapse editor"
+              title={ui("Collapse editor")}
             >
               <X className="h-4 w-4" />
             </button>
@@ -582,8 +587,7 @@ function SortableOptionRow({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "4px", borderTop: "1px solid rgba(27,107,184,0.12)" }}>
                 {!hasAnswer ? (
                   <span style={{ fontSize: "12px", color: "#e05c2a", fontWeight: 600, display: "flex", alignItems: "center", gap: "5px" }}>
-                    ⚠ Answer text is required before saving.
-                  </span>
+                    {ui("⚠ Answer text is required before saving.")}</span>
                 ) : (
                   <span />
                 )}
@@ -591,7 +595,7 @@ function SortableOptionRow({
                   type="button"
                   disabled={!hasAnswer}
                   onClick={hasAnswer ? onCloseEdit : undefined}
-                  title={hasAnswer ? "Save and collapse" : "Type an answer before saving"}
+                  title={hasAnswer ? ui("Save and collapse") : ui("Type an answer before saving")}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "7px",
                     borderRadius: "9px",
@@ -609,8 +613,7 @@ function SortableOptionRow({
                   }}
                 >
                   <Check className="h-3.5 w-3.5" />
-                  Done
-                </button>
+                  {ui("Done")}</button>
               </div>
             );
           })()}
@@ -630,7 +633,7 @@ function SortableOptionRow({
         <button
           type="button"
           onClick={onToggleSelected}
-          title={selectionMode === "multi" ? "Toggle correct" : "Mark as correct"}
+          title={selectionMode === "multi" ? ui("Toggle correct") : ui("Mark as correct")}
           className={cn(
             "h-5 w-5 border flex items-center justify-center",
             selectionMode === "multi" ? "rounded-sm" : "rounded-full"
@@ -645,29 +648,29 @@ function SortableOptionRow({
           ) : null}
         </button>
         <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{option.title?.trim() || "(untitled option)"}</div>
+          <div className="text-sm font-medium truncate">{option.title?.trim() || ui("(untitled option)")}</div>
           <div className="text-[11px] text-muted-foreground">
-            {option.display_format === "only_text" ? "Only text" : option.display_format === "only_image" ? "Only image" : "Text & image"}
-            {option.image_data_url ? " · image" : ""}
+            {option.display_format === "only_text" ? ui("Only text") : option.display_format === "only_image" ? ui("Only image") : ui("Text & image")}
+            {option.image_data_url ? ui(" · image") : ""}
           </div>
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} title="Edit option">
+        <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} title={ui("Edit option")}>
           <Pencil className="h-4 w-4" />
         </Button>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          title="Drag to reorder"
+          title={ui("Drag to reorder")}
           className="cursor-grab active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
           <MoreVertical className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="ghost" size="icon-sm" onClick={onDelete} title="Delete option">
+        <Button type="button" variant="ghost" size="icon-sm" onClick={onDelete} title={ui("Delete option")}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -682,11 +685,12 @@ function TrueFalseCorrectSelector({
   value: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const ui = useUi();
   return (
     <div className="rounded-lg border bg-background p-4">
-      <div className="text-sm font-medium text-foreground">Correct answer</div>
+      <div className="text-sm font-medium text-foreground">{ui("Correct answer")}</div>
       <div className="mt-3 flex items-center gap-3">
-        <span className={cn("text-sm", !value ? "text-foreground font-medium" : "text-muted-foreground")}>False (Netačno)</span>
+        <span className={cn("text-sm", !value ? "text-foreground font-medium" : "text-muted-foreground")}>{ui("False (Netačno)")}</span>
         <button
           type="button"
           onClick={() => onChange(!value)}
@@ -695,13 +699,13 @@ function TrueFalseCorrectSelector({
             value ? "bg-primary border-primary" : "bg-muted border-border"
           )}
           aria-pressed={value}
-          title="Toggle correct answer"
+          title={ui("Toggle correct answer")}
         >
           <span className={cn("h-5 w-5 rounded-full bg-background shadow-sm transition-transform", value ? "translate-x-6" : "translate-x-0")} />
         </button>
-        <span className={cn("text-sm", value ? "text-foreground font-medium" : "text-muted-foreground")}>True (Tačno)</span>
+        <span className={cn("text-sm", value ? "text-foreground font-medium" : "text-muted-foreground")}>{ui("True (Tačno)")}</span>
       </div>
-      <div className="mt-2 text-xs text-muted-foreground">Choose whether the correct answer is True (Tačno) or False (Netačno).</div>
+      <div className="mt-2 text-xs text-muted-foreground">{ui("Choose whether the correct answer is True (Tačno) or False (Netačno).")}</div>
     </div>
   );
 }
@@ -721,6 +725,7 @@ export function QuizWizardModal({
   onClose: () => void;
   onSave: (payload: QuizWizardSavePayload) => void;
 }) {
+  const ui = useUi();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const init = useMemo(() => normalizePayload(initialPayloadJson, initialTitle, initialSummary), [initialPayloadJson, initialSummary, initialTitle]);
@@ -770,7 +775,7 @@ export function QuizWizardModal({
   function goNext() {
     if (step === 1) {
       if (title.trim().length < 2) {
-        toast.error("Quiz title must be at least 2 characters.");
+        toast.error(ui("Quiz title must be at least 2 characters."));
         return;
       }
       setStep(2);
@@ -819,7 +824,7 @@ export function QuizWizardModal({
 
   function finalizeSave() {
     if (title.trim().length < 2) {
-      toast.error("Quiz title must be at least 2 characters.");
+      toast.error(ui("Quiz title must be at least 2 characters."));
       setStep(1);
       return;
     }
@@ -833,7 +838,7 @@ export function QuizWizardModal({
     };
 
     onSave({ title: payload.title, payload_json: payload as unknown as Record<string, unknown>, inline_images: queuedInlineImages });
-    toast.success(mode === "create" ? "Quiz created." : "Quiz updated.");
+    toast.success(ui(mode === "create" ? "Quiz created." : "Quiz updated."));
     setQueuedInlineImages({});
     onClose();
   }
@@ -880,12 +885,12 @@ export function QuizWizardModal({
     if (!editingQuestion) return false;
 
     if (editingQuestion.title.trim().length < 2) {
-      toast.error("Question title must be at least 2 characters.");
+      toast.error(ui("Question title must be at least 2 characters."));
       return false;
     }
 
     if (!isSupportedAnswerType(editingQuestion.type)) {
-      toast.error("This question type is not supported yet. Please use True/False, Single choice, or Multiple Choice.");
+      toast.error(ui("This question type is not supported yet. Please use True/False, Single choice, or Multiple Choice."));
       return false;
     }
 
@@ -900,22 +905,22 @@ export function QuizWizardModal({
       upsertQuestion(normalized);
       setEditingQuestion(null);
       setOptionEditorId(null);
-      toast.success("Question saved.");
+      toast.success(ui("Question saved."));
       return true;
     }
 
     if (editingQuestion.options.length < 2) {
-      toast.error("Add at least 2 options.");
+      toast.error(ui("Add at least 2 options."));
       return false;
     }
     if (editingQuestion.type === "single_choice") {
       if (!editingQuestion.correct_option_id) {
-        toast.error("Select the correct answer.");
+        toast.error(ui("Select the correct answer."));
         return false;
       }
     } else if (editingQuestion.type === "multiple_choice") {
       if (!(editingQuestion.correct_option_ids ?? []).length) {
-        toast.error("Select one or more correct answers.");
+        toast.error(ui("Select one or more correct answers."));
         return false;
       }
     }
@@ -937,7 +942,7 @@ export function QuizWizardModal({
     upsertQuestion(normalized);
     setEditingQuestion(null);
     setOptionEditorId(null);
-    toast.success("Question saved.");
+    toast.success(ui("Question saved."));
     return true;
   }
 
@@ -955,12 +960,12 @@ export function QuizWizardModal({
     if (!editingQuestion || !optionEditorId) return;
     const allowed = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
     if (!allowed.has(file.type)) {
-      toast.error("Invalid image type. Allowed: PNG, JPG, WebP, GIF.");
+      toast.error(ui("Invalid image type. Allowed: PNG, JPG, WebP, GIF."));
       return;
     }
     const maxBytes = 5 * 1024 * 1024;
     if (file.size > maxBytes) {
-      toast.error("Image is too large (max 5MB).");
+      toast.error(ui("Image is too large (max 5MB)."));
       return;
     }
     const uploadId = makeId("option_image");
@@ -993,22 +998,22 @@ export function QuizWizardModal({
       {step === 1 ? (
         <div className="space-y-6">
           <div>
-            <QFieldLabel required>Quiz Title</QFieldLabel>
+            <QFieldLabel required>{ui("Quiz Title")}</QFieldLabel>
             <Input
               className={cn(focusField)}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Type your quiz title here"
+              placeholder={ui("Type your quiz title here")}
             />
           </div>
           <div>
-            <QFieldLabel>Summary</QFieldLabel>
+            <QFieldLabel>{ui("Summary")}</QFieldLabel>
             <Textarea
               className={cn(focusField)}
               rows={8}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Write a short summary"
+              placeholder={ui("Write a short summary")}
             />
           </div>
         </div>
@@ -1036,17 +1041,17 @@ export function QuizWizardModal({
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">
-                          {idx + 1}. {q.title.trim() || "(untitled question)"}
+                          {idx + 1}. {q.title.trim() || ui("(untitled question)")}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {QUESTION_TYPE_OPTIONS.find((t) => t.id === q.type)?.label ?? q.type}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditQuestion(q)} title="Edit question">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => openEditQuestion(q)} title={ui("Edit question")}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => removeQuestion(q.id)} title="Delete question">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => removeQuestion(q.id)} title={ui("Delete question")}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1079,8 +1084,7 @@ export function QuizWizardModal({
                 }}>
                   <Plus className="h-3.5 w-3.5 text-white" />
                 </span>
-                Add Question
-              </button>
+                {ui("Add Question")}</button>
             </>
           ) : (
             <div
@@ -1100,22 +1104,21 @@ export function QuizWizardModal({
                   onClick={() => requestExit("back")}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Back
-                </button>
+                  {ui("Back")}</button>
               </div>
 
               <div>
-                <QFieldLabel accent="#1b6bb8" required>Write your question here</QFieldLabel>
+                <QFieldLabel accent="#1b6bb8" required>{ui("Write your question here")}</QFieldLabel>
                 <Input
                   className={cn(focusField)}
                   value={editingQuestion.title}
                   onChange={(e) => setEditingQuestion((prev) => (prev ? { ...prev, title: e.target.value } : prev))}
-                  placeholder="Question 1"
+                  placeholder={ui("Question 1")}
                 />
               </div>
 
               <div>
-                <QFieldLabel accent="#1b6bb8">Select your question type</QFieldLabel>
+                <QFieldLabel accent="#1b6bb8">{ui("Select your question type")}</QFieldLabel>
                 <div className="relative">
                   {(() => {
                     const meta = questionTypeMeta(editingQuestion.type);
@@ -1132,7 +1135,7 @@ export function QuizWizardModal({
                       <span className={cn("h-6 w-6 rounded-md flex items-center justify-center shrink-0", meta.iconWrapClass)}>
                         {meta.icon}
                       </span>
-                      <span className="truncate">{meta.label}</span>
+                      <span className="truncate">{ui(meta.label)}</span>
                     </span>
                     <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", questionTypeOpen ? "rotate-180" : "")} />
                   </button>
@@ -1159,8 +1162,7 @@ export function QuizWizardModal({
                           marginBottom: "8px",
                         }}
                       >
-                        Select question type
-                      </div>
+                        {ui("Select question type")}</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {QUESTION_TYPE_OPTIONS.map((t) => {
                           const active = editingQuestion.type === t.id;
@@ -1171,7 +1173,7 @@ export function QuizWizardModal({
                               key={t.id}
                               type="button"
                               disabled={!enabled}
-                              title={enabled ? `Use ${meta.label}` : `${meta.label} - Coming soon`}
+                              title={enabled ? ui("Use {v0}", {v0: meta.label}) : ui("{v0} - Coming soon", {v0: meta.label})}
                               style={{
                                 borderRadius: "9px",
                                 border: active
@@ -1205,10 +1207,10 @@ export function QuizWizardModal({
                               </span>
                               <div>
                                 <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#1b6bb8" : enabled ? "#1a1a1a" : "#888" }}>
-                                  {meta.label}
+                                  {ui(meta.label)}
                                 </div>
                                 {!enabled && (
-                                  <div style={{ fontSize: "10px", color: "#aaa", fontWeight: 500 }}>Coming soon</div>
+                                  <div style={{ fontSize: "10px", color: "#aaa", fontWeight: 500 }}>{ui("Coming soon")}</div>
                                 )}
                               </div>
                             </button>
@@ -1224,18 +1226,18 @@ export function QuizWizardModal({
                 <Toggle
                   checked={editingQuestion.answer_required}
                   onChange={(v) => setEditingQuestion((prev) => (prev ? { ...prev, answer_required: v } : prev))}
-                  label="Answer Required"
+                  label={ui("Answer Required")}
                 />
                 <Toggle
                   checked={editingQuestion.randomize}
                   onChange={(v) => setEditingQuestion((prev) => (prev ? { ...prev, randomize: v } : prev))}
-                  label="Randomize"
+                  label={ui("Randomize")}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <QFieldLabel accent="#1b6bb8">Point(s) for this answer</QFieldLabel>
+                  <QFieldLabel accent="#1b6bb8">{ui("Point(s) for this answer")}</QFieldLabel>
                   <Input
                     className={cn(focusField)}
                     type="number"
@@ -1249,18 +1251,18 @@ export function QuizWizardModal({
                   <Toggle
                     checked={editingQuestion.display_points}
                     onChange={(v) => setEditingQuestion((prev) => (prev ? { ...prev, display_points: v } : prev))}
-                    label="Display Points"
+                    label={ui("Display Points")}
                   />
                 </div>
               </div>
 
               <div>
-                <QFieldLabel accent="#1b6bb8">Description (Optional)</QFieldLabel>
+                <QFieldLabel accent="#1b6bb8">{ui("Description (Optional)")}</QFieldLabel>
                 <div>
                   <RichTextEditorWithUploads
                     value={editingQuestion.description_html}
                     onChange={(html) => setEditingQuestion((prev) => (prev ? { ...prev, description_html: html } : prev))}
-                    placeholder="Add more context for this question..."
+                    placeholder={ui("Add more context for this question...")}
                     minHeightClass="min-h-[160px]"
                     className={focusWithinField}
                     queue={queuedInlineImages}
@@ -1272,7 +1274,7 @@ export function QuizWizardModal({
               <div className="space-y-3">
                 {editingQuestion.type === "true_false" ? (
                   <>
-                    <QFieldLabel accent="#1b6bb8">Correct answer</QFieldLabel>
+                    <QFieldLabel accent="#1b6bb8">{ui("Correct answer")}</QFieldLabel>
                     <TrueFalseCorrectSelector
                       value={typeof editingQuestion.correct_boolean === "boolean" ? editingQuestion.correct_boolean : true}
                       onChange={(v) => setEditingQuestion((prev) => (prev ? { ...prev, correct_boolean: v } : prev))}
@@ -1280,11 +1282,10 @@ export function QuizWizardModal({
                   </>
                 ) : !isSupportedAnswerType(editingQuestion.type) ? (
                   <div className="rounded-md border bg-muted/20 px-3 py-3 text-sm text-muted-foreground">
-                    This question type will be implemented later. For now, use True/False, Single choice, or Multiple Choice.
-                  </div>
+                    {ui("This question type will be implemented later. For now, use True/False, Single choice, or Multiple Choice.")}</div>
                 ) : (
                   <>
-                    <QFieldLabel accent="#1b6bb8">Input options for the question and select the correct answer.</QFieldLabel>
+                    <QFieldLabel accent="#1b6bb8">{ui("Input options for the question and select the correct answer.")}</QFieldLabel>
 
                     <div className="rounded-lg border bg-background p-3 space-y-3">
                       {editingQuestion.options.length ? (
@@ -1357,7 +1358,7 @@ export function QuizWizardModal({
                                     >
                                       {/* Body rendered only when editing — becomes the card body */}
                                       <div>
-                                        <QFieldLabel accent="#1b6bb8">Answer</QFieldLabel>
+                                        <QFieldLabel accent="#1b6bb8">{ui("Answer")}</QFieldLabel>
                                         <Input
                                           className={cn(focusField)}
                                           value={editingQuestion.options.find((x) => x.id === o.id)?.title ?? ""}
@@ -1370,13 +1371,13 @@ export function QuizWizardModal({
                                               };
                                             })
                                           }
-                                          placeholder="Type answer text"
+                                          placeholder={ui("Type answer text")}
                                         />
                                       </div>
 
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                          <QFieldLabel accent="#7c3abd">Option Image</QFieldLabel>
+                                          <QFieldLabel accent="#7c3abd">{ui("Option Image")}</QFieldLabel>
                                           <div
                                             role="button"
                                             tabIndex={0}
@@ -1408,7 +1409,7 @@ export function QuizWizardModal({
                                               // eslint-disable-next-line @next/next/no-img-element
                                               <img
                                                 src={editingQuestion.options.find((x) => x.id === o.id)?.image_data_url as string}
-                                                alt="Option image preview"
+                                                alt={ui("Option image preview")}
                                                 className="h-full w-full object-cover"
                                               />
                                             ) : (
@@ -1416,8 +1417,8 @@ export function QuizWizardModal({
                                                 <div className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border">
                                                   <ImageIcon className="h-5 w-5" />
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">Drop or choose image</p>
-                                                <p className="mt-1 text-[11px] text-muted-foreground">Click here or drag file into this area</p>
+                                                <p className="text-xs text-muted-foreground">{ui("Drop or choose image")}</p>
+                                                <p className="mt-1 text-[11px] text-muted-foreground">{ui("Click here or drag file into this area")}</p>
                                               </div>
                                             )}
                                           </div>
@@ -1432,16 +1433,16 @@ export function QuizWizardModal({
                                               if (fileInputRef.current) fileInputRef.current.value = "";
                                             }}
                                           />
-                                          <div className="mt-2 text-xs text-muted-foreground">Recommended: 700x430 pixels</div>
+                                          <div className="mt-2 text-xs text-muted-foreground">{ui("Recommended: 700x430 pixels")}</div>
                                         </div>
                                         <div>
-                                          <QFieldLabel accent="#7c3abd">Display format for options</QFieldLabel>
+                                          <QFieldLabel accent="#7c3abd">{ui("Display format for options")}</QFieldLabel>
                                           <div className="mt-2 space-y-2 text-sm">
                                             {(
                                               [
-                                                ["only_text", "Only text"],
-                                                ["only_image", "Only Image"],
-                                                ["text_and_image_both", "Text & Image both"],
+                                                ["only_text", ui("Only text")],
+                                                ["only_image", ui("Only Image")],
+                                                ["text_and_image_both", ui("Text & Image both")],
                                               ] as Array<[QuizOptionDisplayFormat, string]>
                                             ).map(([id, label]) => {
                                               const current =
@@ -1462,7 +1463,7 @@ export function QuizWizardModal({
                                                       })
                                                     }
                                                   />
-                                                  {label}
+                                                  {ui(label)}
                                                 </label>
                                               );
                                             })}
@@ -1476,7 +1477,7 @@ export function QuizWizardModal({
                           </SortableContext>
                         </DndContext>
                       ) : (
-                        <p className="text-xs text-muted-foreground">No answers yet. Add at least two answers and mark the correct one.</p>
+                        <p className="text-xs text-muted-foreground">{ui("No answers yet. Add at least two answers and mark the correct one.")}</p>
                       )}
 
                       <button
@@ -1517,22 +1518,21 @@ export function QuizWizardModal({
                         }}>
                           <Plus className="h-3 w-3 text-white" />
                         </span>
-                        Add an Option
-                      </button>
+                        {ui("Add an Option")}</button>
                     </div>
                   </>
                 )}
               </div>
 
               <div>
-                <QFieldLabel accent="#1b6bb8">Would you like to show answer explanations after the quiz?</QFieldLabel>
+                <QFieldLabel accent="#1b6bb8">{ui("Would you like to show answer explanations after the quiz?")}</QFieldLabel>
                 <div className="space-y-2">
                   {(
                     [
-                      ["all", "Show all explanations", "Learners will see explanations for every question after the quiz."],
-                      ["none", "Show none", "No explanations are shown — learners only see their score."],
-                      ["correct_only", "Show only correct-answer explanation", "Explanations shown only when a learner answered correctly."],
-                      ["incorrect_only", "Show only incorrect-answer explanation", "Explanations shown only when a learner answered incorrectly."],
+                      ["all", ui("Show all explanations"), ui("Learners will see explanations for every question after the quiz.")],
+                      ["none", ui("Show none"), ui("No explanations are shown — learners only see their score.")],
+                      ["correct_only", ui("Show only correct-answer explanation"), ui("Explanations shown only when a learner answered correctly.")],
+                      ["incorrect_only", ui("Show only incorrect-answer explanation"), ui("Explanations shown only when a learner answered incorrectly.")],
                     ] as Array<["all" | "none" | "correct_only" | "incorrect_only", string, string]>
                   ).map(([id, label, desc]) => {
                     const active = (editingQuestion.answer_explanation_mode ?? "none") === id;
@@ -1574,7 +1574,7 @@ export function QuizWizardModal({
                         }
                       />
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#1b6bb8" : "#1a1a1a" }}>{label}</div>
+                        <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#1b6bb8" : "#1a1a1a" }}>{ui(label)}</div>
                         <div style={{ fontSize: "11px", color: "#777", marginTop: "2px" }}>{desc}</div>
                       </div>
                     </label>
@@ -1584,7 +1584,7 @@ export function QuizWizardModal({
 
                 {(editingQuestion.answer_explanation_mode ?? "none") === "all" || (editingQuestion.answer_explanation_mode ?? "none") === "correct_only" ? (
                   <div className="mt-3">
-                    <QFieldLabel accent="#1b6bb8">Correct-answer explanation</QFieldLabel>
+                    <QFieldLabel accent="#1b6bb8">{ui("Correct-answer explanation")}</QFieldLabel>
                     <div>
                       <RichTextEditorWithUploads
                         value={editingQuestion.answer_explanation_correct_html ?? ""}
@@ -1600,7 +1600,7 @@ export function QuizWizardModal({
                             };
                           })
                         }
-                        placeholder="Write explanation shown when learner gets this question correct..."
+                        placeholder={ui("Write explanation shown when learner gets this question correct...")}
                         minHeightClass="min-h-[160px]"
                         className={focusWithinField}
                         queue={queuedInlineImages}
@@ -1612,7 +1612,7 @@ export function QuizWizardModal({
 
                 {(editingQuestion.answer_explanation_mode ?? "none") === "all" || (editingQuestion.answer_explanation_mode ?? "none") === "incorrect_only" ? (
                   <div className="mt-3">
-                    <QFieldLabel accent="#1b6bb8">Incorrect-answer explanation</QFieldLabel>
+                    <QFieldLabel accent="#1b6bb8">{ui("Incorrect-answer explanation")}</QFieldLabel>
                     <div>
                       <RichTextEditorWithUploads
                         value={editingQuestion.answer_explanation_incorrect_html ?? ""}
@@ -1628,7 +1628,7 @@ export function QuizWizardModal({
                             };
                           })
                         }
-                        placeholder="Write explanation shown when learner gets this question incorrect..."
+                        placeholder={ui("Write explanation shown when learner gets this question incorrect...")}
                         minHeightClass="min-h-[160px]"
                         className={focusWithinField}
                         queue={queuedInlineImages}
@@ -1638,8 +1638,7 @@ export function QuizWizardModal({
                   </div>
                 ) : null}
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Existing learner flow still uses the saved explanation content. This mode controls which explanation content is composed and saved.
-                </div>
+                  {ui("Existing learner flow still uses the saved explanation content. This mode controls which explanation content is composed and saved.")}</div>
               </div>
 
               {/* Primary save action moved to the sticky footer so users don't have to scroll */}
@@ -1668,8 +1667,7 @@ export function QuizWizardModal({
                 <Timer className="h-4 w-4 text-white" />
               </span>
               <span style={{ fontWeight: 700, fontSize: "13px", color: "#1a1a1a", letterSpacing: "0.01em" }}>
-                Time Limit
-              </span>
+                {ui("Time Limit")}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Input
@@ -1685,19 +1683,19 @@ export function QuizWizardModal({
                 value={settings.time_limit_unit}
                 onChange={(e) => setSettings((prev) => ({ ...prev, time_limit_unit: e.target.value as QuizTimeUnit }))}
               >
-                <option value="seconds">Seconds</option>
-                <option value="minutes">Minutes</option>
-                <option value="hours">Hours</option>
+                <option value="seconds">{ui("Seconds")}</option>
+                <option value="minutes">{ui("Minutes")}</option>
+                <option value="hours">{ui("Hours")}</option>
               </select>
               <div className="flex items-center">
                 <Toggle
                   checked={settings.hide_quiz_time_display}
                   onChange={(v) => setSettings((prev) => ({ ...prev, hide_quiz_time_display: v }))}
-                  label="Hide quiz time - display"
+                  label={ui("Hide quiz time - display")}
                 />
               </div>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">0 means no time limit.</div>
+            <div className="mt-1 text-xs text-muted-foreground">{ui("0 means no time limit.")}</div>
           </div>
 
           <div
@@ -1709,13 +1707,13 @@ export function QuizWizardModal({
               boxShadow: "0 3px 14px rgba(0,0,0,0.06)",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "4px", color: "#1a1a1a" }}>👁️ Answer visibility</div>
-            <div className="text-xs text-muted-foreground mb-3">Choose when learners should see quiz answers and feedback.</div>
+            <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "4px", color: "#1a1a1a" }}>{ui("👁️ Answer visibility")}</div>
+            <div className="text-xs text-muted-foreground mb-3">{ui("Choose when learners should see quiz answers and feedback.")}</div>
             <div className="space-y-2">
             {(
               [
-                ["default", "After quiz finished", "Learners see the answer feedback after all questions are submitted."],
-                ["reveal", "After each question", "Learners see answer feedback immediately after each submitted question."],
+                ["default", ui("After quiz finished"), ui("Learners see the answer feedback after all questions are submitted.")],
+                ["reveal", ui("After each question"), ui("Learners see answer feedback immediately after each submitted question.")],
               ] as Array<[QuizFeedbackMode, string, string]>
             ).map(([id, label, desc]) => {
               const active = settings.feedback_mode === id;
@@ -1745,7 +1743,7 @@ export function QuizWizardModal({
                     style={{ marginTop: "2px", accentColor: "#1b6bb8" }}
                   />
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#1b6bb8" : "#1a1a1a" }}>{label}</div>
+                    <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#1b6bb8" : "#1a1a1a" }}>{ui(label)}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
                   </div>
                 </label>
@@ -1763,14 +1761,14 @@ export function QuizWizardModal({
               boxShadow: "0 3px 14px rgba(0,0,0,0.06)",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "4px", color: "#1a1a1a" }}>🔁 Attempts policy</div>
-            <div className="text-xs text-muted-foreground mb-3">Control how many times a learner can retry this quiz.</div>
+            <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "4px", color: "#1a1a1a" }}>{ui("🔁 Attempts policy")}</div>
+            <div className="text-xs text-muted-foreground mb-3">{ui("Control how many times a learner can retry this quiz.")}</div>
             <div className="space-y-2">
             {(
               [
-                ["single", "Single attempt", "Allow exactly one attempt."],
-                ["limited", "Limited attempts", "Allow a limited number of attempts that you choose."],
-                ["unlimited", "Unlimited attempts", "Allow unlimited retries."],
+                ["single", ui("Single attempt"), ui("Allow exactly one attempt.")],
+                ["limited", ui("Limited attempts"), ui("Allow a limited number of attempts that you choose.")],
+                ["unlimited", ui("Unlimited attempts"), ui("Allow unlimited retries.")],
               ] as Array<["single" | "limited" | "unlimited", string, string]>
             ).map(([id, label, desc]) => {
               const attemptsMode = attemptsAllowedSafe === 0 ? "unlimited" : attemptsAllowedSafe === 1 ? "single" : "limited";
@@ -1806,7 +1804,7 @@ export function QuizWizardModal({
                     style={{ marginTop: "2px", accentColor: "#7c3abd" }}
                   />
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#7c3abd" : "#1a1a1a" }}>{label}</div>
+                    <div style={{ fontWeight: 600, fontSize: "13px", color: active ? "#7c3abd" : "#1a1a1a" }}>{ui(label)}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
                   </div>
                 </label>
@@ -1837,7 +1835,7 @@ export function QuizWizardModal({
                   {attemptsAllowedSafe > 1 ? attemptsAllowedSafe : "-"}
                 </div>
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">Use this slider only when Limited attempts is selected.</div>
+              <div className="mt-1 text-xs text-muted-foreground">{ui("Use this slider only when Limited attempts is selected.")}</div>
             </div>
             </div>
           </div>
@@ -1851,10 +1849,10 @@ export function QuizWizardModal({
               boxShadow: "0 3px 14px rgba(0,0,0,0.06)",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "14px", color: "#1a1a1a" }}>📊 Scoring & Question Pool</div>
+            <div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "14px", color: "#1a1a1a" }}>{ui("📊 Scoring & Question Pool")}</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <QFieldLabel accent="#1b8755">Passing Grade (%)</QFieldLabel>
+                <QFieldLabel accent="#1b8755">{ui("Passing Grade (%)")}</QFieldLabel>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -1877,10 +1875,10 @@ export function QuizWizardModal({
                     setSettings((prev) => ({ ...prev, passing_grade_percent: coercePercentInt(next) }));
                   }}
                 />
-                <div className="mt-1 text-xs text-muted-foreground">Set the passing percentage for this quiz</div>
+                <div className="mt-1 text-xs text-muted-foreground">{ui("Set the passing percentage for this quiz")}</div>
               </div>
               <div>
-                <QFieldLabel accent="#1b8755">Max Question Allowed to Answer</QFieldLabel>
+                <QFieldLabel accent="#1b8755">{ui("Max Question Allowed to Answer")}</QFieldLabel>
                 <Input
                   className={cn(focusField)}
                   type="number"
@@ -1892,8 +1890,7 @@ export function QuizWizardModal({
                   }
                 />
                 <div className="mt-1 text-xs text-muted-foreground">
-                  This defines how many questions a learner must answer in one attempt. Questions are selected randomly from the quiz pool. If this number is greater than the available questions, all questions are shown.
-                </div>
+                  {ui("This defines how many questions a learner must answer in one attempt. Questions are selected randomly from the quiz pool. If this number is greater than the available questions, all questions are shown.")}</div>
               </div>
             </div>
           </div>
@@ -1926,7 +1923,7 @@ export function QuizWizardModal({
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#fff" }}>
               <ClipboardList className="h-5 w-5" />
-              <h3 style={{ fontWeight: 700, fontSize: "16px" }}>Quiz Builder</h3>
+              <h3 style={{ fontWeight: 700, fontSize: "16px" }}>{ui("Quiz Builder")}</h3>
             </div>
             <button
               type="button"
@@ -1953,20 +1950,17 @@ export function QuizWizardModal({
               <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
                 <div className="w-full max-w-lg rounded-lg border bg-card shadow-xl">
                   <div className="border-b px-4 py-3">
-                    <h3 className="font-semibold">Discard changes?</h3>
+                    <h3 className="font-semibold">{ui("Discard changes?")}</h3>
                   </div>
                   <div className="p-4 space-y-2 text-sm text-muted-foreground">
                     <p>
-                      You have unsaved changes in this question.
-                    </p>
+                      {ui("You have unsaved changes in this question.")}</p>
                     <p>
-                      If you leave now, those changes will be lost.
-                    </p>
+                      {ui("If you leave now, those changes will be lost.")}</p>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 border-t px-4 py-3">
                     <Button type="button" variant="outline" onClick={() => setConfirmExitOpen(false)}>
-                      Continue editing
-                    </Button>
+                      {ui("Continue editing")}</Button>
                     <Button
                       type="button"
                       onClick={() => {
@@ -1977,8 +1971,7 @@ export function QuizWizardModal({
                         else if (action === "back") goBack();
                       }}
                     >
-                      Discard
-                    </Button>
+                      {ui("Discard")}</Button>
                   </div>
                 </div>
               </div>
@@ -1996,29 +1989,24 @@ export function QuizWizardModal({
             }}
           >
             <Button type="button" variant="outline" onClick={() => requestExit("close")}>
-              Cancel
-            </Button>
+              {ui("Cancel")}</Button>
 
             <div className="flex items-center gap-2">
               {step > 1 ? (
                 <Button type="button" variant="outline" onClick={() => requestExit("back")}>
-                  Back
-                </Button>
+                  {ui("Back")}</Button>
               ) : null}
 
               {editingQuestion ? (
                 <Button type="button" className="gap-2" onClick={commitEditingQuestion}>
                   <Plus className="h-4 w-4" />
-                  Add to Questions
-                </Button>
+                  {ui("Add to Questions")}</Button>
               ) : step < 3 ? (
                 <Button type="button" onClick={goNext}>
-                  Save & Next
-                </Button>
+                  {ui("Save & Next")}</Button>
               ) : (
                 <Button type="button" onClick={finalizeSave}>
-                  Save
-                </Button>
+                  {ui("Save")}</Button>
               )}
             </div>
           </div>

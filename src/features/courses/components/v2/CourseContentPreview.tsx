@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Clock, ClipboardList, Lock, PlayCircle } from "lucide-react";
@@ -54,6 +56,7 @@ export function CourseContentPreview({
   topics: CourseContentTopic[];
   locked: boolean;
 }) {
+  const ui = useUi();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const stats = useMemo(() => {
@@ -92,10 +95,9 @@ export function CourseContentPreview({
     <div className="rounded-xl border bg-background overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-4 bg-muted/20 border-b">
         <div>
-          <div className="text-sm font-semibold text-foreground">Course content</div>
+          <div className="text-sm font-semibold text-foreground">{ui("Course content")}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {stats.sections} section(s) • {stats.items} item(s)
-            {stats.totalMinutes > 0 ? ` • ${formatTotalDuration(stats.totalMinutes)} total length` : null}
+            {stats.sections} {ui("section(s) • ")}{stats.items} {ui("item(s)")}{stats.totalMinutes > 0 ? ui(" • {v0} total length", {v0: formatTotalDuration(stats.totalMinutes)}) : null}
           </div>
         </div>
         <button
@@ -103,12 +105,12 @@ export function CourseContentPreview({
           className="text-sm font-medium text-primary hover:underline self-start sm:self-auto cursor-pointer"
           onClick={() => setAll(!allExpanded)}
         >
-          {allExpanded ? "Collapse all sections" : "Expand all sections"}
+          {allExpanded ? ui("Collapse all sections") : ui("Expand all sections")}
         </button>
       </div>
 
       {topics.length === 0 ? (
-        <div className="px-4 py-5 text-sm text-muted-foreground">No topics yet.</div>
+        <div className="px-4 py-5 text-sm text-muted-foreground">{ui("No topics yet.")}</div>
       ) : (
         <div className="divide-y">
           {topics
@@ -139,19 +141,17 @@ export function CourseContentPreview({
                         {idx + 1}. {t.title}
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {metaParts.length ? metaParts.join(" • ") : itemsSorted.length ? `${itemsSorted.length} item(s)` : "No items yet"}
+                        {metaParts.length ? metaParts.join(" • ") : itemsSorted.length ? ui("{v0} item(s)", {v0: itemsSorted.length}) : ui("No items yet")}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                       {locked ? (
                         <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-0.5">
                           <Lock className="h-3.5 w-3.5" />
-                          Locked
-                        </span>
+                          {ui("Locked")}</span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-0.5">
-                          Preview
-                        </span>
+                          {ui("Preview")}</span>
                       )}
                       {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -160,7 +160,7 @@ export function CourseContentPreview({
                   {isOpen ? (
                     <div className="bg-muted/5">
                       {itemsSorted.length === 0 ? (
-                        <div className="px-4 py-4 text-sm text-muted-foreground">No items in this section yet.</div>
+                        <div className="px-4 py-4 text-sm text-muted-foreground">{ui("No items in this section yet.")}</div>
                       ) : (
                         <div className="divide-y border-t">
                           {itemsSorted.map((it) => {
@@ -170,7 +170,7 @@ export function CourseContentPreview({
                                 <div className="min-w-0 flex items-center gap-3">
                                   <ItemIcon type={it.item_type} />
                                   <div className="min-w-0">
-                                    <div className="text-sm text-foreground truncate">{it.title?.trim() || "(untitled)"}</div>
+                                    <div className="text-sm text-foreground truncate">{it.title?.trim() || ui("(untitled)")}</div>
                                     <div className="mt-0.5 text-xs text-muted-foreground uppercase">{it.item_type}</div>
                                   </div>
                                 </div>

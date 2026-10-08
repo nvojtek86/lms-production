@@ -1,4 +1,6 @@
 'use client'
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUsers } from '../hooks/useUsers';
@@ -25,6 +27,7 @@ export const UserTable = ({
   inviteRolesOverride?: Role[];
   title?: string;
 }) => {
+  const ui = useUi();
   const { users, callerRole, isLoading, error, inviteUser, changeUserRole, disableUser, enableUser, assignOrganization, bulkAssignOrganization, sendPasswordSetupLink } = useUsers(organizationId);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -142,22 +145,22 @@ export const UserTable = ({
         : data.organization_id ?? null;
 
     const fullName = typeof data.full_name === "string" ? data.full_name.trim() : "";
-    const t = toast.loading("Inviting user…");
+    const t = toast.loading(ui("Inviting user…"));
     try {
       const res = await inviteUser(data.email, data.role, effectiveOrgId, fullName.length ? fullName : null);
-      toast.success(res.message || "User invited.", { id: t });
+      toast.success(ui(res.message || "User invited."), { id: t });
       setIsFormOpen(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to invite user", { id: t });
+      toast.error(ui(e instanceof Error ? e.message : "Failed to invite user"), { id: t });
     }
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading users...</div>;
+    return <div className="text-center py-8">{ui("Loading users...")}</div>;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center py-8">Error: {error.message}</div>;
+    return <div className="text-red-500 text-center py-8">{ui("Error: ")}{ui(error.message)}</div>;
   }
 
   return (
@@ -169,8 +172,7 @@ export const UserTable = ({
           onClick={() => setIsFormOpen(true)}
           disabled={!callerRole || (callerRole !== 'super_admin' && callerRole !== 'system_admin' && callerRole !== 'organization_admin')}
         >
-          Invite User
-        </Button>
+          {ui("Invite User")}</Button>
       </div>
 
       {/* Filters */}
@@ -178,17 +180,17 @@ export const UserTable = ({
         <div className="flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between">
           <div className={`grid grid-cols-1 gap-3 ${showOrganizationFilter ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
             <div>
-              <label className="block text-sm font-medium mb-1">Role</label>
+              <label className="block text-sm font-medium mb-1">{ui("Role")}</label>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter((e.target.value as Role | "all"))}
                 className="w-full px-3 py-2 border rounded-md bg-white hover:cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={bulkMode}
               >
-                <option value="all">All roles</option>
+                <option value="all">{ui("All roles")}</option>
                 {roleOptions.map((r) => (
                   <option key={r} value={r}>
-                    {roleLabel(r)}
+                    {ui(roleLabel(r))}
                   </option>
                 ))}
               </select>
@@ -196,15 +198,15 @@ export const UserTable = ({
 
             {showOrganizationFilter ? (
               <div>
-                <label className="block text-sm font-medium mb-1">Organization</label>
+                <label className="block text-sm font-medium mb-1">{ui("Organization")}</label>
                 <select
                   value={orgFilter}
                   onChange={(e) => setOrgFilter(e.target.value as string | "all" | "none")}
                   className="w-full px-3 py-2 border rounded-md bg-white hover:cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                   disabled={bulkMode}
                 >
-                  <option value="all">All organizations</option>
-                  <option value="none">No organization</option>
+                  <option value="all">{ui("All organizations")}</option>
+                  <option value="none">{ui("No organization")}</option>
                   {orgOptions.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.label}
@@ -214,33 +216,31 @@ export const UserTable = ({
                 {orgFilter !== "all" && orgFilter !== "none" && selectedOrgIsInactive ? (
                   <div className="mt-2">
                     <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2 py-0.5 text-xs font-medium">
-                      Inactive org
-                    </span>
+                      {ui("Inactive org")}</span>
                   </div>
                 ) : null}
               </div>
             ) : null}
 
             <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
+              <label className="block text-sm font-medium mb-1">{ui("Status")}</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
                 className="w-full px-3 py-2 border rounded-md bg-white hover:cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={bulkMode}
               >
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="disabled">Disabled</option>
+                <option value="all">{ui("All statuses")}</option>
+                <option value="active">{ui("Active")}</option>
+                <option value="pending">{ui("Pending")}</option>
+                <option value="disabled">{ui("Disabled")}</option>
               </select>
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:justify-end">
             <Button variant="outline" onClick={clearAll}>
-              Clear
-            </Button>
+              {ui("Clear")}</Button>
           </div>
 
         </div>
@@ -249,8 +249,7 @@ export const UserTable = ({
       {showSelectionColumn && bulkMode ? (
         <div className="flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div className="text-sm font-medium">
-            {selectedUserIds.size} selected
-          </div>
+            {selectedUserIds.size} {ui("selected")}</div>
 
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
             <select
@@ -259,23 +258,21 @@ export const UserTable = ({
               className="px-3 py-2 border rounded-md bg-white hover:cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               disabled={isBulkApplying}
             >
-              <option value="">Select target organization…</option>
+              <option value="">{ui("Select target organization…")}</option>
               {(organizations ?? []).map((o) => (
                 <option key={o.id} value={o.id}>
-                  {(o.name?.trim()?.length ? o.name : o.slug?.trim()?.length ? o.slug : o.id) + (o.is_active === false ? " (inactive)" : "")}
+                  {(o.name?.trim()?.length ? o.name : o.slug?.trim()?.length ? o.slug : o.id) + (o.is_active === false ? ui(" (inactive)") : "")}
                 </option>
               ))}
             </select>
 
             {bulkTargetOrgId && bulkTargetOrgIsInactive ? (
               <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2 py-0.5 text-xs font-medium whitespace-nowrap">
-                Inactive org
-              </span>
+                {ui("Inactive org")}</span>
             ) : null}
 
             <Button variant="outline" onClick={clearAll} disabled={isBulkApplying}>
-              Clear
-            </Button>
+              {ui("Clear")}</Button>
             <Button
               disabled={!bulkTargetOrgId || isBulkApplying}
               onClick={() => {
@@ -283,8 +280,7 @@ export const UserTable = ({
                 setBulkConfirmOpen(true);
               }}
             >
-              Move selected
-            </Button>
+              {ui("Move selected")}</Button>
           </div>
         </div>
       ) : null}
@@ -292,8 +288,7 @@ export const UserTable = ({
       {isFormOpen && (
         <div className="border rounded-lg p-4 bg-white shadow">
           <h3 className="text-lg font-semibold mb-4">
-            Invite User
-          </h3>
+            {ui("Invite User")}</h3>
           <UserForm
             initialData={organizationId ? { organization_id: organizationId } : undefined}
             organizationLabel={organizationLabel}
@@ -346,14 +341,14 @@ export const UserTable = ({
                   />
                 </th>
               ) : null}
-              <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Role</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">{ui("Name")}</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">{ui("Email")}</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">{ui("Role")}</th>
               {showOrganizationColumn ? (
-                <th className="px-4 py-3 text-left text-sm font-semibold">Organization</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">{ui("Organization")}</th>
               ) : null}
-              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">{ui("Status")}</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">{ui("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -363,8 +358,7 @@ export const UserTable = ({
                   colSpan={5 + (showOrganizationColumn ? 1 : 0) + (showSelectionColumn ? 1 : 0)}
                   className="px-4 py-8 text-center text-gray-500"
                 >
-                  No users found
-                </td>
+                  {ui("No users found")}</td>
               </tr>
             ) : (
               filteredUsers.map(user => (
@@ -437,7 +431,7 @@ export const UserTable = ({
             const result = await bulkAssignOrganization(ids, bulkTargetOrgId);
 
             if (result.failureCount === 0) {
-              toast.success(`Moved ${result.successCount} user${result.successCount === 1 ? "" : "s"}.`);
+              toast.success(ui("Moved {v0} user{v1}.", {v0: result.successCount, v1: ui.locale === "sr-Latn" ? "" : (result.successCount === 1 ? "" : "s")}));
               setSelectedUserIds(new Set());
               setBulkTargetOrgId("");
               setBulkConfirmOpen(false);
@@ -445,8 +439,7 @@ export const UserTable = ({
             }
 
             toast.error(
-              `Moved ${result.successCount} user${result.successCount === 1 ? "" : "s"}. ` +
-                `${result.failureCount} failed. The failed users remain selected so you can retry.`
+              ui("Moved {v0} user{v1}. ", {v0: result.successCount, v1: ui.locale === "sr-Latn" ? "" : (result.successCount === 1 ? "" : "s")}) + ui("{v0} failed. The failed users remain selected so you can retry.", {v0: result.failureCount})
             );
             setSelectedUserIds(new Set(result.failures.map((f) => f.userId)));
             setBulkConfirmOpen(false);

@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { Download, FileSpreadsheet, FileText, Calendar, Building2, Users, BookOpen, Award } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,7 @@ export default async function SystemExportPage({
 }: {
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
+  const ui = await getUi();
   const sp = (await searchParams) ?? {};
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
@@ -123,14 +126,13 @@ export default async function SystemExportPage({
         <div className="flex items-center gap-3">
           <Download className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Export Data</h1>
-            <p className="text-muted-foreground">{isSystemAdmin ? "Export organization data" : "Export system data in various formats"}</p>
+            <h1 className="text-2xl font-bold text-foreground">{ui("Export Data")}</h1>
+            <p className="text-muted-foreground">{isSystemAdmin ? ui("Export organization data") : ui("Export system data in various formats")}</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2 shrink-0" disabled title="Coming soon">
+        <Button variant="outline" className="gap-2 shrink-0" disabled title={ui("Coming soon")}>
           <Calendar className="h-4 w-4" />
-          Schedule Export
-        </Button>
+          {ui("Schedule Export")}</Button>
       </div>
 
       {/* Export Options Grid */}
@@ -142,23 +144,20 @@ export default async function SystemExportPage({
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-foreground">Users Export</h3>
-                <p className="text-sm text-muted-foreground mt-1">Export all user data including roles and organizations</p>
+                <h3 className="text-lg font-semibold text-foreground">{ui("Users Export")}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{ui("Export all user data including roles and organizations")}</p>
                 <div className="flex gap-2 mt-4">
                   <Button variant="outline" size="sm" className="gap-2" asChild>
                     <a href="/api/exports/users" target="_blank" rel="noreferrer">
                       <FileSpreadsheet className="h-4 w-4" />
-                      CSV
-                    </a>
+                      {ui("CSV")}</a>
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                  <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                     <FileSpreadsheet className="h-4 w-4" />
-                    Excel
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                    {ui("Excel")}</Button>
+                  <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                     <FileText className="h-4 w-4" />
-                    JSON
-                  </Button>
+                    {ui("JSON")}</Button>
                 </div>
               </div>
             </div>
@@ -171,23 +170,20 @@ export default async function SystemExportPage({
               <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-foreground">Organizations Export</h3>
-              <p className="text-sm text-muted-foreground mt-1">Export organization details</p>
+              <h3 className="text-lg font-semibold text-foreground">{ui("Organizations Export")}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{ui("Export organization details")}</p>
               <div className="flex gap-2 mt-4">
                 <Button variant="outline" size="sm" className="gap-2" asChild>
                   <a href="/api/exports/organizations" target="_blank" rel="noreferrer">
                     <FileSpreadsheet className="h-4 w-4" />
-                    CSV
-                  </a>
+                    {ui("CSV")}</a>
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                   <FileSpreadsheet className="h-4 w-4" />
-                  Excel
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                  {ui("Excel")}</Button>
+                <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                   <FileText className="h-4 w-4" />
-                  JSON
-                </Button>
+                  {ui("JSON")}</Button>
               </div>
             </div>
           </div>
@@ -200,27 +196,23 @@ export default async function SystemExportPage({
               <BookOpen className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-foreground">Courses Export</h3>
-              <p className="text-sm text-muted-foreground mt-1">Export course data</p>
+              <h3 className="text-lg font-semibold text-foreground">{ui("Courses Export")}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{ui("Export course data")}</p>
               <div className="flex gap-2 mt-4">
                 <Button variant="outline" size="sm" className="gap-2" asChild>
                   <a href="/api/exports/courses" target="_blank" rel="noreferrer">
                     <FileSpreadsheet className="h-4 w-4" />
-                    CSV
-                  </a>
+                    {ui("CSV")}</a>
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                   <FileSpreadsheet className="h-4 w-4" />
-                  Excel
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                  {ui("Excel")}</Button>
+                <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                   <FileText className="h-4 w-4" />
-                  JSON
-                </Button>
+                  {ui("JSON")}</Button>
               </div>
               <div className="mt-3 text-xs text-muted-foreground">
-                Need enrollments + assessment-time export? Use the Reports export (Enrollments CSV).
-              </div>
+                {ui("Need enrollments + assessment-time export? Use the Reports export (Enrollments CSV).")}</div>
             </div>
           </div>
         </div>
@@ -233,23 +225,20 @@ export default async function SystemExportPage({
                 <Award className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-foreground">Certificates Export</h3>
-                <p className="text-sm text-muted-foreground mt-1">Export all issued certificates</p>
+                <h3 className="text-lg font-semibold text-foreground">{ui("Certificates Export")}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{ui("Export all issued certificates")}</p>
                 <div className="flex gap-2 mt-4">
                   <Button variant="outline" size="sm" className="gap-2" asChild>
                     <a href="/api/exports/certificates" target="_blank" rel="noreferrer">
                       <FileSpreadsheet className="h-4 w-4" />
-                      CSV
-                    </a>
+                      {ui("CSV")}</a>
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                  <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                     <FileSpreadsheet className="h-4 w-4" />
-                    Excel
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+                    {ui("Excel")}</Button>
+                  <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                     <FileText className="h-4 w-4" />
-                    PDF
-                  </Button>
+                    {ui("PDF")}</Button>
                 </div>
               </div>
             </div>
@@ -260,22 +249,21 @@ export default async function SystemExportPage({
       {/* Recent Exports */}
       <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-foreground">Recent Exports</h2>
-          <p className="text-sm text-muted-foreground">Your recent export history</p>
+          <h2 className="text-lg font-semibold text-foreground">{ui("Recent Exports")}</h2>
+          <p className="text-sm text-muted-foreground">{ui("Your recent export history")}</p>
         </div>
 
         {auditError ? (
           <div className="px-6 py-4 text-sm text-destructive">
-            Failed to load export history: {auditError.message}
+            {ui("Failed to load export history: ")}{auditError.message}
           </div>
         ) : exportsCountError ? (
           <div className="px-6 py-4 text-sm text-amber-800 bg-amber-50 border-t border-amber-200">
-            Export history count not available: {exportsCountError.message}
+            {ui("Export history count not available: ")}{exportsCountError.message}
           </div>
         ) : rows.length === 0 ? (
           <div className="px-6 py-10 text-center text-muted-foreground">
-            No export history yet. Exports are logged when you download a CSV above.
-          </div>
+            {ui("No export history yet. Exports are logged when you download a CSV above.")}</div>
         ) : (
           <div className="px-6 py-6">
             <RecentExportsTableV2
@@ -301,8 +289,8 @@ export default async function SystemExportPage({
                   meta: r.metadata ?? null,
                 };
               })}
-              emptyTitle="No export history yet."
-              emptySubtitle="Exports are logged when you download a CSV above."
+              emptyTitle={ui("No export history yet.")}
+              emptySubtitle={ui("Exports are logged when you download a CSV above.")}
             />
           </div>
         )}
@@ -311,7 +299,7 @@ export default async function SystemExportPage({
         {!auditError && !exportsCountError && exportsTotalCount > 0 ? (
           <div className="px-6 py-4 border-t flex items-center justify-between gap-3 text-sm">
             <div className="text-muted-foreground">
-              Showing {exportsFromIdx + 1}–{Math.min(exportsFromIdx + rows.length, exportsTotalCount)} of {exportsTotalCount}
+              {ui("Showing ")}{exportsFromIdx + 1}–{Math.min(exportsFromIdx + rows.length, exportsTotalCount)} {ui("of ")}{exportsTotalCount}
             </div>
             <div className="flex items-center gap-2">
               {(() => {
@@ -324,11 +312,10 @@ export default async function SystemExportPage({
                   <>
                     {prevDisabled ? (
                       <Button variant="outline" disabled>
-                        Prev
-                      </Button>
+                        {ui("Prev")}</Button>
                     ) : (
                       <Button asChild variant="outline">
-                        <Link href={exportsHref(exportsCurrent - 1)}>Prev</Link>
+                        <Link href={exportsHref(exportsCurrent - 1)}>{ui("Prev")}</Link>
                       </Button>
                     )}
 
@@ -352,11 +339,10 @@ export default async function SystemExportPage({
 
                     {nextDisabled ? (
                       <Button variant="outline" disabled>
-                        Next
-                      </Button>
+                        {ui("Next")}</Button>
                     ) : (
                       <Button asChild variant="outline">
-                        <Link href={exportsHref(exportsCurrent + 1)}>Next</Link>
+                        <Link href={exportsHref(exportsCurrent + 1)}>{ui("Next")}</Link>
                       </Button>
                     )}
                   </>

@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Clock, FileText, User, X } from "lucide-react";
@@ -30,6 +32,7 @@ export function RecentActivityTableV2({
   emptySubtitle?: string;
   tip?: string;
 }) {
+  const ui = useUi();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerMounted = useMountedForAnimation(drawerOpen, 220);
@@ -49,9 +52,9 @@ export function RecentActivityTableV2({
           <table className="min-w-max w-full">
             <thead className="bg-muted/50 border-b">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Time</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Actor</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Subject</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{ui("Time")}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{ui("Actor")}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{ui("Subject")}</th>
                 <th className="px-4 py-3 w-10" />
               </tr>
             </thead>
@@ -79,7 +82,7 @@ export function RecentActivityTableV2({
                     <td className="px-4 py-3 text-sm text-muted-foreground">{row.actor}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{row.subject}</td>
                     <td className="px-4 py-3 text-right">
-                      <span className="sr-only">Open details</span>
+                      <span className="sr-only">{ui("Open details")}</span>
                       <ChevronRight className="inline-block h-4 w-4 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
                     </td>
                   </tr>
@@ -140,6 +143,7 @@ function RecentActivityDetailsDrawer({
   item: RecentActivityItemV2;
   onClose: () => void;
 }) {
+  const ui = useUi();
   const [entered, setEntered] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
 
@@ -173,10 +177,10 @@ function RecentActivityDetailsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-16 px-6 flex items-center justify-between">
-          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">Activity Details</div>
+          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">{ui("Activity Details")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={onClose}
           >
@@ -188,14 +192,13 @@ function RecentActivityDetailsDrawer({
         <div className="flex-1 overflow-auto px-6 py-6 space-y-6">
           {/* Summary */}
           <div className="rounded-xl bg-muted/30 border p-5">
-            <h2 className="text-lg font-semibold text-foreground">What happened?</h2>
-            <div className="text-lg font-semibold text-primary">{item.title || "Activity"} by <span className="font-bold text-foreground">{item.actor}</span></div>
+            <h2 className="text-lg font-semibold text-foreground">{ui("What happened?")}</h2>
+            <div className="text-lg font-semibold text-primary">{item.title || ui("Activity")} {ui("by ")}<span className="font-bold text-foreground">{item.actor}</span></div>
             <div className="mt-4 space-y-3 text-sm">
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  Time
-                </span>
+                  {ui("Time")}</span>
                 <span className="text-foreground text-right">
                   <LocalDateTime iso={item.timeIso} fallback={item.time} />
                 </span>
@@ -203,15 +206,13 @@ function RecentActivityDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <User className="h-4 w-4" />
-                  Actor
-                </span>
+                  {ui("Actor")}</span>
                 <span className="text-foreground text-right break-all">{item.actor}</span>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <FileText className="h-4 w-4" />
-                  Subject
-                </span>
+                  {ui("Subject")}</span>
                 <span className="text-foreground text-right wrap-break-word">{item.subject}</span>
               </div>
             </div>
@@ -220,7 +221,7 @@ function RecentActivityDetailsDrawer({
           {/* Details */}
           {item.details && item.details.trim().length > 0 ? (
             <div className="space-y-3">
-              <div className="text-xl font-semibold text-foreground">Details</div>
+              <div className="text-xl font-semibold text-foreground">{ui("Details")}</div>
               <div className="rounded-xl border bg-background p-5 text-sm text-muted-foreground whitespace-pre-wrap">
                 {item.details}
               </div>
@@ -231,9 +232,9 @@ function RecentActivityDetailsDrawer({
           {metaText ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-xl font-semibold text-foreground">Metadata</div>
+                <div className="text-xl font-semibold text-foreground">{ui("Metadata")}</div>
                 <Button variant="outline" size="sm" onClick={() => setShowMeta((v) => !v)}>
-                  {showMeta ? "Hide" : "Show"}
+                  {showMeta ? ui("Hide") : ui("Show")}
                 </Button>
               </div>
               {showMeta ? (
@@ -241,7 +242,7 @@ function RecentActivityDetailsDrawer({
 {metaText}
                 </pre>
               ) : (
-                <HelpText>Metadata is available for troubleshooting.</HelpText>
+                <HelpText>{ui("Metadata is available for troubleshooting.")}</HelpText>
               )}
             </div>
           ) : null}

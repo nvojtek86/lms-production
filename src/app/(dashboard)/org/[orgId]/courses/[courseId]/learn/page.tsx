@@ -1,3 +1,6 @@
+import {getCourseLocale} from "@/i18n/course";
+
+import {getUi} from "@/i18n/server";
 import { notFound, redirect } from "next/navigation";
 import { BookOpen } from "lucide-react";
 
@@ -56,6 +59,7 @@ export default async function CourseLearnPage({
 }: {
   params: Promise<{ orgId: string; courseId: string }>;
 }) {
+  let ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
 
@@ -89,6 +93,7 @@ export default async function CourseLearnPage({
   }
 
   const courseId = String((course as CourseRow).id);
+  if (user.role === "member") ui = await getUi(await getCourseLocale(courseId));
   const courseSlug = typeof (course as CourseRow).slug === "string" && (course as CourseRow).slug!.trim().length ? (course as CourseRow).slug!.trim() : null;
   const courseHrefKey = courseSlug ?? courseId;
 
@@ -396,13 +401,13 @@ export default async function CourseLearnPage({
           <div className="flex items-center gap-3">
             <BookOpen className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Course learning</h1>
+              <h1 className="text-2xl font-bold text-foreground">{ui("Course learning")}</h1>
               <p className="text-muted-foreground">{courseTitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-              <Link href={`/org/${orgSlug}/courses/${courseHrefKey}`}>Back</Link>
+              <Link href={`/org/${orgSlug}/courses/${courseHrefKey}`}>{ui("Back")}</Link>
             </Button>
           </div>
         </div>

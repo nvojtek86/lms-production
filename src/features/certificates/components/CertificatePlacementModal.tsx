@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
@@ -43,6 +45,7 @@ export function CertificatePlacementModal({
   onClose: () => void;
   onSave: (placement: CertificateNamePlacement) => void;
 }) {
+  const ui = useUi();
   const isPdf = templateMime === "application/pdf";
   const isImage = templateMime.startsWith("image/");
 
@@ -105,7 +108,7 @@ export function CertificatePlacementModal({
         }
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Failed to load template");
+        setError(ui(e instanceof Error ? e.message : "Failed to load template"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -183,14 +186,14 @@ export function CertificatePlacementModal({
 
         await p.render({ canvasContext: ctx, viewport }).promise;
       } catch (e) {
-        if (!destroyed) setError(e instanceof Error ? e.message : "Failed to render PDF");
+        if (!destroyed) setError(ui(e instanceof Error ? e.message : "Failed to render PDF"));
       }
     })();
 
     return () => {
       destroyed = true;
     };
-  }, [open, isPdf, bytes, page]);
+  }, [open, isPdf, bytes, page, ui]);
 
   const viewportSize = (() => {
     const canvas = canvasRef.current;
@@ -336,14 +339,14 @@ export function CertificatePlacementModal({
               gap: "12px",
             }}
           >
-            <div style={{ fontWeight: 800, fontSize: "14px" }}>🏆 Place member name</div>
+            <div style={{ fontWeight: 800, fontSize: "14px" }}>{ui("🏆 Place member name")}</div>
             <button
               type="button"
               onClick={onClose}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg"
               style={{ background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.25)" }}
-              aria-label="Close"
-              title="Close"
+              aria-label={ui("Close")}
+              title={ui("Close")}
             >
               <X className="h-4 w-4 text-white" />
             </button>
@@ -355,15 +358,14 @@ export function CertificatePlacementModal({
               <div className="mx-auto w-full max-w-[860px]">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="text-xs text-muted-foreground">
-                    Drag the highlighted box to choose where the learner’s <span className="font-semibold text-foreground">Full name</span> will be printed.
-                  </div>
+                    {ui("Drag the highlighted box to choose where the learner’s ")}<span className="font-semibold text-foreground">{ui("Full name")}</span> {ui("will be printed.")}</div>
                   {isPdf ? (
                     <div className="flex items-center gap-2">
                       <Button type="button" size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <div className="text-xs text-muted-foreground">
-                        Page <span className="font-semibold text-foreground">{page}</span> / {pageCount}
+                        {ui("Page ")}<span className="font-semibold text-foreground">{page}</span> / {pageCount}
                       </div>
                       <Button type="button" size="sm" variant="outline" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}>
                         <ChevronRight className="h-4 w-4" />
@@ -380,17 +382,16 @@ export function CertificatePlacementModal({
                   {loading ? (
                     <div className="p-10 text-sm text-muted-foreground flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading template…
-                    </div>
+                      {ui("Loading template…")}</div>
                   ) : error ? (
-                    <div className="p-10 text-sm text-destructive">{error}</div>
+                    <div className="p-10 text-sm text-destructive">{ui(error)}</div>
                   ) : isPdf ? (
                     <canvas ref={canvasRef} style={{ width: "100%", height: "auto", display: "block" }} />
                   ) : isImage && imgUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img alt="Certificate template preview" src={imgUrl} style={{ width: "100%", height: "auto", display: "block" }} />
+                    <img alt={ui("Certificate template preview")} src={imgUrl} style={{ width: "100%", height: "auto", display: "block" }} />
                   ) : (
-                    <div className="p-10 text-sm text-muted-foreground">Unsupported template type.</div>
+                    <div className="p-10 text-sm text-muted-foreground">{ui("Unsupported template type.")}</div>
                   )}
 
                   {/* Placement box */}
@@ -415,7 +416,7 @@ export function CertificatePlacementModal({
                         cursor: "move",
                         padding: "6px 10px",
                       }}
-                      title="Drag to position (resize from edges)"
+                      title={ui("Drag to position (resize from edges)")}
                     >
                       {/* Resize hints (visual only; resizing is edge-detection on the box) */}
                       <div className="pointer-events-none absolute -left-1 -top-1 h-5 w-5 rounded-md border bg-white/90 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
@@ -458,20 +459,20 @@ export function CertificatePlacementModal({
             {/* Sidebar */}
             <div className="border-l bg-white p-4 space-y-4 overflow-auto">
               <div className="rounded-xl border p-4">
-                <div className="text-sm font-semibold text-foreground">Placement</div>
+                <div className="text-sm font-semibold text-foreground">{ui("Placement")}</div>
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Current: page {placement.page}, x {Math.round(placement.xPct * 100)}%, y {Math.round(placement.yPct * 100)}%
+                  {ui("Current: page ")}{placement.page}, x {Math.round(placement.xPct * 100)}%, y {Math.round(placement.yPct * 100)}%
                 </div>
               </div>
 
               <div className="rounded-xl border p-4 space-y-2">
-                <div className="text-sm font-semibold text-foreground">Preview text</div>
+                <div className="text-sm font-semibold text-foreground">{ui("Preview text")}</div>
                 <div className="rounded-lg border bg-muted/20 px-3 py-2 text-sm font-semibold">{PREVIEW_NAME}</div>
-                <div className="text-xs text-muted-foreground">We’ll replace this with the learner’s full name when generating certificates.</div>
+                <div className="text-xs text-muted-foreground">{ui("We’ll replace this with the learner’s full name when generating certificates.")}</div>
               </div>
 
               <div className="rounded-xl border p-4 space-y-3">
-                <div className="text-sm font-semibold text-foreground">Font</div>
+                <div className="text-sm font-semibold text-foreground">{ui("Font")}</div>
                 <select
                   className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
                   value={placement.fontFamily ?? "helvetica_bold"}
@@ -480,15 +481,15 @@ export function CertificatePlacementModal({
                     setPlacement((p) => ({ ...p, fontFamily: v }));
                   }}
                 >
-                  <option value="helvetica_bold">Helvetica Bold</option>
-                  <option value="helvetica">Helvetica</option>
-                  <option value="times_bold">Times Bold</option>
-                  <option value="times">Times</option>
-                  <option value="courier_bold">Courier Bold</option>
-                  <option value="courier">Courier</option>
+                  <option value="helvetica_bold">{ui("Helvetica Bold")}</option>
+                  <option value="helvetica">{ui("Helvetica")}</option>
+                  <option value="times_bold">{ui("Times Bold")}</option>
+                  <option value="times">{ui("Times")}</option>
+                  <option value="courier_bold">{ui("Courier Bold")}</option>
+                  <option value="courier">{ui("Courier")}</option>
                 </select>
                 <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Font size (px)</span>
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">{ui("Font size (px)")}</span>
                   <input
                     className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
                     type="number"
@@ -502,11 +503,11 @@ export function CertificatePlacementModal({
                     }}
                   />
                 </label>
-                <div className="text-xs text-muted-foreground">Uses PDF built-in fonts for maximum compatibility.</div>
+                <div className="text-xs text-muted-foreground">{ui("Uses PDF built-in fonts for maximum compatibility.")}</div>
               </div>
 
               <div className="rounded-xl border p-4 space-y-3">
-                <div className="text-sm font-semibold text-foreground">Color</div>
+                <div className="text-sm font-semibold text-foreground">{ui("Color")}</div>
                 <div className="grid grid-cols-3 gap-2">
                   {COLOR_PRESETS.map((c) => {
                     const selected = (placement.color ?? "#111111").toLowerCase() === c.hex.toLowerCase();
@@ -525,18 +526,17 @@ export function CertificatePlacementModal({
                           style={{ background: c.hex }}
                           aria-hidden="true"
                         />
-                        <span className="truncate">{c.label}</span>
+                        <span className="truncate">{ui(c.label)}</span>
                       </button>
                     );
                   })}
                 </div>
-                <div className="text-xs text-muted-foreground">This color will be used for the learner’s name on the generated PDF.</div>
+                <div className="text-xs text-muted-foreground">{ui("This color will be used for the learner’s name on the generated PDF.")}</div>
               </div>
 
               <div className="pt-2 flex items-center justify-between gap-2">
                 <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
+                  {ui("Cancel")}</Button>
                 <Button
                   type="button"
                   onClick={() => {
@@ -555,8 +555,7 @@ export function CertificatePlacementModal({
                   className="gap-2"
                 >
                   <Check className="h-4 w-4" />
-                  Save placement
-                </Button>
+                  {ui("Save placement")}</Button>
               </div>
             </div>
           </div>

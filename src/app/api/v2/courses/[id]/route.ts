@@ -7,6 +7,7 @@ import { patchCourseV2Schema, validateSchema } from "@/lib/validations/schemas";
 import { coerceNullableText, coursePermalink, ensureUniqueCourseSlug } from "@/lib/courses/v2";
 import { sanitizeRichHtml } from "@/lib/courses/sanitize.server";
 import { generateAndPersistCertificatePdf } from "@/lib/certificates/generateCertificatePdf";
+import {getCourseLanguage} from '@/i18n/course';
 
 type CourseRow = {
   id: string;
@@ -223,10 +224,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     items: itemsByTopic.get(t.id) ?? [],
   }));
 
+  const courseLanguage = await getCourseLanguage(id);
   return apiOk(
     {
       course: {
         ...course,
+        default_language: courseLanguage.locale,
+        language_settings_available: courseLanguage.available,
         permalink,
         assigned_member_ids: assignedMemberIds,
       },
@@ -271,9 +275,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   }
 
   const patch = parsed.data;
+  if (patch.default_language !== undefined && !(await getCourseLanguage(id)).available) {
+    return apiError('CONFLICT', 'Course language settings require the approved database migration.', {status: 409});
+  }
   const updatePayload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
+
+  if (patch.default_language !== undefined) updatePayload.default_language = patch.default_language;
 
   if (Object.prototype.hasOwnProperty.call(patch, "title")) {
     updatePayload.title = patch.title?.trim();
@@ -572,4 +581,3 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     { status: 200, message: "Course deleted." }
   );
 }
-

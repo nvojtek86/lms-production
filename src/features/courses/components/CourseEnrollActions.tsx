@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,6 +27,7 @@ export function CourseEnrollActions({
   disabled: boolean;
   className?: string;
 }) {
+  const ui = useUi();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -38,10 +41,10 @@ export function CourseEnrollActions({
     setLoading(true);
     try {
       const { message } = await fetchJson<{ enrollment: unknown }>(`/api/courses/${courseId}/enroll`, { method: "POST" });
-      toast.success(message || "Enrollment started.");
+      toast.success(ui(message || "Enrollment started."));
       router.push(`/org/${orgId}/courses/${courseHrefKey}/learn`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to enroll");
+      toast.error(ui(e instanceof Error ? e.message : "Failed to enroll"));
     } finally {
       setLoading(false);
     }
@@ -50,7 +53,7 @@ export function CourseEnrollActions({
   return (
     <Button onClick={() => void enrollAndStart()} disabled={disabled || loading} className={["gap-2", className].filter(Boolean).join(" ")}>
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-      {isEnrolled ? "Continue learning" : "Start learning"}
+      {isEnrolled ? ui("Continue learning") : ui("Start learning")}
     </Button>
   );
 }

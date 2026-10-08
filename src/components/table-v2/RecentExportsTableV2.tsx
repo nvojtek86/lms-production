@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Clock, Download, Building2, User, ShieldCheck, FileText, X } from "lucide-react";
@@ -47,6 +49,7 @@ export function RecentExportsTableV2({
   emptySubtitle?: string;
   tip?: string;
 }) {
+  const ui = useUi();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerMounted = useMountedForAnimation(drawerOpen, 220);
@@ -66,9 +69,9 @@ export function RecentExportsTableV2({
           <table className="min-w-max w-full">
             <thead className="bg-background border-b">
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Time</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">What</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Who</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Time")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("What")}</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">{ui("Who")}</th>
                 <th className="px-6 py-3 w-10" />
               </tr>
             </thead>
@@ -96,7 +99,7 @@ export function RecentExportsTableV2({
                     <td className="px-6 py-4 text-sm text-foreground">{it.what}</td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{it.who}</td>
                     <td className="px-6 py-4 text-right">
-                      <span className="sr-only">Open details</span>
+                      <span className="sr-only">{ui("Open details")}</span>
                       <ChevronRight className="inline-block h-4 w-4 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
                     </td>
                   </tr>
@@ -159,6 +162,7 @@ function RecentExportDetailsDrawer({
   item: RecentExportItemV2;
   onClose: () => void;
 }) {
+  const ui = useUi();
   const [entered, setEntered] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
 
@@ -200,10 +204,10 @@ function RecentExportDetailsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-16 px-6 flex items-center justify-between">
-          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">Export Details</div>
+          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">{ui("Export Details")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={onClose}
           >
@@ -220,8 +224,7 @@ function RecentExportDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  Time
-                </span>
+                  {ui("Time")}</span>
                 <span className="text-foreground text-right">
                   <LocalDateTime iso={item.timeIso} fallback={item.time} />
                 </span>
@@ -229,16 +232,14 @@ function RecentExportDetailsDrawer({
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-muted-foreground">
                   <User className="h-4 w-4" />
-                  Who
-                </span>
+                  {ui("Who")}</span>
                 <span className="text-foreground text-right break-all">{item.who}</span>
               </div>
               {orgLabel ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
-                    Organization
-                  </span>
+                    {ui("Organization")}</span>
                   <span className="text-foreground text-right">{orgLabel}</span>
                 </div>
               ) : null}
@@ -246,8 +247,7 @@ function RecentExportDetailsDrawer({
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <ShieldCheck className="h-4 w-4" />
-                    Scope
-                  </span>
+                    {ui("Scope")}</span>
                   <span className="text-foreground text-right">
                     {item.scope}
                     {item.scopeId ? ` (${item.scopeId})` : ""}
@@ -259,32 +259,31 @@ function RecentExportDetailsDrawer({
 
           {/* Details */}
           <div className="space-y-3">
-            <div className="text-xl font-semibold text-foreground">Details</div>
+            <div className="text-xl font-semibold text-foreground">{ui("Details")}</div>
             <div className="rounded-xl border bg-background p-5 space-y-3 text-sm">
               {exportType ? (
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Download className="h-4 w-4" />
-                    Export
-                  </span>
+                    {ui("Export")}</span>
                   <span className="text-foreground text-right">{exportType}</span>
                 </div>
               ) : null}
               {format ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Format</span>
+                  <span className="text-muted-foreground">{ui("Format")}</span>
                   <span className="text-foreground text-right">{format}</span>
                 </div>
               ) : null}
               {typeof rowCount === "number" ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Row count</span>
+                  <span className="text-muted-foreground">{ui("Row count")}</span>
                   <span className="text-foreground text-right tabular-nums">{rowCount}</span>
                 </div>
               ) : null}
               {typeof max === "number" ? (
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">Max</span>
+                  <span className="text-muted-foreground">{ui("Max")}</span>
                   <span className="text-foreground text-right tabular-nums">{max}</span>
                 </div>
               ) : null}
@@ -294,43 +293,43 @@ function RecentExportDetailsDrawer({
           {/* Filters (optional) */}
           {courseId || userId || result || from || to || qPresent !== null ? (
             <div className="space-y-3">
-              <div className="text-xl font-semibold text-foreground">Filters</div>
+              <div className="text-xl font-semibold text-foreground">{ui("Filters")}</div>
               <div className="rounded-xl border bg-background p-5 space-y-3 text-sm">
                 {courseId ? (
                   <div className="flex items-start justify-between gap-4">
-                    <span className="text-muted-foreground">Course</span>
+                    <span className="text-muted-foreground">{ui("Course")}</span>
                     <span className="text-foreground text-right break-all">{courseId}</span>
                   </div>
                 ) : null}
                 {userId ? (
                   <div className="flex items-start justify-between gap-4">
-                    <span className="text-muted-foreground">User</span>
+                    <span className="text-muted-foreground">{ui("User")}</span>
                     <span className="text-foreground text-right break-all">{userId}</span>
                   </div>
                 ) : null}
                 {result ? (
                   <div className="flex items-start justify-between gap-4">
-                    <span className="text-muted-foreground">Result</span>
+                    <span className="text-muted-foreground">{ui("Result")}</span>
                     <span className="text-foreground text-right">{result}</span>
                   </div>
                 ) : null}
                 {from ? (
                   <div className="flex items-start justify-between gap-4">
-                    <span className="text-muted-foreground">From</span>
+                    <span className="text-muted-foreground">{ui("From")}</span>
                     <span className="text-foreground text-right break-all">{from}</span>
                   </div>
                 ) : null}
                 {to ? (
                   <div className="flex items-start justify-between gap-4">
-                    <span className="text-muted-foreground">To</span>
+                    <span className="text-muted-foreground">{ui("To")}</span>
                     <span className="text-foreground text-right break-all">{to}</span>
                   </div>
                 ) : null}
                 {qPresent !== null ? (
                   <div className="flex items-start justify-between gap-4">
-                    <span className="text-muted-foreground">Search</span>
+                    <span className="text-muted-foreground">{ui("Search")}</span>
                     <span className="text-foreground text-right">
-                      {qPresent ? `Yes${typeof qLength === "number" ? ` (${qLength})` : ""}` : "No"}
+                      {qPresent ? ui("Yes{v0}", {v0: typeof qLength === "number" ? ` (${qLength})` : ""}) : ui("No")}
                     </span>
                   </div>
                 ) : null}
@@ -342,18 +341,18 @@ function RecentExportDetailsDrawer({
           {item.meta ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-xl font-semibold text-foreground">Raw metadata</div>
+                <div className="text-xl font-semibold text-foreground">{ui("Raw metadata")}</div>
                 <button
                   type="button"
                   className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted/30 transition-colors"
                   onClick={() => setShowMeta((v) => !v)}
                 >
                   <FileText className="h-4 w-4" />
-                  {showMeta ? "Hide" : "Show"}
+                  {showMeta ? ui("Hide") : ui("Show")}
                 </button>
               </div>
               {showMeta ? <PrettyJson value={item.meta} /> : null}
-              <HelpText>Shows the audit log metadata captured when the export was generated.</HelpText>
+              <HelpText>{ui("Shows the audit log metadata captured when the export was generated.")}</HelpText>
             </div>
           ) : null}
         </div>

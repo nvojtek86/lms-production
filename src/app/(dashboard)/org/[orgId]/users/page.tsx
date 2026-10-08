@@ -1,9 +1,12 @@
+
+import {getUi} from "@/i18n/server";
 import { notFound, redirect } from "next/navigation";
 import { createAdminSupabaseClient, getServerUser } from "@/lib/supabase/server";
 import { resolveOrgKey } from "@/lib/organizations/resolveOrgKey";
 import { UserTableV2 } from "@/features/users";
 
 export default async function UsersPage({ params }: { params: Promise<{ orgId: string }> }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) return null;
 
@@ -41,7 +44,7 @@ export default async function UsersPage({ params }: { params: Promise<{ orgId: s
 
   return (
     <div className="container mx-auto p-6">
-      <UserTableV2 title="All Users" organizationId={orgId} organizationLabel={organizationLabel} />
+      <UserTableV2 title={ui("All Users")} organizationId={orgId} organizationLabel={organizationLabel} />
     </div>
   );
 }

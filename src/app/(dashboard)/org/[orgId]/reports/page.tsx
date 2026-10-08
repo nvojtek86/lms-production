@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { notFound, redirect } from "next/navigation";
 import { BarChart3, Download, Users, BookOpen, Award, TrendingUp } from "lucide-react";
 import Link from "next/link";
@@ -50,6 +52,7 @@ export default async function OrgReportsPage({
   params: Promise<{ orgId: string }>;
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
+  const ui = await getUi();
   const sp = (await searchParams) ?? {};
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
@@ -119,10 +122,10 @@ export default async function OrgReportsPage({
   ]);
 
   const cards = [
-    { label: "Total Users", value: String(stats.usersCount), icon: Users },
-    { label: "Enrollments", value: String(stats.enrollmentsCount), icon: BookOpen },
-    { label: "Certified", value: String(stats.certifiedCount), icon: Award },
-    { label: "Certification Rate", value: `${stats.certificationRate}%`, icon: TrendingUp },
+    { label: ui("Total Users"), value: String(stats.usersCount), icon: Users },
+    { label: ui("Enrollments"), value: String(stats.enrollmentsCount), icon: BookOpen },
+    { label: ui("Certified"), value: String(stats.certifiedCount), icon: Award },
+    { label: ui("Certification Rate"), value: `${stats.certificationRate}%`, icon: TrendingUp },
   ];
 
   const topCourses = topCoursesRes.rows;
@@ -160,43 +163,42 @@ export default async function OrgReportsPage({
         <div className="flex items-center gap-3">
           <BarChart3 className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-            <p className="text-muted-foreground">Analytics and reports for your organization</p>
+            <h1 className="text-2xl font-bold text-foreground">{ui("Reports")}</h1>
+            <p className="text-muted-foreground">{ui("Analytics and reports for your organization")}</p>
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
           <Button className="gap-2" asChild>
             <a href={exportHref}>
               <Download className="h-4 w-4" />
-              Export CSV
-            </a>
+              {ui("Export CSV")}</a>
           </Button>
         </div>
       </div>
 
       {stats.error ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Some stats could not be loaded: {stats.error}
+          {ui("Some stats could not be loaded: ")}{stats.error}
         </div>
       ) : null}
       {summaryPage.error ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load report rows: {summaryPage.error}
+          {ui("Failed to load report rows: ")}{summaryPage.error}
         </div>
       ) : null}
       {daily.error ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Enrollments chart not available: {daily.error}
+          {ui("Enrollments chart not available: ")}{daily.error}
         </div>
       ) : null}
       {topCoursesRes.error ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Top courses not available: {topCoursesRes.error}
+          {ui("Top courses not available: ")}{topCoursesRes.error}
         </div>
       ) : null}
       {topUsersRes.error ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Top users not available: {topUsersRes.error}
+          {ui("Top users not available: ")}{topUsersRes.error}
         </div>
       ) : null}
 
@@ -204,12 +206,12 @@ export default async function OrgReportsPage({
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <div key={c.label} className="bg-card border rounded-lg p-6 shadow-sm">
+            <div key={ui(c.label)} className="bg-card border rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">{c.label}</p>
+                  <p className="text-sm text-muted-foreground">{ui(c.label)}</p>
                   <p className="text-3xl font-bold text-foreground mt-1">{c.value}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Live</p>
+                  <p className="text-xs text-muted-foreground mt-1">{ui("Live")}</p>
                 </div>
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Icon className="h-6 w-6 text-primary" />
@@ -238,7 +240,7 @@ export default async function OrgReportsPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-card border rounded-lg p-6 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Enrollments (daily)</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{ui("Enrollments (daily)")}</h2>
           {hasDailyData ? (
             <>
               <div className="flex items-end gap-1 h-40">
@@ -259,16 +261,15 @@ export default async function OrgReportsPage({
             </>
           ) : (
             <div className="flex h-40 items-center justify-center rounded-lg border border-dashed bg-muted/20 px-4 text-center text-sm text-muted-foreground">
-              No enrollments in the selected period.
-            </div>
+              {ui("No enrollments in the selected period.")}</div>
           )}
         </div>
 
         <div className="bg-card border rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Top Courses</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{ui("Top Courses")}</h2>
           <div className="space-y-3">
             {topCourses.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No data.</div>
+              <div className="text-sm text-muted-foreground">{ui("No data.")}</div>
             ) : (
               topCourses.map((c) => {
                 const max = Math.max(1, topCourses[0]?.count ?? 1);
@@ -276,7 +277,7 @@ export default async function OrgReportsPage({
                 return (
                   <div key={c.id}>
                     <div className="flex justify-between text-sm">
-                      <span className="truncate">{c.label}</span>
+                      <span className="truncate">{ui(c.label)}</span>
                       <span className="tabular-nums text-muted-foreground">{c.count}</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden mt-1">
@@ -288,10 +289,10 @@ export default async function OrgReportsPage({
             )}
           </div>
 
-          <h2 className="text-lg font-semibold text-foreground mb-4 mt-6">Top Users (by certificates)</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 mt-6">{ui("Top Users (by certificates)")}</h2>
           <div className="space-y-3">
             {topUsers.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No data.</div>
+              <div className="text-sm text-muted-foreground">{ui("No data.")}</div>
             ) : (
               topUsers.map((u) => {
                 const max = Math.max(1, topUsers[0]?.count ?? 1);
@@ -314,7 +315,7 @@ export default async function OrgReportsPage({
       </div>
 
       <div className="bg-card border rounded-lg p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Enrollments</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{ui("Enrollments")}</h2>
 
         <RecentEnrollmentsTableV2
           items={summaryPage.rows.map((r, idx): RecentEnrollmentItemV2 => {
@@ -340,19 +341,19 @@ export default async function OrgReportsPage({
               meta: r,
             };
           })}
-          emptyTitle="No enrollments yet."
-          emptySubtitle="Once users enroll, their status and certificates will appear here."
+          emptyTitle={ui("No enrollments yet.")}
+          emptySubtitle={ui("Once users enroll, their status and certificates will appear here.")}
         />
 
         <div className="mt-4 flex items-center justify-between gap-3 text-sm">
           <div className="text-muted-foreground">
             {summaryPage.count > 0 ? (
               <span>
-                Showing {(summaryPage.page - 1) * summaryPage.pageSize + 1}–
-                {Math.min(summaryPage.page * summaryPage.pageSize, summaryPage.count)} of {summaryPage.count}
+                {ui("Showing ")}{(summaryPage.page - 1) * summaryPage.pageSize + 1}–
+                {Math.min(summaryPage.page * summaryPage.pageSize, summaryPage.count)} {ui("of ")}{summaryPage.count}
               </span>
             ) : (
-              <span>Showing 0 results</span>
+              <span>{ui("Showing 0 results")}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -368,11 +369,10 @@ export default async function OrgReportsPage({
                 <>
                   {prevDisabled ? (
                     <Button variant="outline" disabled>
-                      Prev
-                    </Button>
+                      {ui("Prev")}</Button>
                   ) : (
                     <Button asChild variant="outline">
-                      <Link href={pageHref(current - 1)}>Prev</Link>
+                      <Link href={pageHref(current - 1)}>{ui("Prev")}</Link>
                     </Button>
                   )}
 
@@ -395,16 +395,15 @@ export default async function OrgReportsPage({
                   </div>
 
                   <div className="text-muted-foreground tabular-nums hidden sm:block">
-                    Page {current} / {totalPages}
+                    {ui("Page ")}{current} / {totalPages}
                   </div>
 
                   {nextDisabled ? (
                     <Button variant="outline" disabled>
-                      Next
-                    </Button>
+                      {ui("Next")}</Button>
                   ) : (
                     <Button asChild variant="outline">
-                      <Link href={pageHref(current + 1)}>Next</Link>
+                      <Link href={pageHref(current + 1)}>{ui("Next")}</Link>
                     </Button>
                   )}
                 </>

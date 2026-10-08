@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -27,6 +29,7 @@ export function AsyncIdCombobox({
   pageSize?: number;
   fetchUrl: (params: { q: string; page: number; page_size: number }) => string;
 }) {
+  const ui = useUi();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -92,7 +95,7 @@ export function AsyncIdCombobox({
       } catch (e) {
         setItems([]);
         setTotal(0);
-        setError(e instanceof Error ? e.message : "Failed to load options");
+        setError(ui(e instanceof Error ? e.message : "Failed to load options"));
       } finally {
         setLoading(false);
       }
@@ -102,7 +105,7 @@ export function AsyncIdCombobox({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, q, page, pageSize, fetchUrl]);
+  }, [open, q, page, pageSize, fetchUrl, ui]);
 
   function clearSelection() {
     setSelectedId("");
@@ -121,7 +124,7 @@ export function AsyncIdCombobox({
     <div className="relative" ref={wrapRef}>
       <input type="hidden" name={name} value={selectedId} />
       <div className="text-xs text-muted-foreground mb-1">
-        {label}
+        {ui(label)}
       </div>
       <div className="relative">
         <Input
@@ -146,7 +149,7 @@ export function AsyncIdCombobox({
         {!disabled && (selectedId || (open && q.length > 0)) ? (
           <button
             type="button"
-            aria-label="Clear"
+            aria-label={ui("Clear")}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-muted-foreground hover:bg-muted/50"
             onClick={() => {
               if (selectedId) {
@@ -166,8 +169,8 @@ export function AsyncIdCombobox({
         <div className="absolute z-50 mt-2 w-full rounded-md border bg-card shadow-sm">
           <div className="px-3 py-2 text-xs text-muted-foreground border-b flex items-center justify-between gap-2">
             <span>
-              {loading ? "Loading..." : `Page ${page} / ${totalPages}`}{" "}
-              {total ? `• ${total} total` : ""}
+              {loading ? ui("Loading...") : ui("Page {v0} / {v1}", {v0: page, v1: totalPages})}{" "}
+              {total ? ui("• {v0} total", {v0: total}) : ""}
             </span>
             <div className="flex gap-1">
               <button
@@ -176,23 +179,21 @@ export function AsyncIdCombobox({
                 disabled={loading || page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                Prev
-              </button>
+                {ui("Prev")}</button>
               <button
                 type="button"
                 className="h-8 rounded-md border px-2 text-xs text-foreground disabled:opacity-50"
                 disabled={loading || page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               >
-                Next
-              </button>
+                {ui("Next")}</button>
             </div>
           </div>
 
           {error ? (
-            <div className="px-3 py-3 text-sm text-destructive">{error}</div>
+            <div className="px-3 py-3 text-sm text-destructive">{ui(error)}</div>
           ) : items.length === 0 && !loading ? (
-            <div className="px-3 py-3 text-sm text-muted-foreground">No results.</div>
+            <div className="px-3 py-3 text-sm text-muted-foreground">{ui("No results.")}</div>
           ) : (
             <div className="max-h-64 overflow-auto">
               {items.map((it) => (

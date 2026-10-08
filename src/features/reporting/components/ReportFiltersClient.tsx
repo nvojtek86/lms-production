@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,6 +24,7 @@ export function ReportFiltersClient(props: {
     userLabel?: string;
   };
 }) {
+  const ui = useUi();
   const { mode, orgIdFixed, initial } = props;
   const router = useRouter();
   const pathname = usePathname();
@@ -62,7 +65,7 @@ export function ReportFiltersClient(props: {
 
   return (
     <div className="bg-card border rounded-lg p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground mb-4">Filters</h2>
+      <h2 className="text-lg font-semibold text-foreground mb-4">{ui("Filters")}</h2>
 
       <form onSubmit={onSubmit} className="space-y-4">
         {/* Any filter change should reset pagination */}
@@ -71,20 +74,20 @@ export function ReportFiltersClient(props: {
         {/* Row 1: Search (full width) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">Search</div>
-            <Input name="q" defaultValue={initial.q} placeholder="Email, name, course title..." />
+            <div className="text-xs text-muted-foreground mb-1">{ui("Search")}</div>
+            <Input name="q" defaultValue={initial.q} placeholder={ui("Email, name, course title...")} />
           </div>
 
           <div>
-              <div className="text-xs text-muted-foreground mb-1">Certificate</div>
+              <div className="text-xs text-muted-foreground mb-1">{ui("Certificate")}</div>
               <select
                 name="result"
                 defaultValue={initial.result}
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
               >
-                <option value="all">All</option>
-                <option value="certified">Certified</option>
-                <option value="not_certified">Not certified</option>
+                <option value="all">{ui("All")}</option>
+                <option value="certified">{ui("Certified")}</option>
+                <option value="not_certified">{ui("Not certified")}</option>
               </select>
             </div>
           </div>
@@ -94,8 +97,8 @@ export function ReportFiltersClient(props: {
           {mode !== "org" ? (
             <AsyncIdCombobox
               name="orgId"
-              label="Organizations"
-              placeholder="Search organizations..."
+              label={ui("Organizations")}
+              placeholder={ui("Search organizations...")}
               initialId={initial.orgId}
               initialLabel={initial.orgLabel}
               fetchUrl={({ q, page, page_size }) =>
@@ -108,8 +111,8 @@ export function ReportFiltersClient(props: {
 
           <AsyncIdCombobox
             name="courseId"
-            label="Course (draft + archived included)"
-            placeholder="Search courses..."
+            label={ui("Course (draft + archived included)")}
+            placeholder={ui("Search courses...")}
             initialId={initial.courseId}
             initialLabel={initial.courseLabel}
             fetchUrl={({ q, page, page_size }) => {
@@ -120,8 +123,8 @@ export function ReportFiltersClient(props: {
 
           <AsyncIdCombobox
             name="userId"
-            label="Users"
-            placeholder="Search users..."
+            label={ui("Users")}
+            placeholder={ui("Search users...")}
             initialId={initial.userId}
             initialLabel={initial.userLabel}
             fetchUrl={({ q, page, page_size }) => {
@@ -134,21 +137,20 @@ export function ReportFiltersClient(props: {
         {/* Row 3: Result / From / To */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">From</div>
+            <div className="text-xs text-muted-foreground mb-1">{ui("From")}</div>
             <Input name="from" type="date" defaultValue={initial.from} />
           </div>
           <div>
-            <div className="text-xs text-muted-foreground mb-1">To</div>
+            <div className="text-xs text-muted-foreground mb-1">{ui("To")}</div>
             <Input name="to" type="date" defaultValue={initial.to} />
           </div>
         </div>
 
         {/* Row 4: buttons */}
         <div className="flex gap-2">
-          <Button type="submit">Apply</Button>
+          <Button type="submit">{ui("Apply")}</Button>
           <Button type="button" variant="outline" onClick={reset}>
-            Reset
-          </Button>
+            {ui("Reset")}</Button>
         </div>
       </form>
     </div>

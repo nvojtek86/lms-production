@@ -1,4 +1,6 @@
 'use client';
+import {useUi} from "@/i18n/useUi";
+
 
 import { useState } from 'react';
 import { ShieldX } from 'lucide-react';
@@ -7,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ROLE_PRIMARY_CACHE_KEY } from '@/lib/theme/themeConstants';
 
 export default function UnauthorizedPage() {
+  const ui = useUi();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Landing here usually means the session is valid but cannot reach any dashboard,
@@ -45,17 +48,14 @@ export default function UnauthorizedPage() {
         </div>
         
         <h1 className="text-4xl font-bold text-foreground">
-          Access Denied
-        </h1>
+          {ui("Access Denied")}</h1>
         
         <p className="text-lg text-muted-foreground max-w-md">
-          You don&apos;t have permission to access this page. 
-          Please contact your administrator if you believe this is an error.
-        </p>
+          {ui("You don't have permission to access this page. Please contact your administrator if you believe this is an error.")}</p>
         
         <div className="flex gap-4 justify-center">
           <Button onClick={handleBackToLogin} disabled={isLoggingOut}>
-            {isLoggingOut ? 'Signing out...' : 'Log out and go to Login'}
+            {isLoggingOut ? ui("Signing out...") : ui("Log out and go to Login")}
           </Button>
         </div>
       </div>

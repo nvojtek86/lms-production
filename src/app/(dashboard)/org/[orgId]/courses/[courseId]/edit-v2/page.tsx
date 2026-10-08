@@ -1,3 +1,4 @@
+import {getCourseLanguage} from "@/i18n/course";
 import { notFound, redirect } from "next/navigation";
 import { createServerSupabaseClient, getServerUser } from "@/lib/supabase/server";
 import { resolveOrgKey } from "@/lib/organizations/resolveOrgKey";
@@ -123,7 +124,10 @@ export default async function OrgCourseEditV2Page({
     assignedMemberExpiresAt[uid] = typeof r.access_expires_at === "string" ? r.access_expires_at : null;
   }
 
+  const courseLanguage = await getCourseLanguage(courseId);
   const initialCourse: CourseV2 = {
+    default_language: courseLanguage.locale,
+    language_settings_available: courseLanguage.available,
     id: String(courseRow.id),
     title: (courseRow as { title?: string | null }).title ?? null,
     slug: (courseRow as { slug?: string | null }).slug ?? null,

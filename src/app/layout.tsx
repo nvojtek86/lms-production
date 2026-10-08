@@ -1,3 +1,6 @@
+import {NextIntlClientProvider} from "next-intl";
+import {getLocale, getMessages} from "next-intl/server";
+import {PublicLanguageSwitcher} from "@/components/ui/LanguageSwitcher";
 import { AuthProvider } from "@/context/AuthProvider";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
@@ -84,6 +87,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   const serverTheme = await loadPublicThemeServer();
   const serverThemeCss = themeToCss(serverTheme);
 
@@ -98,7 +103,7 @@ export default async function RootLayout({
   )});var p=(typeof location!=="undefined"&&location&&typeof location.pathname==="string")?location.pathname:"";var dash=p.indexOf("/admin")===0||p.indexOf("/system")===0||p.indexOf("/org")===0;if(dash&&rp&&typeof rp==="string"&&rp.length){document.documentElement.style.setProperty("--brand-primary",rp);} }catch(e){}})();`;
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         {serverThemeCss ? (
           <style
@@ -114,6 +119,8 @@ export default async function RootLayout({
         className={`antialiased`}
         suppressHydrationWarning
       >
+        <NextIntlClientProvider locale={locale} messages={messages}>
+        <PublicLanguageSwitcher />
         <ThemeProvider>
           <AuthProvider>
             <ClientErrorLogger />
@@ -122,6 +129,7 @@ export default async function RootLayout({
             <Toaster position="top-right" richColors closeButton />
           </AuthProvider>
         </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { notFound, redirect } from "next/navigation";
 import { FileText, CheckCircle, XCircle, ClipboardList } from "lucide-react";
 
@@ -11,6 +13,7 @@ type CourseRow = { id: string; title: string | null; slug?: string | null };
 type ItemRow = { id: string; title: string | null; course_id: string | null };
 
 export default async function StudentMyQuizzesPage({ params }: { params: Promise<{ orgId: string }> }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
 
@@ -133,8 +136,8 @@ export default async function StudentMyQuizzesPage({ params }: { params: Promise
       <div className="flex items-center gap-3">
         <FileText className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Quizzes</h1>
-          <p className="text-muted-foreground">Your full quiz attempt history across courses</p>
+          <h1 className="text-2xl font-bold text-foreground">{ui("My Quizzes")}</h1>
+          <p className="text-muted-foreground">{ui("Your full quiz attempt history across courses")}</p>
         </div>
       </div>
 
@@ -145,7 +148,7 @@ export default async function StudentMyQuizzesPage({ params }: { params: Promise
               <ClipboardList className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total attempts</p>
+              <p className="text-sm text-muted-foreground">{ui("Total attempts")}</p>
               <p className="text-2xl font-bold text-foreground">{totalAttempts}</p>
             </div>
           </div>
@@ -156,7 +159,7 @@ export default async function StudentMyQuizzesPage({ params }: { params: Promise
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Passed</p>
+              <p className="text-sm text-muted-foreground">{ui("Passed")}</p>
               <p className="text-2xl font-bold text-foreground">{passedCount}</p>
             </div>
           </div>
@@ -167,7 +170,7 @@ export default async function StudentMyQuizzesPage({ params }: { params: Promise
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Failed</p>
+              <p className="text-sm text-muted-foreground">{ui("Failed")}</p>
               <p className="text-2xl font-bold text-foreground">{failedCount}</p>
             </div>
           </div>

@@ -1,4 +1,7 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
+
 
 import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
@@ -17,6 +20,7 @@ export function FilterSelect<T extends string>(props: {
   className?: string;
   ariaLabel?: string;
 }) {
+  const ui = useUi();
   return (
     <div className={`relative ${props.className ?? ""}`}>
       <select
@@ -33,7 +37,7 @@ export function FilterSelect<T extends string>(props: {
       >
         {props.options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {ui.optionLabel(o.label, o.value)}
           </option>
         ))}
       </select>
@@ -61,11 +65,12 @@ export function UnderlineDropdown<T extends string>({
   onSelect: (v: T) => void;
   disabled?: boolean;
 }) {
+  const ui = useUi();
   const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
 
   return (
     <div className="min-w-[180px]">
-      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+      <div className="text-xs text-muted-foreground mb-1">{ui(label)}</div>
       <div data-filter-dropdown={id} className="relative">
         <button
           type="button"
@@ -81,7 +86,7 @@ export function UnderlineDropdown<T extends string>({
             ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
           `}
         >
-          <span className="min-w-0 truncate text-foreground">{selectedLabel}</span>
+          <span className="min-w-0 truncate text-foreground">{ui.optionLabel(selectedLabel, value)}</span>
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
           </span>
@@ -100,7 +105,7 @@ export function UnderlineDropdown<T extends string>({
                     active ? "bg-primary text-white" : "text-foreground cursor-pointer"
                   } hover:bg-primary/90 hover:text-white`}
                 >
-                  {o.label}
+                  {ui.optionLabel(o.label, o.value)}
                 </button>
               );
             })}

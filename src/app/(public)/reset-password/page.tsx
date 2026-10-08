@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -107,6 +109,7 @@ async function reportAuthLinkError(flow: AuthLinkFlow, stage: AuthLinkStage, err
 }
 
 export default function ResetPasswordPage() {
+  const ui = useUi();
   const [isReady, setIsReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [flow, setFlow] = useState<AuthLinkFlow>("unknown");
@@ -229,12 +232,12 @@ export default function ResetPasswordPage() {
     setError(null);
 
     if (!passwordsMatch) {
-      setError("Passwords do not match.");
+      setError(ui("Passwords do not match."));
       return;
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(ui("Password must be at least 8 characters."));
       return;
     }
 
@@ -278,7 +281,7 @@ export default function ResetPasswordPage() {
 
       window.location.assign("/");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to update password");
+      setError(ui(caught instanceof Error ? caught.message : "Failed to update password"));
       setIsSaving(false);
     }
   }
@@ -290,57 +293,55 @@ export default function ResetPasswordPage() {
       <header className="border-b px-6 py-4">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft size={16} />
-          Back to Login
-        </Link>
+          {ui("Back to Login")}</Link>
       </header>
 
       <main className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-3xl font-bold text-foreground">{pageTitle}</h1>
-            <p className="text-muted-foreground">Choose a new password for your account.</p>
+            <p className="text-muted-foreground">{ui("Choose a new password for your account.")}</p>
           </div>
 
           {error && hasSession ? (
-            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{ui(error)}</div>
           ) : null}
 
           <div className="rounded-lg border bg-card p-6">
             {!isReady ? (
-              <div className="text-sm text-muted-foreground">Checking your secure link...</div>
+              <div className="text-sm text-muted-foreground">{ui("Checking your secure link...")}</div>
             ) : !hasSession ? (
               <div className="space-y-5">
                 <div className="flex gap-3">
                   <CircleAlert className="mt-0.5 size-5 shrink-0 text-amber-600" aria-hidden="true" />
                   <div className="space-y-1">
-                    <h2 className="font-semibold text-foreground">{linkProblem?.title ?? "This link is not valid"}</h2>
+                    <h2 className="font-semibold text-foreground">{linkProblem?.title ?? ui("This link is not valid")}</h2>
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {linkProblem?.message ?? "Request a fresh link to continue."}
+                      {linkProblem?.message ?? ui("Request a fresh link to continue.")}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button asChild className="sm:flex-1">
-                    <Link href="/forgot-password">Request new link</Link>
+                    <Link href="/forgot-password">{ui("Request new link")}</Link>
                   </Button>
                   <Button asChild variant="outline" className="sm:flex-1">
-                    <Link href="/">Back to login</Link>
+                    <Link href="/">{ui("Back to login")}</Link>
                   </Button>
                 </div>
 
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Still having trouble? Contact{" "}
+                  {ui("Still having trouble? Contact")}{" "}
                   <a className="font-medium text-primary hover:underline" href="mailto:support@smartapprentice.app">
-                    support@smartapprentice.app
-                  </a>
+                    {ui("support@smartapprentice.app")}</a>
                   .
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">New password</Label>
+                  <Label htmlFor="password">{ui("New password")}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -352,7 +353,7 @@ export default function ResetPasswordPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm new password</Label>
+                  <Label htmlFor="confirmPassword">{ui("Confirm new password")}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -365,7 +366,7 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <Button className="w-full" type="submit" disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Update password"}
+                  {isSaving ? ui("Saving...") : ui("Update password")}
                 </Button>
               </form>
             )}

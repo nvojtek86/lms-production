@@ -1,3 +1,7 @@
+
+import {useUi} from "@/i18n/useUi";
+
+import {getUi} from "@/i18n/server";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { LayoutDashboard, Users, BookOpen, Award, TrendingUp } from "lucide-react";
@@ -33,6 +37,7 @@ interface OrgDashboardProps {
 }
 
 export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
 
@@ -136,21 +141,21 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
 
     const memberStats: Stat[] = [
       {
-        label: "Organizations",
+        label: ui("Organizations"),
         value: String(memberships.length),
         icon: Users,
         color: "bg-blue-500",
         error: membershipsError,
       },
       {
-        label: "Assigned Courses",
+        label: ui("Assigned Courses"),
         value: String(assignedCourseCount),
         icon: BookOpen,
         color: "bg-purple-500",
         error: assignmentsError?.message ?? null,
       },
       {
-        label: "Total Issued Certificates",
+        label: ui("Total Issued Certificates"),
         value: String(certificateCount),
         icon: Award,
         color: "bg-amber-500",
@@ -165,7 +170,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
             <div className="my-5 flex h-12 w-auto items-center justify-center overflow-hidden rounded bg-transparent">
               <Image
                 src={orgLogoUrl}
-                alt={`${orgLabel} logo`}
+                alt={ui("{v0} logo", {v0: orgLabel})}
                 width={160}
                 height={64}
                 className="h-full w-full object-contain"
@@ -176,13 +181,13 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
             <LayoutDashboard className="h-8 w-8 text-primary" />
           )}
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Organization Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">{ui("Organization Dashboard")}</h1>
             <p className="text-muted-foreground">
-              You belong to <span className="font-medium text-foreground">{memberships.length}</span>{" "}
-              {memberships.length === 1 ? "organization" : "organizations"}.
+              {ui("You belong to ")}<span className="font-medium text-foreground">{memberships.length}</span>{" "}
+              {memberships.length === 1 ? ui("organization") : ui("organizations")}.
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {user.full_name && user.full_name.trim().length > 0 ? `Welcome back, ${user.full_name.trim()}` : "Welcome back"}
+              {user.full_name && user.full_name.trim().length > 0 ? ui("Welcome back, {v0}", {v0: user.full_name.trim()}) : ui("Welcome back")}
             </p>
           </div>
         </div>
@@ -211,8 +216,8 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
           <div className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-primary" />
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Your Organizations</h2>
-              <p className="text-sm text-muted-foreground">All active organizations linked to your account.</p>
+              <h2 className="text-lg font-semibold text-foreground">{ui("Your Organizations")}</h2>
+              <p className="text-sm text-muted-foreground">{ui("All active organizations linked to your account.")}</p>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -226,7 +231,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
                 </span>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">No active organizations found.</p>
+              <p className="text-sm text-muted-foreground">{ui("No active organizations found.")}</p>
             )}
           </div>
         </div>
@@ -288,7 +293,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
     ...(canSeeUsersCard
       ? [
           {
-            label: "Users (Active / Disabled)",
+            label: ui("Users (Active / Disabled)"),
             value: `${activeUsersCount} / ${disabledUsersCount}`,
             icon: Users,
             color: "bg-blue-500",
@@ -296,8 +301,8 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
           },
         ]
       : []),
-    { label: "Courses", value: String(courses.count), icon: BookOpen, color: "bg-purple-500", error: courses.error },
-    { label: "Total Issued Certificates", value: String(certificates.count), icon: Award, color: "bg-amber-500", error: certificates.error },
+    { label: ui("Courses"), value: String(courses.count), icon: BookOpen, color: "bg-purple-500", error: courses.error },
+    { label: ui("Total Issued Certificates"), value: String(certificates.count), icon: Award, color: "bg-amber-500", error: certificates.error },
   ];
 
   // Course progress (org admin & above)
@@ -431,7 +436,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
           <div className="h-12 w-auto rounded bg-transparent my-5 flex items-center justify-center overflow-hidden">
             <Image
               src={orgLogoUrl}
-              alt={`${orgLabel} logo`}
+              alt={ui("{v0} logo", {v0: orgLabel})}
               width={160}
               height={64}
               className="h-full w-full object-contain"
@@ -442,15 +447,15 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
           <LayoutDashboard className="h-8 w-8 text-primary" />
         )}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Organization Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">{ui("Organization Dashboard")}</h1>
           <p className="text-muted-foreground">
-            {typeof orgName === "string" && orgName.trim().length > 0 ? "Organization Name" : "Organization"}:{" "}
+            {typeof orgName === "string" && orgName.trim().length > 0 ? ui("Organization Name") : ui("Organization")}:{" "}
             <span className="font-medium text-foreground">{orgLabel}</span>
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {user.full_name && user.full_name.trim().length > 0
-              ? `Welcome back, ${user.full_name.trim()}`
-              : "Welcome back"}
+              ? ui("Welcome back, {v0}", {v0: user.full_name.trim()})
+              : ui("Welcome back")}
           </p>
         </div>
       </div>
@@ -470,7 +475,7 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
                   <p className="text-3xl font-bold text-foreground mt-1">{stat.value}</p>
                   {stat.error ? (
                     <p className="mt-1 text-xs text-destructive">
-                      {stat.error.includes("relation") ? "Missing table / schema" : stat.error}
+                      {stat.error.includes("relation") ? ui("Missing table / schema") : stat.error}
                     </p>
                   ) : null}
                 </div>
@@ -488,16 +493,15 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Course Progress
-          </h2>
+            {ui("Course Progress")}</h2>
           {courseProgressError ? (
             <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              Failed to load course progress: {courseProgressError}
+              {ui("Failed to load course progress: ")}{courseProgressError}
             </div>
           ) : courseProgressRows.length === 0 ? (
             <div className="text-muted-foreground text-center py-8">
-              <p>No enrollments yet.</p>
-              <p className="text-sm mt-2">Once users enroll, course progress will show here.</p>
+              <p>{ui("No enrollments yet.")}</p>
+              <p className="text-sm mt-2">{ui("Once users enroll, course progress will show here.")}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
@@ -505,11 +509,11 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
                 <table className="min-w-max w-full">
                 <thead className="bg-muted/50 border-b">
                   <tr>
-                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Course</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Enrollments</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Certified</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Not certified</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Certification rate</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">{ui("Course")}</th>
+                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Enrollments")}</th>
+                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Certified")}</th>
+                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Not certified")}</th>
+                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Certification rate")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -546,16 +550,15 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Recent Activity
-          </h2>
+            {ui("Recent Activity")}</h2>
           {activityError ? (
             <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              Failed to load activity: {activityError}
+              {ui("Failed to load activity: ")}{activityError}
             </div>
           ) : activityEvents.length === 0 ? (
             <div className="text-muted-foreground text-center py-8">
-              <p>No recent activity yet.</p>
-              <p className="text-sm mt-2">Enrollments and certificates will appear here.</p>
+              <p>{ui("No recent activity yet.")}</p>
+              <p className="text-sm mt-2">{ui("Enrollments and certificates will appear here.")}</p>
             </div>
           ) : (
             <RecentActivityTableV2
@@ -579,8 +582,8 @@ export default async function OrgDashboardPage({ params }: OrgDashboardProps) {
                   meta: e,
                 };
               })}
-              emptyTitle="No recent activity yet."
-              emptySubtitle="Enrollments and certificates will appear here."
+              emptyTitle={ui("No recent activity yet.")}
+              emptySubtitle={ui("Enrollments and certificates will appear here.")}
             />
           )}
         </div>

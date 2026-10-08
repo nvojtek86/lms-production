@@ -1,4 +1,6 @@
 'use client';
+import {useUi} from "@/i18n/useUi";
+
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,6 +16,7 @@ type DashboardSidebarClientProps = {
 };
 
 export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSidebarClientProps) {
+  const ui = useUi();
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -124,7 +127,7 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
                 userToggledCollapsedRef.current = true;
                 setCollapsed((v) => !v);
               }}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed ? ui("Expand sidebar") : ui("Collapse sidebar")}
               className={`
                 w-full flex items-center rounded-md transition-colors
                 ${collapsed ? "justify-center px-0 py-3" : "gap-3 px-3 py-2.5"}
@@ -133,9 +136,9 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
             >
               {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
               {collapsed ? (
-                <span className="sr-only">{collapsed ? "Expand" : "Collapse"}</span>
+                <span className="sr-only">{collapsed ? ui("Expand") : ui("Collapse")}</span>
               ) : (
-                <span className="truncate">{collapsed ? "Expand" : "Collapse"}</span>
+                <span className="truncate">{collapsed ? ui("Expand") : ui("Collapse")}</span>
               )}
             </button>
           </div>
@@ -148,7 +151,7 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
 
             return (
               <Link
-                key={item.label}
+                key={ui(item.label)}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={`
@@ -163,9 +166,9 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
               >
                 <Icon size={20} />
                 {collapsed ? (
-                  <span className="sr-only">{item.label}</span>
+                  <span className="sr-only">{ui(item.label)}</span>
                 ) : (
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate">{ui(item.label)}</span>
                 )}
               </Link>
             );
@@ -173,7 +176,7 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
 
           {canLogout ? (
             <button
-              title={collapsed ? "Logout" : undefined}
+              title={collapsed ? ui("Logout") : undefined}
               className={`
                 mt-5 flex w-full items-center rounded-md transition-colors text-white/80 hover:bg-white/10 hover:text-white disabled:opacity-50 cursor-pointer
                 ${collapsed ? "justify-center px-0 py-3" : "gap-3 px-3 py-2.5"}
@@ -187,9 +190,9 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
                 <LogOut size={20} />
               )}
               {collapsed ? (
-                <span className="sr-only">{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                <span className="sr-only">{isLoggingOut ? ui("Logging out...") : ui("Logout")}</span>
               ) : (
-                <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                <span>{isLoggingOut ? ui("Logging out...") : ui("Logout")}</span>
               )}
             </button>
           ) : null}
@@ -203,8 +206,7 @@ export function DashboardSidebarClient({ menuItems, canLogout }: DashboardSideba
           collapsed ? "text-[10px] text-center" : "text-xs text-center leading-relaxed"
         }`}
       >
-        © 2026 Smart Consulting Agency. All rights reserved.
-      </div>
+        {ui("© 2026 Smart Consulting Agency. All rights reserved.")}</div>
     </aside>
   );
 }

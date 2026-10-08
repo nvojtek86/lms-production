@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { LayoutDashboard, Building2, UserCog, BookOpen, Award, FileText, Users } from "lucide-react";
 import Link from "next/link";
 import { createAdminSupabaseClient, getServerUser } from "@/lib/supabase/server";
@@ -72,6 +74,7 @@ export default async function SystemDashboardPage({
 }
 
 async function SystemDashboardContent(props: { searchParams?: Promise<SearchParams> | SearchParams }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) return null;
   if (!["super_admin", "system_admin"].includes(user.role)) return null;
@@ -98,26 +101,26 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
   const stats: Stat[] = isSystemAdmin
     ? [
         {
-          label: "Organizations (Active / Inactive)",
+          label: ui("Organizations (Active / Inactive)"),
           value: `${activeOrgsCount} / ${orgsInactive.count}`,
           icon: Building2,
           color: "bg-blue-500",
           error: orgsCountError,
         },
-        { label: "System Admins", value: String(systemAdmins.count), icon: Users, color: "bg-emerald-600", error: systemAdmins.error },
-        { label: "Org Admins", value: String(orgAdmins.count), icon: UserCog, color: "bg-indigo-500", error: orgAdmins.error },
+        { label: ui("System Admins"), value: String(systemAdmins.count), icon: Users, color: "bg-emerald-600", error: systemAdmins.error },
+        { label: ui("Org Admins"), value: String(orgAdmins.count), icon: UserCog, color: "bg-indigo-500", error: orgAdmins.error },
       ]
     : [
         {
-          label: "Organizations (Active / Inactive)",
+          label: ui("Organizations (Active / Inactive)"),
           value: `${activeOrgsCount} / ${orgsInactive.count}`,
           icon: Building2,
           color: "bg-blue-500",
           error: orgsCountError,
         },
-        { label: "Org Admins", value: String(orgAdmins.count), icon: UserCog, color: "bg-indigo-500", error: orgAdmins.error },
-        { label: "Total Courses", value: String(courses.count), icon: BookOpen, color: "bg-purple-500", error: courses.error },
-        { label: "Certificates Issued", value: String(certificates.count), icon: Award, color: "bg-amber-500", error: certificates.error },
+        { label: ui("Org Admins"), value: String(orgAdmins.count), icon: UserCog, color: "bg-indigo-500", error: orgAdmins.error },
+        { label: ui("Total Courses"), value: String(courses.count), icon: BookOpen, color: "bg-purple-500", error: courses.error },
+        { label: ui("Certificates Issued"), value: String(certificates.count), icon: Award, color: "bg-amber-500", error: certificates.error },
       ];
 
   let activityTotalCount = 0;
@@ -619,11 +622,11 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
       <div className="flex items-center gap-3">
         <LayoutDashboard className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">System Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">{ui("System Dashboard")}</h1>
           <p className="text-muted-foreground">
             {user.full_name && user.full_name.trim().length > 0
-              ? `Welcome back System Administrator, ${user.full_name.trim()}`
-              : "Welcome back, System Administrator"}
+              ? ui("Welcome back System Administrator, {v0}", {v0: user.full_name.trim()})
+              : ui("Welcome back, System Administrator")}
           </p>
         </div>
       </div>
@@ -643,7 +646,7 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
                   <p className="text-3xl font-bold text-foreground mt-1">{stat.value}</p>
                   {stat.error ? (
                     <p className="mt-1 text-xs text-destructive">
-                      {stat.error.includes("relation") ? "Missing table / schema" : stat.error}
+                      {stat.error.includes("relation") ? ui("Missing table / schema") : stat.error}
                     </p>
                   ) : null}
                 </div>
@@ -661,29 +664,28 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Organizations Overview
-          </h2>
+            {ui("Organizations Overview")}</h2>
 
           {orgLoadError ? (
             <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              Failed to load organizations: {orgLoadError.message}
+              {ui("Failed to load organizations: ")}{orgLoadError.message}
             </div>
           ) : null}
 
           {usersCountsError ? (
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {isSystemAdmin ? "Org admin counts not available: " : "User counts not available: "}
+              {isSystemAdmin ? ui("Org admin counts not available: ") : ui("User counts not available: ")}
               {usersCountsError}
             </div>
           ) : null}
           {!isSystemAdmin && coursesCountsError ? (
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Courses counts not available: {coursesCountsError}
+              {ui("Courses counts not available: ")}{coursesCountsError}
             </div>
           ) : null}
           {!isSystemAdmin && certificatesCountsError ? (
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Certificates counts not available: {certificatesCountsError}
+              {ui("Certificates counts not available: ")}{certificatesCountsError}
             </div>
           ) : null}
 
@@ -692,15 +694,15 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
               <table className="min-w-max w-full">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Organization</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">{ui("Organization")}</th>
                     {!isSystemAdmin ? (
                       <>
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Courses</th>
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Users (A / D / T)</th>
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Certificates</th>
+                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Courses")}</th>
+                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Users (A / D / T)")}</th>
+                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Certificates")}</th>
                       </>
                     ) : (
-                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">Org Admins (A / D / T)</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">{ui("Org Admins (A / D / T)")}</th>
                     )}
                   </tr>
                 </thead>
@@ -708,8 +710,7 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
                   {orgOverview.length === 0 ? (
                     <tr>
                       <td colSpan={isSystemAdmin ? 2 : 4} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                        No organizations found.
-                      </td>
+                        {ui("No organizations found.")}</td>
                     </tr>
                   ) : (
                     orgOverview.map((o) => (
@@ -747,13 +748,12 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Recent Activity
-          </h2>
+            {ui("Recent Activity")}</h2>
           {auditError ? (
-            <div className="text-sm text-destructive">Failed to load audit logs: {auditError.message}</div>
+            <div className="text-sm text-destructive">{ui("Failed to load audit logs: ")}{auditError.message}</div>
           ) : visibleAuditRows.length === 0 ? (
             <div className="text-muted-foreground text-center py-8">
-              <p>No activity yet.</p>
+              <p>{ui("No activity yet.")}</p>
             </div>
           ) : (
             <>
@@ -775,7 +775,7 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
                     meta: row.metadata ?? null,
                   };
                 })}
-                emptyTitle="No activity yet."
+                emptyTitle={ui("No activity yet.")}
               />
 
               {!isSystemAdmin ? (
@@ -783,10 +783,10 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
                   <div className="text-muted-foreground">
                     {activityTotalCount > 0 ? (
                       <span>
-                        Showing {activityFromIdx + 1}–{Math.min(activityFromIdx + visibleAuditRows.length, activityTotalCount)} of {activityTotalCount}
+                        {ui("Showing ")}{activityFromIdx + 1}–{Math.min(activityFromIdx + visibleAuditRows.length, activityTotalCount)} {ui("of ")}{activityTotalCount}
                       </span>
                     ) : (
-                      <span>Showing 0 results</span>
+                      <span>{ui("Showing 0 results")}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -800,11 +800,10 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
                         <>
                           {prevDisabled ? (
                             <Button variant="outline" disabled>
-                              Prev
-                            </Button>
+                              {ui("Prev")}</Button>
                           ) : (
                             <Button asChild variant="outline">
-                              <Link href={activityHref(activityCurrent - 1)}>Prev</Link>
+                              <Link href={activityHref(activityCurrent - 1)}>{ui("Prev")}</Link>
                             </Button>
                           )}
 
@@ -828,11 +827,10 @@ async function SystemDashboardContent(props: { searchParams?: Promise<SearchPara
 
                           {nextDisabled ? (
                             <Button variant="outline" disabled>
-                              Next
-                            </Button>
+                              {ui("Next")}</Button>
                           ) : (
                             <Button asChild variant="outline">
-                              <Link href={activityHref(activityCurrent + 1)}>Next</Link>
+                              <Link href={activityHref(activityCurrent + 1)}>{ui("Next")}</Link>
                             </Button>
                           )}
                         </>

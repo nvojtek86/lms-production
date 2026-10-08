@@ -1,4 +1,6 @@
 "use client";
+import {useUi} from "@/i18n/useUi";
+
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -158,14 +160,14 @@ function AttachmentsCard({
   attachments: NonNullable<LearnV2Item["lesson"]>["attachments"];
   compact?: boolean;
 }) {
+  const ui = useUi();
   if (!attachments.length) return null;
   return (
     <div className={cn("rounded-2xl border bg-card", compact ? "" : "")}>
       <div className="px-5 py-4 border-b">
-        <div className="text-base font-semibold text-foreground">Attachments</div>
+        <div className="text-base font-semibold text-foreground">{ui("Attachments")}</div>
         <div className="mt-1 text-sm text-muted-foreground">
-          Download lesson files and resources.
-        </div>
+          {ui("Download lesson files and resources.")}</div>
       </div>
       <div className="p-4 space-y-2">
         {attachments.map((a, i) => (
@@ -185,7 +187,7 @@ function AttachmentsCard({
             </div>
             <span className="inline-flex items-center gap-2 text-xs text-primary shrink-0">
               <Download className="h-4 w-4" />
-              Download <ExternalLink className="h-3.5 w-3.5" />
+              {ui("Download ")}<ExternalLink className="h-3.5 w-3.5" />
             </span>
           </a>
         ))}
@@ -214,6 +216,7 @@ export function CourseLearnV2Client({
     { best_score_percent: number | null; passed_at: string | null; last_submitted_attempt_id: string | null }
   >;
 }) {
+  const ui = useUi();
   const topicsSorted = useMemo(() => topics.slice().sort((a, b) => a.position - b.position), [topics]);
 
   const orderedItems = useMemo(() => {
@@ -364,7 +367,7 @@ export function CourseLearnV2Client({
         }));
       }
     } catch (e) {
-      setQuizMetaError(e instanceof Error ? e.message : "Failed to load quiz attempt.");
+      setQuizMetaError(ui(e instanceof Error ? e.message : "Failed to load quiz attempt."));
       setQuizAttempt(null);
       setQuizAnswers({});
     } finally {
@@ -389,10 +392,10 @@ export function CourseLearnV2Client({
       }
     } catch (e) {
       if (e instanceof ApiClientError && e.code === "CONFLICT") {
-        setQuizMetaError("You’ve reached the maximum number of attempts for this quiz.");
+        setQuizMetaError(ui("You’ve reached the maximum number of attempts for this quiz."));
         return;
       }
-      setQuizMetaError(e instanceof Error ? e.message : "Failed to start quiz.");
+      setQuizMetaError(ui(e instanceof Error ? e.message : "Failed to start quiz."));
     }
   }
 
@@ -413,10 +416,10 @@ export function CourseLearnV2Client({
       }
     } catch (e) {
       if (e instanceof ApiClientError && e.code === "CONFLICT") {
-        setQuizMetaError("You’ve reached the maximum number of attempts for this quiz.");
+        setQuizMetaError(ui("You’ve reached the maximum number of attempts for this quiz."));
         return;
       }
-      setQuizMetaError(e instanceof Error ? e.message : "Failed to retake quiz.");
+      setQuizMetaError(ui(e instanceof Error ? e.message : "Failed to retake quiz."));
     }
   }
 
@@ -480,7 +483,7 @@ export function CourseLearnV2Client({
       if (body?.state && itemId) setQuizStateByItemId((prev) => ({ ...prev, [itemId]: body.state }));
       void loadQuizAttemptState(courseId, itemId);
     } catch (e) {
-      setQuizMetaError(e instanceof Error ? e.message : "Failed to submit quiz.");
+      setQuizMetaError(ui(e instanceof Error ? e.message : "Failed to submit quiz."));
     } finally {
       setQuizSubmitting(false);
     }
@@ -617,8 +620,8 @@ export function CourseLearnV2Client({
               <div className="px-5 py-5 border-b">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">Learning path</div>
-                    <div className="mt-1 text-xl font-semibold text-foreground truncate">Get the most out of {courseTitle}</div>
+                    <div className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">{ui("Learning path")}</div>
+                    <div className="mt-1 text-xl font-semibold text-foreground truncate">{ui("Get the most out of ")}{courseTitle}</div>
                   </div>
                   <div className="shrink-0">
                     <div
@@ -626,7 +629,7 @@ export function CourseLearnV2Client({
                       style={{
                         background: `conic-gradient(#10b981 ${completionPercent * 3.6}deg, hsl(var(--muted)) 0deg)`,
                       }}
-                      aria-label={`Course progress ${completedCount} of ${orderedItems.length}`}
+                      aria-label={ui("Course progress {v0} of {v1}", {v0: completedCount, v1: orderedItems.length})}
                     >
                       <div className="h-full w-full rounded-full bg-card flex items-center justify-center text-xs font-semibold text-foreground">
                         {completedCount}/{orderedItems.length}
@@ -638,7 +641,7 @@ export function CourseLearnV2Client({
 
               <div className="divide-y flex-1 overflow-y-auto overscroll-contain">
                 {topicsSorted.length === 0 ? (
-                  <div className="px-5 py-5 text-sm text-muted-foreground">No content yet.</div>
+                  <div className="px-5 py-5 text-sm text-muted-foreground">{ui("No content yet.")}</div>
                 ) : (
                   topicsSorted.map((t) => {
                     const isOpen = expanded.has(t.id);
@@ -664,7 +667,7 @@ export function CourseLearnV2Client({
                                   isOpen ? "text-primary" : "text-foreground"
                                 )}
                               >
-                                {isOpen ? "Current Chapter" : "Chapter"}
+                                {isOpen ? ui("Current Chapter") : ui("Chapter")}
                               </div>
                               <div className={cn("text-sm font-semibold truncate", isOpen ? "text-primary" : "text-muted-foreground")}>
                                 {t.title}
@@ -746,20 +749,20 @@ export function CourseLearnV2Client({
                   <div className="mt-1 text-2xl font-semibold text-foreground truncate">{selected.item.title}</div>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground">Select a lesson or quiz from the left.</div>
+                <div className="text-sm text-muted-foreground">{ui("Select a lesson or quiz from the left.")}</div>
               )}
             </div>
 
             <div className="flex-1 min-h-0">
               {!selected ? (
-                <div className="p-6 sm:p-10 text-sm text-muted-foreground">Select a lesson or quiz from the left.</div>
+                <div className="p-6 sm:p-10 text-sm text-muted-foreground">{ui("Select a lesson or quiz from the left.")}</div>
               ) : selected.item.item_type === "lesson" ? (
                 <div key={selected.item.id} className="p-6 sm:p-10 space-y-8">
                   {selected.item.lesson?.feature_image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={selected.item.lesson.feature_image_url}
-                      alt="Lesson feature"
+                      alt={ui("Lesson feature")}
                       className="w-full h-auto max-h-[420px] object-contain rounded-2xl border bg-background"
                     />
                   ) : null}
@@ -778,7 +781,7 @@ export function CourseLearnV2Client({
                               <iframe
                                 className="absolute inset-0 h-full w-full"
                                 src={embed}
-                                title="Lesson video"
+                                title={ui("Lesson video")}
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                 allowFullScreen
                                 referrerPolicy="strict-origin-when-cross-origin"
@@ -787,8 +790,7 @@ export function CourseLearnV2Client({
                           ) : (
                             <div className="p-4 text-sm text-white/80 flex items-center gap-2">
                               <Lock className="h-4 w-4" />
-                              Video URL is not supported.
-                            </div>
+                              {ui("Video URL is not supported.")}</div>
                           );
                         })()
                       )}
@@ -811,7 +813,7 @@ export function CourseLearnV2Client({
                     ) : selected.item.lesson?.content_html?.trim() ? (
                       <div dangerouslySetInnerHTML={{ __html: selected.item.lesson.content_html }} />
                     ) : (
-                      <p className="text-muted-foreground">No lesson content yet.</p>
+                      <p className="text-muted-foreground">{ui("No lesson content yet.")}</p>
                     )}
                   </div>
 
@@ -843,7 +845,7 @@ export function CourseLearnV2Client({
                         <div className="rounded-2xl border bg-card p-5">
                           <div className="flex flex-col gap-3">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                              <div className="text-sm text-muted-foreground">Quiz</div>
+                              <div className="text-sm text-muted-foreground">{ui("Quiz")}</div>
                               <div className="shrink-0 flex flex-wrap items-center gap-2">
                                 {best !== null ? (
                                   <span
@@ -852,23 +854,22 @@ export function CourseLearnV2Client({
                                       passed ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"
                                     )}
                                   >
-                                    Best: {best}%
+                                    {ui("Best: ")}{best}%
                                   </span>
                                 ) : (
-                                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">No score yet</span>
+                                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{ui("No score yet")}</span>
                                 )}
                                 <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                                  Attempts:{" "}
+                                  {ui("Attempts:")}{" "}
                                   {attemptsAllowed === null
                                     ? "—"
                                     : attemptsAllowed === 0
-                                      ? "Unlimited"
+                                      ? ui("Unlimited")
                                       : `${quizSubmittedCount}/${attemptsAllowed}`}
                                 </span>
                                 {attemptsExhausted ? (
                                   <span className="rounded-full bg-red-100 text-red-800 px-3 py-1 text-xs font-semibold">
-                                    Attempts limit reached
-                                  </span>
+                                    {ui("Attempts limit reached")}</span>
                                 ) : null}
                               </div>
                             </div>
@@ -879,32 +880,31 @@ export function CourseLearnV2Client({
                                 dangerouslySetInnerHTML={{ __html: quiz.summary_html }}
                               />
                             ) : (
-                              <div className="text-base text-muted-foreground">No quiz summary yet.</div>
+                              <div className="text-base text-muted-foreground">{ui("No quiz summary yet.")}</div>
                             )}
                           </div>
                         </div>
 
                         {quizMetaError ? (
                           <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                            {quizMetaError}
+                            {ui(quizMetaError)}
                           </div>
                         ) : null}
 
                         {quizMetaLoading ? (
                           <div className="rounded-2xl border bg-blue-100 p-5 text-sm text-muted-foreground flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Loading quiz…
-                          </div>
+                            {ui("Loading quiz…")}</div>
                         ) : quizSubmitResult ? (
                           <div className="space-y-5">
                             <div className={cn("rounded-2xl border p-5", quizSubmitResult.passed ? "bg-emerald-50" : "bg-amber-50")}>
                               <div className="flex items-start justify-between gap-4">
                                 <div>
                                   <div className="text-xl font-semibold text-foreground">
-                                    {quizSubmitResult.passed ? "Passed" : "Not passed"}
+                                    {quizSubmitResult.passed ? ui("Passed") : ui("Not passed")}
                                   </div>
                                   <div className="text-sm text-muted-foreground">
-                                    Score: <span className="font-medium text-foreground">{quizSubmitResult.score_percent}%</span> • Passing score:{" "}
+                                    {ui("Score: ")}<span className="font-medium text-foreground">{quizSubmitResult.score_percent}%</span> {ui("• Passing score:")}{" "}
                                     <span className="font-medium text-foreground">{quizSubmitResult.passing_grade_percent}%</span>
                                   </div>
                                 </div>
@@ -913,9 +913,9 @@ export function CourseLearnV2Client({
                                   onClick={() => setRetakeConfirmOpen(true)}
                                   className="shrink-0"
                                   disabled={attemptsExhausted}
-                                  title={attemptsExhausted ? "Attempts limit reached" : undefined}
+                                  title={attemptsExhausted ? ui("Attempts limit reached") : undefined}
                                 >
-                                  {attemptsExhausted ? "No attempts left" : "Retake quiz"}
+                                  {attemptsExhausted ? ui("No attempts left") : ui("Retake quiz")}
                                 </Button>
                               </div>
                             </div>
@@ -937,8 +937,8 @@ export function CourseLearnV2Client({
                                   if (ca.kind === "boolean") {
                                     return (
                                       <div className="rounded-xl border bg-muted/10 p-4">
-                                        <div className="text-sm font-semibold text-foreground">This is the correct answer</div>
-                                        <div className="mt-2 text-sm text-foreground">{ca.value ? "True (Tačno)" : "False (Netačno)"}</div>
+                                        <div className="text-sm font-semibold text-foreground">{ui("This is the correct answer")}</div>
+                                        <div className="mt-2 text-sm text-foreground">{ca.value ? ui("True (Tačno)") : ui("False (Netačno)")}</div>
                                       </div>
                                     );
                                   }
@@ -949,7 +949,7 @@ export function CourseLearnV2Client({
                                   if (!opts.length) return null;
                                   return (
                                     <div className="rounded-xl border bg-muted/10 p-4">
-                                      <div className="text-sm font-semibold text-foreground">This is the correct answer</div>
+                                      <div className="text-sm font-semibold text-foreground">{ui("This is the correct answer")}</div>
                                       <div className="mt-3 space-y-2">
                                         {opts.map((o) => {
                                           const showImage = Boolean(o.image_data_url) && o.display_format !== "only_text";
@@ -961,7 +961,7 @@ export function CourseLearnV2Client({
                                                 // eslint-disable-next-line @next/next/no-img-element
                                                 <img
                                                   src={o.image_data_url as string}
-                                                  alt={o.title || "Option image"}
+                                                  alt={o.title || ui("Option image")}
                                                   className="mt-2 max-h-48 w-auto rounded-lg border bg-background object-contain"
                                                 />
                                               ) : null}
@@ -970,7 +970,7 @@ export function CourseLearnV2Client({
                                         })}
                                       </div>
                                       {qType === "multiple_choice" ? (
-                                        <div className="mt-3 text-xs text-muted-foreground">Multiple answers may be correct.</div>
+                                        <div className="mt-3 text-xs text-muted-foreground">{ui("Multiple answers may be correct.")}</div>
                                       ) : null}
                                     </div>
                                   );
@@ -984,8 +984,8 @@ export function CourseLearnV2Client({
                                           Q{idx + 1} • {questionTitle}
                                         </div>
                                         <div className="text-xs text-muted-foreground">
-                                          {questionTypeLabel}
-                                          {q.points ? ` • ${q.points} pts` : ""}
+                                          {ui(questionTypeLabel)}
+                                          {q.points ? ui(" • {v0} pts", {v0: q.points}) : ""}
                                         </div>
                                       </div>
                                       <span
@@ -994,7 +994,7 @@ export function CourseLearnV2Client({
                                           isCorrect ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
                                         )}
                                       >
-                                        {isCorrect ? "Correct answer" : "Incorrect answer"}
+                                        {isCorrect ? ui("Correct answer") : ui("Incorrect answer")}
                                       </span>
                                     </div>
                                     {q.description_html?.trim() ? (
@@ -1004,7 +1004,7 @@ export function CourseLearnV2Client({
                                     {correctBlock}
                                     {settings?.feedback_mode === "reveal" && q.answer_explanation_html?.trim() ? (
                                       <div className="rounded-xl border bg-muted/10 p-4">
-                                        <div className="text-sm font-semibold text-foreground">Explanation</div>
+                                        <div className="text-sm font-semibold text-foreground">{ui("Explanation")}</div>
                                         <div
                                           className="mt-2 prose prose-base max-w-none text-foreground"
                                           dangerouslySetInnerHTML={{ __html: q.answer_explanation_html }}
@@ -1020,13 +1020,11 @@ export function CourseLearnV2Client({
                           <div className="space-y-4">
                             <div className="rounded-2xl border bg-blue-100 p-4 text-sm text-muted-foreground flex items-center justify-between gap-3">
                               <div>
-                                Attempt <span className="font-semibold text-foreground">#{quizAttempt.attempt_number}</span> • Autosaves automatically
-                              </div>
+                                {ui("Attempt ")}<span className="font-semibold text-foreground">#{quizAttempt.attempt_number}</span> {ui("• Autosaves automatically")}</div>
                               {quizSubmitting ? (
                                 <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                                   <Loader2 className="h-4 w-4 animate-spin" />
-                                  Submitting…
-                                </span>
+                                  {ui("Submitting…")}</span>
                               ) : null}
                             </div>
 
@@ -1060,9 +1058,9 @@ export function CourseLearnV2Client({
                                         Q{idx + 1} • {questionTitle}
                                       </div>
                                       <div className="text-xs text-muted-foreground">
-                                        {questionTypeLabel}
-                                        {q.points ? ` • ${q.points} pts` : ""}
-                                        {isRequired ? "" : " • Optional"}
+                                        {ui(questionTypeLabel)}
+                                        {q.points ? ui(" • {v0} pts", {v0: q.points}) : ""}
+                                        {isRequired ? "" : ui(" • Optional")}
                                       </div>
                                     </div>
                                   </div>
@@ -1074,8 +1072,8 @@ export function CourseLearnV2Client({
                                   {qType === "true_false" ? (
                                     <div className="space-y-2">
                                       {[
-                                        { id: "true", label: "True (Tačno)", value: true },
-                                        { id: "false", label: "False (Netačno)", value: false },
+                                        { id: "true", label: ui("True (Tačno)"), value: true },
+                                        { id: "false", label: ui("False (Netačno)"), value: false },
                                       ].map((opt) => {
                                         const checked = typeof answer === "boolean" ? answer === opt.value : false;
                                         return (
@@ -1090,7 +1088,7 @@ export function CourseLearnV2Client({
                                               checked={checked}
                                               onChange={() => setAnswer(opt.value)}
                                             />
-                                            <span className="text-sm text-foreground">{opt.label}</span>
+                                            <span className="text-sm text-foreground">{ui(opt.label)}</span>
                                           </label>
                                         );
                                       })}
@@ -1118,7 +1116,7 @@ export function CourseLearnV2Client({
                                                 // eslint-disable-next-line @next/next/no-img-element
                                                 <img
                                                   src={o.image_data_url as string}
-                                                  alt={o.title || "Option image"}
+                                                  alt={o.title || ui("Option image")}
                                                   className="max-h-48 w-auto rounded-lg border bg-background object-contain"
                                                 />
                                               ) : null}
@@ -1151,7 +1149,7 @@ export function CourseLearnV2Client({
                                                 // eslint-disable-next-line @next/next/no-img-element
                                                 <img
                                                   src={o.image_data_url as string}
-                                                  alt={o.title || "Option image"}
+                                                  alt={o.title || ui("Option image")}
                                                   className="max-h-48 w-auto rounded-lg border bg-background object-contain"
                                                 />
                                               ) : null}
@@ -1172,8 +1170,7 @@ export function CourseLearnV2Client({
                                 className="gap-2"
                               >
                                 {quizSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                Submit quiz
-                              </Button>
+                                {ui("Submit quiz")}</Button>
                             </div>
                           </div>
                         ) : (
@@ -1181,10 +1178,9 @@ export function CourseLearnV2Client({
                             <div className="text-sm text-muted-foreground">
                               {passed ? (
                                 <>
-                                  You already passed this quiz{best !== null ? ` (best score ${best}%)` : ""}. You can retake anytime.
-                                </>
+                                  {ui("You already passed this quiz")}{best !== null ? ui(" (best score {v0}%)", {v0: best}) : ""}{ui(". You can retake anytime.")}</>
                               ) : (
-                                <>Ready to start? Your answers will autosave as you work.</>
+                                <>{ui("Ready to start? Your answers will autosave as you work.")}</>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -1192,14 +1188,13 @@ export function CourseLearnV2Client({
                                 <Button
                                   onClick={() => setRetakeConfirmOpen(true)}
                                   disabled={attemptsExhausted}
-                                  title={attemptsExhausted ? "Attempts limit reached" : undefined}
+                                  title={attemptsExhausted ? ui("Attempts limit reached") : undefined}
                                 >
-                                  {attemptsExhausted ? "No attempts left" : "Retake quiz"}
+                                  {attemptsExhausted ? ui("No attempts left") : ui("Retake quiz")}
                                 </Button>
                               ) : (
                                 <Button onClick={() => void startQuizAttempt(courseId, selected.item.id)} className="gap-2">
-                                  Start quiz
-                                </Button>
+                                  {ui("Start quiz")}</Button>
                               )}
                             </div>
                           </div>
@@ -1211,15 +1206,13 @@ export function CourseLearnV2Client({
                             <div className="min-h-[calc(100svh-2rem)] sm:min-h-[calc(100svh-3rem)] flex items-center justify-center">
                               <div className="w-full max-w-md rounded-2xl border bg-card shadow-xl overflow-hidden">
                                 <div className="px-5 py-4 border-b">
-                                  <div className="text-lg font-semibold text-foreground">Retake quiz</div>
+                                  <div className="text-lg font-semibold text-foreground">{ui("Retake quiz")}</div>
                                   <div className="mt-1 text-sm text-muted-foreground">
-                                    Start a new attempt? Your previous attempt will be saved.
-                                  </div>
+                                    {ui("Start a new attempt? Your previous attempt will be saved.")}</div>
                                 </div>
                                 <div className="px-5 py-4 flex items-center justify-end gap-2">
                                   <Button variant="outline" onClick={() => setRetakeConfirmOpen(false)}>
-                                    Cancel
-                                  </Button>
+                                    {ui("Cancel")}</Button>
                                   <Button
                                     onClick={() => {
                                       setRetakeConfirmOpen(false);
@@ -1227,7 +1220,7 @@ export function CourseLearnV2Client({
                                     }}
                                     disabled={attemptsExhausted}
                                   >
-                                    {attemptsExhausted ? "Attempts limit reached" : "Start new attempt"}
+                                    {attemptsExhausted ? ui("Attempts limit reached") : ui("Start new attempt")}
                                   </Button>
                                 </div>
                               </div>
@@ -1249,20 +1242,19 @@ export function CourseLearnV2Client({
                       variant="outline"
                       onClick={() => openItem(prev.topic.id, prev.item.id)}
                       className="gap-2"
-                      title={`Previous: ${prev.item.title}`}
+                      title={ui("Previous: {v0}", {v0: prev.item.title})}
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
+                      {ui("Previous")}</Button>
                   ) : null}
 
                   {next ? (
                     <Button
                       onClick={() => openItem(next.topic.id, next.item.id)}
                       className={cn("gap-2", !prev ? "ml-auto" : "")}
-                      title={`Next: ${next.item.title}`}
+                      title={ui("Next: {v0}", {v0: next.item.title})}
                     >
-                      {selected && next.topic.id !== selected.topic.id ? next.topic.title : "Next"}
+                      {selected && next.topic.id !== selected.topic.id ? next.topic.title : ui("Next")}
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   ) : null}

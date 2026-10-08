@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import { Download, FileSpreadsheet, FileText, Calendar, Users, BookOpen, Award } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -52,6 +54,7 @@ export default async function OrgExportPage({
   params: Promise<{ orgId: string }>;
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
+  const ui = await getUi();
   const sp = (await searchParams) ?? {};
   const { user, error } = await getServerUser();
   if (error || !user) redirect("/");
@@ -118,14 +121,13 @@ export default async function OrgExportPage({
         <div className="flex items-center gap-3">
           <Download className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Export Data</h1>
-            <p className="text-muted-foreground">Export your organization&apos;s data</p>
+            <h1 className="text-2xl font-bold text-foreground">{ui("Export Data")}</h1>
+            <p className="text-muted-foreground">{ui("Export your organization's data")}</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2 shrink-0" disabled title="Coming soon">
+        <Button variant="outline" className="gap-2 shrink-0" disabled title={ui("Coming soon")}>
           <Calendar className="h-4 w-4" />
-          Schedule Export
-        </Button>
+          {ui("Schedule Export")}</Button>
       </div>
 
       {/* Export Options Grid */}
@@ -135,19 +137,17 @@ export default async function OrgExportPage({
             <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
               <Users className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Users Export</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Export all users in your organization</p>
+            <h3 className="text-lg font-semibold text-foreground">{ui("Users Export")}</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">{ui("Export all users in your organization")}</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <a href={`/api/exports/users?orgId=${encodeURIComponent(orgId)}`} target="_blank" rel="noreferrer">
                   <FileSpreadsheet className="h-4 w-4" />
-                  CSV
-                </a>
+                  {ui("CSV")}</a>
               </Button>
-              <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+              <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                 <FileSpreadsheet className="h-4 w-4" />
-                Excel
-              </Button>
+                {ui("Excel")}</Button>
             </div>
           </div>
         </div>
@@ -157,19 +157,17 @@ export default async function OrgExportPage({
             <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
               <BookOpen className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Course Progress</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Export enrollment results + assessment time</p>
+            <h3 className="text-lg font-semibold text-foreground">{ui("Course Progress")}</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">{ui("Export enrollment results + assessment time")}</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <a href={`/api/reports/enrollments/export?orgId=${encodeURIComponent(orgId)}`} target="_blank" rel="noreferrer">
                   <FileSpreadsheet className="h-4 w-4" />
-                  CSV
-                </a>
+                  {ui("CSV")}</a>
               </Button>
-              <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+              <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                 <FileSpreadsheet className="h-4 w-4" />
-                Excel
-              </Button>
+                {ui("Excel")}</Button>
             </div>
           </div>
         </div>
@@ -179,19 +177,17 @@ export default async function OrgExportPage({
             <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
               <Award className="h-7 w-7 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Certificates Export</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Export all issued certificates</p>
+            <h3 className="text-lg font-semibold text-foreground">{ui("Certificates Export")}</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">{ui("Export all issued certificates")}</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <a href={`/api/exports/certificates?orgId=${encodeURIComponent(orgId)}`} target="_blank" rel="noreferrer">
                   <FileSpreadsheet className="h-4 w-4" />
-                  CSV
-                </a>
+                  {ui("CSV")}</a>
               </Button>
-              <Button variant="outline" size="sm" className="gap-2" disabled title="Coming soon">
+              <Button variant="outline" size="sm" className="gap-2" disabled title={ui("Coming soon")}>
                 <FileText className="h-4 w-4" />
-                PDF
-              </Button>
+                {ui("PDF")}</Button>
             </div>
           </div>
         </div>
@@ -200,22 +196,21 @@ export default async function OrgExportPage({
       {/* Recent Exports */}
       <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-foreground">Recent Exports</h2>
-          <p className="text-sm text-muted-foreground">Your recent export history</p>
+          <h2 className="text-lg font-semibold text-foreground">{ui("Recent Exports")}</h2>
+          <p className="text-sm text-muted-foreground">{ui("Your recent export history")}</p>
         </div>
 
         {auditError ? (
           <div className="px-6 py-4 text-sm text-destructive">
-            Failed to load export history: {auditError.message}
+            {ui("Failed to load export history: ")}{auditError.message}
           </div>
         ) : exportsCountError ? (
           <div className="px-6 py-4 text-sm text-amber-800 bg-amber-50 border-t border-amber-200">
-            Export history count not available: {exportsCountError.message}
+            {ui("Export history count not available: ")}{exportsCountError.message}
           </div>
         ) : recentExports.length === 0 ? (
           <div className="px-6 py-10 text-center text-muted-foreground">
-            No export history yet. Your CSV exports will appear here after you download them above.
-          </div>
+            {ui("No export history yet. Your CSV exports will appear here after you download them above.")}</div>
         ) : (
           <div className="px-6 py-6">
             <RecentExportsTableV2
@@ -234,8 +229,8 @@ export default async function OrgExportPage({
                   meta: r.metadata ?? null,
                 };
               })}
-              emptyTitle="No export history yet."
-              emptySubtitle="Your CSV exports will appear here after you download them above."
+              emptyTitle={ui("No export history yet.")}
+              emptySubtitle={ui("Your CSV exports will appear here after you download them above.")}
             />
           </div>
         )}
@@ -244,7 +239,7 @@ export default async function OrgExportPage({
         {!auditError && !exportsCountError && exportsTotalCount > 0 ? (
           <div className="px-6 py-4 border-t flex items-center justify-between gap-3 text-sm">
             <div className="text-muted-foreground">
-              Showing {exportsFromIdx + 1}–{Math.min(exportsFromIdx + recentExports.length, exportsTotalCount)} of {exportsTotalCount}
+              {ui("Showing ")}{exportsFromIdx + 1}–{Math.min(exportsFromIdx + recentExports.length, exportsTotalCount)} {ui("of ")}{exportsTotalCount}
             </div>
             <div className="flex items-center gap-2">
               {(() => {
@@ -257,11 +252,10 @@ export default async function OrgExportPage({
                   <>
                     {prevDisabled ? (
                       <Button variant="outline" disabled>
-                        Prev
-                      </Button>
+                        {ui("Prev")}</Button>
                     ) : (
                       <Button asChild variant="outline">
-                        <Link href={exportsHref(exportsCurrent - 1)}>Prev</Link>
+                        <Link href={exportsHref(exportsCurrent - 1)}>{ui("Prev")}</Link>
                       </Button>
                     )}
 
@@ -285,11 +279,10 @@ export default async function OrgExportPage({
 
                     {nextDisabled ? (
                       <Button variant="outline" disabled>
-                        Next
-                      </Button>
+                        {ui("Next")}</Button>
                     ) : (
                       <Button asChild variant="outline">
-                        <Link href={exportsHref(exportsCurrent + 1)}>Next</Link>
+                        <Link href={exportsHref(exportsCurrent + 1)}>{ui("Next")}</Link>
                       </Button>
                     )}
                   </>

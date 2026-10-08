@@ -1,4 +1,6 @@
 'use client';
+import {useUi} from "@/i18n/useUi";
+
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -61,11 +63,11 @@ function getInitials(user: ApiUser): string {
   return (user.email?.[0] ?? "?").toUpperCase();
 }
 
-function formatIso(iso?: string | null): string {
+function formatIso(iso?: string | null, locale = "en"): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(locale, {
     year: "numeric",
     month: "short",
     day: "2-digit",
@@ -79,6 +81,7 @@ function HelpText({ children, className }: { children: ReactNode; className?: st
 }
 
 function StatusPill({ user, className }: { user: ApiUser; className?: string }) {
+  const ui = useUi();
   const s = getStatus(user);
   const cls =
     s === "disabled"
@@ -89,16 +92,17 @@ function StatusPill({ user, className }: { user: ApiUser; className?: string }) 
   const txt = s === "disabled" ? "Disabled" : s === "pending" ? "Pending" : "Active";
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${cls} ${className ?? ""}`}>
-      {txt}
+      {ui(txt)}
     </span>
   );
 }
 
 function OrgChip({ label, inactive, className }: { label: string; inactive: boolean; className?: string }) {
+  const ui = useUi();
   return (
     <span className={`inline-flex items-center gap-2 px-2 py-1 text-xs ${className ?? "text-foreground"}`}>
       <span className="truncate max-w-[220px]">{label}</span>
-      {inactive ? <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">Inactive</span> : null}
+      {inactive ? <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">{ui("Inactive")}</span> : null}
     </span>
   );
 }
@@ -111,6 +115,7 @@ function FilterSelect<T extends string>(props: {
   className?: string;
   ariaLabel?: string;
 }) {
+  const ui = useUi();
   return (
     <div className={`relative ${props.className ?? ""}`}>
       <select
@@ -127,7 +132,7 @@ function FilterSelect<T extends string>(props: {
       >
         {props.options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {ui.optionLabel(o.label, o.value)}
           </option>
         ))}
       </select>
@@ -155,11 +160,12 @@ function UnderlineDropdown<T extends string>({
   onSelect: (v: T) => void;
   disabled?: boolean;
 }) {
+  const ui = useUi();
   const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
 
   return (
     <div className="min-w-[180px]">
-      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+      <div className="text-xs text-muted-foreground mb-1">{ui(label)}</div>
       <div data-filter-dropdown={id} className="relative">
         <button
           type="button"
@@ -175,7 +181,7 @@ function UnderlineDropdown<T extends string>({
             ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
           `}
         >
-          <span className="min-w-0 truncate text-foreground">{selectedLabel}</span>
+          <span className="min-w-0 truncate text-foreground">{ui.optionLabel(selectedLabel, value)}</span>
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
           </span>
@@ -194,7 +200,7 @@ function UnderlineDropdown<T extends string>({
                     active ? "bg-primary text-white" : "text-foreground cursor-pointer"
                   } hover:bg-primary/90 hover:text-white`}
                 >
-                  {o.label}
+                  {ui.optionLabel(o.label, o.value)}
                 </button>
               );
             })}
@@ -275,10 +281,10 @@ type CourseAssignmentInfo = {
   assigned_at: string | null;
 };
 
-function formatShortDate(iso: string): string {
+function formatShortDate(iso: string, locale = "en"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString(locale, { year: "numeric", month: "short", day: "2-digit" });
 }
 
 function deriveAccessKeyFromAssignment(row: {
@@ -324,6 +330,7 @@ export function UserTableV2({
   organizationId?: string;
   organizationLabel?: string;
 }) {
+  const ui = useUi();
   const orgScoped = typeof organizationId === "string" && organizationId.trim().length > 0;
   const orgScopedId = orgScoped ? organizationId.trim() : null;
   const orgScopedLabel =
@@ -442,7 +449,7 @@ export function UserTableV2({
         setAssignableCourses(list);
       } catch (e) {
         if (cancelled) return;
-        toast.error(e instanceof Error ? e.message : "Failed to load assignable courses");
+        toast.error(ui(e instanceof Error ? e.message : "Failed to load assignable courses"));
       } finally {
         if (!cancelled) setIsAssignableCoursesLoading(false);
       }
@@ -451,7 +458,7 @@ export function UserTableV2({
     return () => {
       cancelled = true;
     };
-  }, [getAssignableCourses, isOrgAdmin]);
+  }, [getAssignableCourses, isOrgAdmin, ui]);
 
   const orgOptions = useMemo(() => {
     const opts = (organizations ?? []).map((o) => {
@@ -688,14 +695,14 @@ export function UserTableV2({
   const activeChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; onRemove: () => void }> = [];
     if (search.trim().length) {
-      chips.push({ key: "q", label: `Search: ${search.trim()}`, onRemove: () => setSearch("") });
+      chips.push({ key: "q", label: ui("Search: {v0}", {v0: search.trim()}), onRemove: () => setSearch("") });
     }
     if (roleFilter !== "all") {
-      chips.push({ key: "role", label: `Role: ${roleLabel(roleFilter)}`, onRemove: () => setRoleFilter("all") });
+      chips.push({ key: "role", label: ui("Role: {v0}", {v0: ui(roleLabel(roleFilter))}), onRemove: () => setRoleFilter("all") });
     }
     if (statusFilter !== "all") {
       const txt = statusFilter === "active" ? "Active" : statusFilter === "pending" ? "Pending" : "Disabled";
-      chips.push({ key: "status", label: `Status: ${txt}`, onRemove: () => setStatusFilter("all") });
+      chips.push({ key: "status", label: ui("Status: {v0}", {v0: ui(txt)}), onRemove: () => setStatusFilter("all") });
     }
     if (orgFilter !== "all") {
       chips.push({
@@ -708,7 +715,7 @@ export function UserTableV2({
       });
     }
     return chips;
-  }, [orgFilter, orgOptions, roleFilter, search, statusFilter]);
+  }, [orgFilter, orgOptions, roleFilter, search, statusFilter, ui]);
 
   const bulkTargetOrg = (organizations ?? []).find((o) => o.id === bulkTargetOrgId) ?? null;
   const bulkTargetOrgIsInactive = !!bulkTargetOrg && bulkTargetOrg.is_active === false;
@@ -766,7 +773,7 @@ export function UserTableV2({
   );
 
   const handleInviteUser = async (data: UserFormData) => {
-    const t = toast.loading("Inviting user…");
+    const t = toast.loading(ui("Inviting user…"));
     try {
       const fullName = typeof data.full_name === "string" ? data.full_name.trim() : "";
       const effectiveOrgId =
@@ -777,10 +784,10 @@ export function UserTableV2({
         effectiveOrgId,
         fullName.length ? fullName : null
       );
-      toast.success(res.message || "User invited.", { id: t });
+      toast.success(ui(res.message || "User invited."), { id: t });
       setIsInviteOpen(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to invite user", { id: t });
+      toast.error(ui(e instanceof Error ? e.message : "Failed to invite user"), { id: t });
     }
   };
 
@@ -789,13 +796,11 @@ export function UserTableV2({
     if (selectedUserIds.size === 0) return;
     const ids = Array.from(selectedUserIds);
     const confirmMsg =
-      action === "assign"
-        ? `Assign selected course to ${ids.length} user${ids.length === 1 ? "" : "s"}?`
-        : `Remove selected course from ${ids.length} user${ids.length === 1 ? "" : "s"}?`;
+      action === "assign" ? ui("Assign selected course to {v0} user{v1}?", {v0: ids.length, v1: ui.locale === "sr-Latn" ? "" : (ids.length === 1 ? "" : "s")}) : ui("Remove selected course from {v0} user{v1}?", {v0: ids.length, v1: ui.locale === "sr-Latn" ? "" : (ids.length === 1 ? "" : "s")});
     if (!confirm(confirmMsg)) return;
 
     setIsBulkApplying(true);
-    const t = toast.loading(action === "assign" ? "Assigning course…" : "Removing course assignment…");
+    const t = toast.loading(ui(action === "assign" ? "Assigning course…" : "Removing course assignment…"));
     try {
       const res = await bulkCourseAssignments({
         user_ids: ids,
@@ -809,37 +814,37 @@ export function UserTableV2({
       const failures = Array.isArray(res.failures) ? res.failures : [];
 
       if (failureCount === 0) {
-        toast.success(res.message || `${action === "assign" ? "Assigned" : "Removed"} for ${successCount} user${successCount === 1 ? "" : "s"}.`, { id: t });
+        toast.success(res.message || ui("{v0} for {v1} user{v2}.", {v0: ui(action === "assign" ? "Assigned" : "Removed"), v1: successCount, v2: ui.locale === "sr-Latn" ? "" : (successCount === 1 ? "" : "s")}), { id: t });
         setSelectedUserIds(new Set());
         return;
       }
 
       toast.error(
-        `${action === "assign" ? "Assigned" : "Removed"} for ${successCount} user${successCount === 1 ? "" : "s"}. ${failureCount} failed.`,
+        ui("{v0} for {v1} user{v2}. {v3} failed.", {v0: action === "assign" ? "Assigned" : "Removed", v1: successCount, v2: ui.locale === "sr-Latn" ? "" : (successCount === 1 ? "" : "s"), v3: failureCount}),
         { id: t }
       );
       setSelectedUserIds(new Set(failures.map((f) => f.user_id)));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bulk course action failed", { id: t });
+      toast.error(ui(e instanceof Error ? e.message : "Bulk course action failed"), { id: t });
     } finally {
       setIsBulkApplying(false);
     }
   };
 
-  if (isLoading) return <div className="py-10 text-center text-sm text-muted-foreground">Loading users…</div>;
-  if (error) return <div className="py-10 text-center text-sm text-destructive">Error: {error.message}</div>;
+  if (isLoading) return <div className="py-10 text-center text-sm text-muted-foreground">{ui("Loading users…")}</div>;
+  if (error) return <div className="py-10 text-center text-sm text-destructive">{ui("Error: ")}{ui(error.message)}</div>;
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-16">
         <div className="min-w-0">
-          <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+          <h2 className="text-2xl font-bold text-foreground">{ui(title)}</h2>
           <div className="mt-1 inline-flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>
-              <span className="font-medium">Total:</span>{" "}
-              {sortedUsers.length.toLocaleString()} user{sortedUsers.length === 1 ? "" : "s"}
+              <span className="font-medium">{ui("Total:")}</span>{" "}
+              {sortedUsers.length.toLocaleString(ui.locale)} {ui("user")}{ui.locale === "sr-Latn" ? "" : (sortedUsers.length === 1 ? "" : "s")}
             </span>
           </div>
         </div>
@@ -848,8 +853,7 @@ export function UserTableV2({
           onClick={() => setIsInviteOpen(true)}
           disabled={!callerRole || (callerRole !== "super_admin" && callerRole !== "system_admin" && !isOrgAdmin)}
         >
-          Invite User
-        </Button>
+          {ui("Invite User")}</Button>
       </div>
 
       {/* Toolbar */}
@@ -863,7 +867,7 @@ export function UserTableV2({
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search users…"
+                  placeholder={ui("Search users…")}
                   className="pl-6 border-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-0"
                 />
               </div>
@@ -877,21 +881,20 @@ export function UserTableV2({
               className="hover:bg-primary hover:text-white hover:border-primary"
             >
               <Filter className="h-4 w-4" />
-              Filters
-            </Button>
+              {ui("Filters")}</Button>
           </div>
 
           {/* Desktop/tablet: all filters visible + wrap */}
           <div className="hidden lg:flex flex-wrap items-end gap-6">
             <div className="min-w-[260px] flex-1 lg:flex-none lg:w-[360px]">
-              <div className="text-xs text-muted-foreground mb-1">Search</div>
+              <div className="text-xs text-muted-foreground mb-1">{ui("Search")}</div>
               <div className="border-b border-primary">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search users…"
+                    placeholder={ui("Search users…")}
                     className="pl-6 border-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-0"
                   />
                 </div>
@@ -900,10 +903,10 @@ export function UserTableV2({
 
             <UnderlineDropdown
               id="role"
-              label="Role"
+              label={ui("Role")}
               value={roleFilter}
               options={[
-                { value: "all", label: "All Roles" },
+                { value: "all", label: ui("All Roles") },
                 ...Array.from(new Set(users.map((u) => u.role)))
                   .sort((a, b) => a.localeCompare(b))
                   .map((r) => ({ value: r, label: roleLabel(r) })),
@@ -919,13 +922,13 @@ export function UserTableV2({
 
             <UnderlineDropdown
               id="status"
-              label="Status"
+              label={ui("Status")}
               value={statusFilter}
               options={[
-                { value: "all", label: "All Status" },
-                { value: "active", label: "Active" },
-                { value: "pending", label: "Pending" },
-                { value: "disabled", label: "Disabled" },
+                { value: "all", label: ui("All Status") },
+                { value: "active", label: ui("Active") },
+                { value: "pending", label: ui("Pending") },
+                { value: "disabled", label: ui("Disabled") },
               ]}
               open={openFilterDropdown === "status"}
               onToggle={() => setOpenFilterDropdown((v) => (v === "status" ? null : "status"))}
@@ -938,17 +941,17 @@ export function UserTableV2({
 
             {!isOrgAdmin && orgScopedId ? (
               <div className="min-w-[180px]">
-                <div className="text-xs text-muted-foreground mb-1">Organization</div>
+                <div className="text-xs text-muted-foreground mb-1">{ui("Organization")}</div>
                 <div className="border-b border-primary pb-2 text-sm text-foreground truncate">{orgScopedLabel ?? "—"}</div>
               </div>
             ) : !orgScopedId ? (
               <UnderlineDropdown
                 id="organization"
-                label="Organization"
+                label={ui("Organization")}
                 value={orgFilter as string}
                 options={[
-                  { value: "all", label: "All organizations" },
-                  { value: "none", label: "No organization" },
+                  { value: "all", label: ui("All organizations") },
+                  { value: "none", label: ui("No organization") },
                   ...orgOptions.map((o) => ({ value: o.id, label: o.label })),
                 ]}
                 open={openFilterDropdown === "organization"}
@@ -968,8 +971,7 @@ export function UserTableV2({
                 disabled={bulkMode || activeChips.length === 0}
                 className="hover:bg-primary hover:text-white hover:border-primary"
               >
-                Clear
-              </Button>
+                {ui("Clear")}</Button>
             </div>
           </div>
         </div>
@@ -984,7 +986,7 @@ export function UserTableV2({
                 onClick={c.onRemove}
                 className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs text-foreground hover:bg-muted/40"
               >
-                <span className="truncate max-w-[280px]">{c.label}</span>
+                <span className="truncate max-w-[280px]">{ui(c.label)}</span>
                 <X className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             ))}
@@ -1003,7 +1005,7 @@ export function UserTableV2({
                   <input
                     ref={mobileSelectAllRef}
                     type="checkbox"
-                    aria-label="Select all visible users"
+                    aria-label={ui("Select all visible users")}
                     checked={allSelectableSelected}
                     className="h-4 w-4 rounded border-gray-300 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
@@ -1020,7 +1022,7 @@ export function UserTableV2({
                       });
                     }}
                   />
-                  <div className="text-sm font-semibold">{selectedUserIds.size} selected</div>
+                  <div className="text-sm font-semibold">{selectedUserIds.size} {ui("selected")}</div>
                 </div>
                 <Button
                   variant="outline"
@@ -1034,8 +1036,7 @@ export function UserTableV2({
                   disabled={isBulkApplying}
                   className="h-9 hover:bg-primary hover:text-white hover:border-primary"
                 >
-                  Clear selection
-                </Button>
+                  {ui("Clear selection")}</Button>
               </div>
 
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1049,7 +1050,7 @@ export function UserTableV2({
                         disabled={isBulkApplying}
                         className="w-full"
                         options={[
-                          { value: "", label: "Set role…" },
+                          { value: "", label: ui("Set role…") },
                           { value: "organization_admin", label: roleLabel("organization_admin") },
                           { value: "member", label: roleLabel("member") },
                         ]}
@@ -1061,14 +1062,14 @@ export function UserTableV2({
                           if (!bulkTargetRole) return;
                           if (selectedUserIds.size === 0) return;
                           const ok = confirm(
-                            `Change role for ${selectedUserIds.size} user${selectedUserIds.size === 1 ? "" : "s"} to "${roleLabel(
+                            ui("Change role for {v0} user{v1} to \"{v2}\"?", {v0: selectedUserIds.size, v1: ui.locale === "sr-Latn" ? "" : (selectedUserIds.size === 1 ? "" : "s"), v2: ui(roleLabel(
                               bulkTargetRole as Role
-                            )}"?`
+                            ))})
                           );
                           if (!ok) return;
 
                           setIsBulkApplying(true);
-                          const t = toast.loading("Updating roles…");
+                          const t = toast.loading(ui("Updating roles…"));
                           const failures: string[] = [];
                           try {
                             const ids = Array.from(selectedUserIds);
@@ -1081,13 +1082,13 @@ export function UserTableV2({
                             }
 
                             if (failures.length === 0) {
-                              toast.success(`Updated role for ${ids.length} user${ids.length === 1 ? "" : "s"}.`, { id: t });
+                              toast.success(ui("Updated role for {v0} user{v1}.", {v0: ids.length, v1: ui.locale === "sr-Latn" ? "" : (ids.length === 1 ? "" : "s")}), { id: t });
                               setSelectedUserIds(new Set());
                               setBulkTargetRole("");
                             } else {
                               const successCount = ids.length - failures.length;
                               toast.error(
-                                `Updated ${successCount} user${successCount === 1 ? "" : "s"}. ${failures.length} failed.`,
+                                ui("Updated {v0} user{v1}. {v2} failed.", {v0: successCount, v1: ui.locale === "sr-Latn" ? "" : (successCount === 1 ? "" : "s"), v2: failures.length}),
                                 { id: t }
                               );
                               setSelectedUserIds(new Set(failures));
@@ -1097,8 +1098,7 @@ export function UserTableV2({
                           }
                         }}
                       >
-                        Update roles
-                      </Button>
+                        {ui("Update roles")}</Button>
                     </div>
 
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:col-span-2">
@@ -1112,7 +1112,7 @@ export function UserTableV2({
                           { value: "", label: isAssignableCoursesLoading ? "Loading courses…" : "Select course…" },
                           ...assignableCourses.map((c) => ({
                             value: c.id,
-                            label: `${(c.title ?? "").trim() || "(untitled)"}${c.is_published ? "" : " (draft)"}`,
+                            label: `${(c.title ?? "").trim() || ui("(untitled)")}${c.is_published ? "" : ui(" (draft)")}`,
                           })),
                         ]}
                       />
@@ -1130,16 +1130,14 @@ export function UserTableV2({
                         disabled={!bulkCourseId || isBulkApplying}
                         onClick={() => void handleBulkCourseAction("assign")}
                       >
-                        Assign selected
-                      </Button>
+                        {ui("Assign selected")}</Button>
                       <Button
                         className="w-full"
                         variant="outline"
                         disabled={!bulkCourseId || isBulkApplying}
                         onClick={() => void handleBulkCourseAction("remove")}
                       >
-                        Remove selected
-                      </Button>
+                        {ui("Remove selected")}</Button>
                     </div>
                   </>
                 ) : (
@@ -1151,7 +1149,7 @@ export function UserTableV2({
                       disabled={isBulkApplying}
                       className="w-full"
                       options={[
-                        { value: "", label: "Select target organization…" },
+                        { value: "", label: ui("Select target organization…") },
                         ...(organizations ?? []).map((o) => {
                           const { label, inactive } = resolveOrgLabel(o);
                           return { value: o.id, label: inactive ? `${label} (inactive)` : label };
@@ -1167,8 +1165,7 @@ export function UserTableV2({
                         setBulkConfirmOpen(true);
                       }}
                     >
-                      Move selected
-                    </Button>
+                      {ui("Move selected")}</Button>
                   </>
                 )}
               </div>
@@ -1178,7 +1175,7 @@ export function UserTableV2({
           {/* Desktop (>=1024px): inline bulk bar */}
           <div className="hidden lg:block rounded-xl border bg-background p-4 shadow-sm">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm font-medium">{selectedUserIds.size} selected</div>
+              <div className="text-sm font-medium">{selectedUserIds.size} {ui("selected")}</div>
               <div className="flex flex-col gap-2 md:flex-row md:items-center">
                 {isOrgAdmin ? (
                   <FilterSelect
@@ -1188,7 +1185,7 @@ export function UserTableV2({
                     disabled={isBulkApplying}
                     className="min-w-[220px]"
                     options={[
-                      { value: "", label: "Set role…" },
+                      { value: "", label: ui("Set role…") },
                       { value: "organization_admin", label: roleLabel("organization_admin") },
                       { value: "member", label: roleLabel("member") },
                     ]}
@@ -1201,7 +1198,7 @@ export function UserTableV2({
                     disabled={isBulkApplying}
                     className="min-w-[260px]"
                     options={[
-                      { value: "", label: "Select target organization…" },
+                      { value: "", label: ui("Select target organization…") },
                       ...(organizations ?? []).map((o) => {
                         const { label, inactive } = resolveOrgLabel(o);
                         return { value: o.id, label: inactive ? `${label} (inactive)` : label };
@@ -1222,8 +1219,7 @@ export function UserTableV2({
                   disabled={isBulkApplying}
                   className="hover:bg-primary hover:text-white hover:border-primary"
                 >
-                  Clear selection
-                </Button>
+                  {ui("Clear selection")}</Button>
 
                 {isOrgAdmin ? (
                   <>
@@ -1233,14 +1229,14 @@ export function UserTableV2({
                         if (!bulkTargetRole) return;
                         if (selectedUserIds.size === 0) return;
                         const ok = confirm(
-                          `Change role for ${selectedUserIds.size} user${selectedUserIds.size === 1 ? "" : "s"} to "${roleLabel(
+                          ui("Change role for {v0} user{v1} to \"{v2}\"?", {v0: selectedUserIds.size, v1: ui.locale === "sr-Latn" ? "" : (selectedUserIds.size === 1 ? "" : "s"), v2: ui(roleLabel(
                             bulkTargetRole as Role
-                          )}"?`
+                          ))})
                         );
                         if (!ok) return;
 
                         setIsBulkApplying(true);
-                        const t = toast.loading("Updating roles…");
+                        const t = toast.loading(ui("Updating roles…"));
                         const failures: string[] = [];
                         try {
                           const ids = Array.from(selectedUserIds);
@@ -1253,13 +1249,13 @@ export function UserTableV2({
                           }
 
                           if (failures.length === 0) {
-                            toast.success(`Updated role for ${ids.length} user${ids.length === 1 ? "" : "s"}.`, { id: t });
+                            toast.success(ui("Updated role for {v0} user{v1}.", {v0: ids.length, v1: ui.locale === "sr-Latn" ? "" : (ids.length === 1 ? "" : "s")}), { id: t });
                             setSelectedUserIds(new Set());
                             setBulkTargetRole("");
                           } else {
                             const successCount = ids.length - failures.length;
                             toast.error(
-                              `Updated ${successCount} user${successCount === 1 ? "" : "s"}. ${failures.length} failed.`,
+                              ui("Updated {v0} user{v1}. {v2} failed.", {v0: successCount, v1: ui.locale === "sr-Latn" ? "" : (successCount === 1 ? "" : "s"), v2: failures.length}),
                               { id: t }
                             );
                             setSelectedUserIds(new Set(failures));
@@ -1269,8 +1265,7 @@ export function UserTableV2({
                         }
                       }}
                     >
-                      Update roles
-                    </Button>
+                      {ui("Update roles")}</Button>
 
                     <FilterSelect
                       ariaLabel="Bulk course assignment"
@@ -1282,7 +1277,7 @@ export function UserTableV2({
                         { value: "", label: isAssignableCoursesLoading ? "Loading courses…" : "Select course…" },
                         ...assignableCourses.map((c) => ({
                           value: c.id,
-                          label: `${(c.title ?? "").trim() || "(untitled)"}${c.is_published ? "" : " (draft)"}`,
+                          label: `${(c.title ?? "").trim() || ui("(untitled)")}${c.is_published ? "" : ui(" (draft)")}`,
                         })),
                       ]}
                     />
@@ -1299,15 +1294,13 @@ export function UserTableV2({
                       disabled={!bulkCourseId || isBulkApplying}
                       onClick={() => void handleBulkCourseAction("assign")}
                     >
-                      Assign selected
-                    </Button>
+                      {ui("Assign selected")}</Button>
                     <Button
                       variant="outline"
                       disabled={!bulkCourseId || isBulkApplying}
                       onClick={() => void handleBulkCourseAction("remove")}
                     >
-                      Remove selected
-                    </Button>
+                      {ui("Remove selected")}</Button>
                   </>
                 ) : (
                   <Button
@@ -1317,8 +1310,7 @@ export function UserTableV2({
                       setBulkConfirmOpen(true);
                     }}
                   >
-                    Move selected
-                  </Button>
+                    {ui("Move selected")}</Button>
                 )}
               </div>
             </div>
@@ -1329,7 +1321,7 @@ export function UserTableV2({
       {/* Invite form */}
       {isInviteOpen ? (
         <div className="rounded-lg border bg-background p-4 shadow-sm">
-          <h3 className="text-lg font-semibold">Invite user</h3>
+          <h3 className="text-lg font-semibold">{ui("Invite user")}</h3>
           <div className="mt-3">
             <UserForm
               initialData={orgScopedId ? { organization_id: orgScopedId } : undefined}
@@ -1384,8 +1376,7 @@ export function UserTableV2({
                     className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
                     onClick={() => toggleSort("name")}
                   >
-                    User
-                    {sortIcon("name")}
+                    {ui("User")}{sortIcon("name")}
                   </button>
                 </th>
                 <th className="px-4 py-5 text-left text-md font-medium text-muted-foreground">
@@ -1394,8 +1385,7 @@ export function UserTableV2({
                     className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
                     onClick={() => toggleSort("role")}
                   >
-                    Role
-                    {sortIcon("role")}
+                    {ui("Role")}{sortIcon("role")}
                   </button>
                 </th>
                 {!orgScopedId ? (
@@ -1405,8 +1395,7 @@ export function UserTableV2({
                       className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
                       onClick={() => toggleSort("organization")}
                     >
-                      Organization
-                      {sortIcon("organization")}
+                      {ui("Organization")}{sortIcon("organization")}
                     </button>
                   </th>
                 ) : null}
@@ -1416,8 +1405,7 @@ export function UserTableV2({
                     className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
                     onClick={() => toggleSort("status")}
                   >
-                    Status
-                    {sortIcon("status")}
+                    {ui("Status")}{sortIcon("status")}
                   </button>
                 </th>
                 <th className="px-4 py-5 w-10" />
@@ -1430,8 +1418,7 @@ export function UserTableV2({
                     colSpan={4 + (showSelectionColumn ? 1 : 0) + (orgScopedId ? 0 : 1)}
                     className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
-                    No users found.
-                  </td>
+                    {ui("No users found.")}</td>
                 </tr>
               ) : (
                 sortedUsers.map((u) => {
@@ -1520,7 +1507,7 @@ export function UserTableV2({
                       </td>
 
                       <td className="px-4 py-3">
-                        <span className={`text-sm ${rowText}`}>{roleLabel(u.role)}</span>
+                        <span className={`text-sm ${rowText}`}>{ui(roleLabel(u.role))}</span>
                       </td>
 
                       {!orgScopedId ? (
@@ -1528,7 +1515,7 @@ export function UserTableV2({
                           {orgInfo ? (
                             <OrgChip label={orgInfo.label} inactive={orgInfo.inactive} className={rowText} />
                           ) : (
-                            <span className={`text-xs ${rowMuted}`}>No org</span>
+                            <span className={`text-xs ${rowMuted}`}>{ui("No org")}</span>
                           )}
                         </td>
                       ) : null}
@@ -1559,7 +1546,7 @@ export function UserTableV2({
       {/* Mobile cards */}
       <div className="lg:hidden space-y-3">
         {sortedUsers.length === 0 ? (
-          <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">No users found.</div>
+          <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">{ui("No users found.")}</div>
         ) : (
           sortedUsers.map((u) => (
             <MobileUserCard
@@ -1706,7 +1693,7 @@ export function UserTableV2({
               const result = await bulkAssignOrganization(ids, bulkTargetOrgId);
 
               if (result.failureCount === 0) {
-                toast.success(`Moved ${result.successCount} user${result.successCount === 1 ? "" : "s"}.`);
+                toast.success(ui("Moved {v0} user{v1}.", {v0: result.successCount, v1: ui.locale === "sr-Latn" ? "" : (result.successCount === 1 ? "" : "s")}));
                 setSelectedUserIds(new Set());
                 setBulkTargetOrgId("");
                 setBulkConfirmOpen(false);
@@ -1714,8 +1701,7 @@ export function UserTableV2({
               }
 
               toast.error(
-                `Moved ${result.successCount} user${result.successCount === 1 ? "" : "s"}. ` +
-                  `${result.failureCount} failed. The failed users remain selected so you can retry.`
+                ui("Moved {v0} user{v1}. ", {v0: result.successCount, v1: ui.locale === "sr-Latn" ? "" : (result.successCount === 1 ? "" : "s")}) + ui("{v0} failed. The failed users remain selected so you can retry.", {v0: result.failureCount})
               );
               setSelectedUserIds(new Set(result.failures.map((f) => f.userId)));
               setBulkConfirmOpen(false);
@@ -1752,6 +1738,7 @@ function UserDetailsDrawer(props: {
     assignments: Array<{ course_id: string; access: AccessDurationKey }>
   ) => Promise<{ message?: string; assignments?: Array<{ course_id: string; access_expires_at: string | null; access_duration_key: string | null }> }>;
 }) {
+  const ui = useUi();
   const {
     user,
     callerRole,
@@ -1844,7 +1831,7 @@ function UserDetailsDrawer(props: {
         setBaselineCourseExpiresAtById(expiresById);
       } catch (e) {
         if (cancelled) return;
-        toast.error(e instanceof Error ? e.message : "Failed to load course assignments");
+        toast.error(ui(e instanceof Error ? e.message : "Failed to load course assignments"));
       } finally {
         if (!cancelled) setIsLoadingCourses(false);
       }
@@ -1853,7 +1840,7 @@ function UserDetailsDrawer(props: {
     return () => {
       cancelled = true;
     };
-  }, [canManageCourseAccess, onLoadCourseAssignments, open, user.id]);
+  }, [canManageCourseAccess, onLoadCourseAssignments, open, user.id, ui]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setEntered(true), 0);
@@ -1892,10 +1879,10 @@ function UserDetailsDrawer(props: {
       >
         {/* Modal header */}
         <div className="h-16 px-6 flex items-center justify-between">
-          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">User Details</div>
+          <div className="text-md font-semibold text-foreground bg-muted-foreground/10 rounded-md px-6 py-2">{ui("User Details")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={onClose}
           >
@@ -1934,10 +1921,10 @@ function UserDetailsDrawer(props: {
                   </div>
                   <div className={`inline-flex items-center gap-1.5 text-sm ${statusTone}`}>
                     <CheckCheck className="h-4 w-4" />
-                    <span className="font-medium">{statusText}</span>
+                    <span className="font-medium">{ui(statusText)}</span>
                   </div>
                 </div>
-                <div className="mt-2 text-md text-muted-foreground">{roleLabel(user.role)}</div>
+                <div className="mt-2 text-md text-muted-foreground">{ui(roleLabel(user.role))}</div>
               </div>
             </div>
 
@@ -1946,26 +1933,23 @@ function UserDetailsDrawer(props: {
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Mail className="h-4 w-4" />
-                    Email
-                  </span>
+                    {ui("Email")}</span>
                   <span className="text-foreground text-right break-all">{user.email}</span>
                 </div>
 
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
-                    Organization
-                  </span>
-                  <span className="text-foreground text-right">{orgInfo ? orgInfo.label : "No organization"}</span>
+                    {ui("Organization")}</span>
+                  <span className="text-foreground text-right">{orgInfo ? orgInfo.label : ui("No organization")}</span>
                 </div>
 
                 {orgCreated ? (
                   <div className="flex items-start justify-between gap-4">
                     <span className="inline-flex items-center gap-2 text-muted-foreground">
                       <CalendarDays className="h-4 w-4" />
-                      Org created
-                    </span>
-                    <span className="text-foreground text-right">{formatIso(orgCreated)}</span>
+                      {ui("Org created")}</span>
+                    <span className="text-foreground text-right">{formatIso(orgCreated, ui.locale)}</span>
                   </div>
                 ) : null}
 
@@ -1977,29 +1961,26 @@ function UserDetailsDrawer(props: {
 
           {/* Lifecycle */}
           <div className="space-y-3">
-            <div className="text-xl font-semibold text-foreground">Lifecycle</div>
+            <div className="text-xl font-semibold text-foreground">{ui("Lifecycle")}</div>
             <div className="rounded-xl border bg-background p-5">
               <div className="space-y-3 text-sm">
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <CalendarDays className="h-4 w-4" />
-                    User created
-                  </span>
-                  <span className="text-foreground text-right">{formatIso(user.created_at)}</span>
+                    {ui("User created")}</span>
+                  <span className="text-foreground text-right">{formatIso(user.created_at, ui.locale)}</span>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <Send className="h-4 w-4" />
-                    Invited
-                  </span>
-                  <span className="text-foreground text-right">{formatIso(user.invited_at)}</span>
+                    {ui("Invited")}</span>
+                  <span className="text-foreground text-right">{formatIso(user.invited_at, ui.locale)}</span>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <span className="inline-flex items-center gap-2 text-muted-foreground">
                     <CheckCheck className="h-4 w-4" />
-                    Activated
-                  </span>
-                  <span className="text-foreground text-right">{formatIso(user.activated_at)}</span>
+                    {ui("Activated")}</span>
+                  <span className="text-foreground text-right">{formatIso(user.activated_at, ui.locale)}</span>
                 </div>
               </div>
             </div>
@@ -2010,16 +1991,16 @@ function UserDetailsDrawer(props: {
           {/* Access & assignment */}
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-xl font-semibold text-foreground">Access & assignment</div>
+              <div className="text-xl font-semibold text-foreground">{ui("Access & assignment")}</div>
             </div>
             <div className="rounded-xl border bg-background p-5">
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Role</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">{ui("Role")}</label>
                   {user.role === "super_admin" ? (
-                    <div className="text-sm text-muted-foreground">Protected user</div>
+                    <div className="text-sm text-muted-foreground">{ui("Protected user")}</div>
                   ) : !canEdit ? (
-                    <div className="text-sm">{roleLabel(user.role)}</div>
+                    <div className="text-sm">{ui(roleLabel(user.role))}</div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
@@ -2031,7 +2012,7 @@ function UserDetailsDrawer(props: {
                         >
                           {allowedRoleOptions(callerRole).map((r) => (
                             <option key={r} value={r}>
-                              {roleLabel(r)}
+                              {ui(roleLabel(r))}
                             </option>
                           ))}
                         </select>
@@ -2043,30 +2024,28 @@ function UserDetailsDrawer(props: {
                         onClick={async () => {
                           if (selectedRole === user.role) return;
                           setIsSavingRole(true);
-                          const t = toast.loading("Saving role…");
+                          const t = toast.loading(ui("Saving role…"));
                           try {
                             const res = await props.onChangeRole(user.id, selectedRole);
-                            toast.success(res.message || "Role updated.", { id: t });
+                            toast.success(ui(res.message || "Role updated."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to update role", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to update role"), { id: t });
                           } finally {
                             setIsSavingRole(false);
                           }
                         }}
                       >
-                        Save
-                      </Button>
+                        {ui("Save")}</Button>
                     </div>
                   )}
                   <HelpText>
-                    Controls what the user can access in the app. Changes take effect after you click Save.
-                  </HelpText>
+                    {ui("Controls what the user can access in the app. Changes take effect after you click Save.")}</HelpText>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Organization</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">{ui("Organization")}</label>
                   {!canOrg ? (
-                    <div className="text-sm text-muted-foreground">{orgInfo ? orgInfo.label : "No organization"}</div>
+                    <div className="text-sm text-muted-foreground">{orgInfo ? orgInfo.label : ui("No organization")}</div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
@@ -2076,12 +2055,12 @@ function UserDetailsDrawer(props: {
                           className="h-10 w-full appearance-none rounded-md border bg-background px-3 pr-10 text-sm hover:cursor-pointer disabled:opacity-60"
                           disabled={isSavingOrg}
                         >
-                          <option value="">No organization</option>
+                          <option value="">{ui("No organization")}</option>
                           {organizations.map((o) => {
                             const { label, inactive } = resolveOrgLabel(o);
                             return (
                               <option key={o.id} value={o.id}>
-                                {inactive ? `${label} (inactive)` : label}
+                                {inactive ? ui("{v0} (inactive)", {v0: label}) : label}
                               </option>
                             );
                           })}
@@ -2093,35 +2072,33 @@ function UserDetailsDrawer(props: {
                         disabled={isSavingOrg || selectedOrgId === (user.organization_id ?? "")}
                         onClick={async () => {
                           setIsSavingOrg(true);
-                          const t = toast.loading("Saving organization…");
+                          const t = toast.loading(ui("Saving organization…"));
                           try {
                             const res = await props.onAssignOrganization(user.id, selectedOrgId);
-                            toast.success(res.message || "Organization updated.", { id: t });
+                            toast.success(ui(res.message || "Organization updated."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to assign organization", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to assign organization"), { id: t });
                           } finally {
                             setIsSavingOrg(false);
                           }
                         }}
                       >
-                        Save
-                      </Button>
+                        {ui("Save")}</Button>
                     </div>
                   )}
                   {callerRole !== "organization_admin" && canOrg ? (
                     <HelpText>
-                      Assign which organization this user belongs to. This can affect what content and data they can see.
-                    </HelpText>
+                      {ui("Assign which organization this user belongs to. This can affect what content and data they can see.")}</HelpText>
                   ) : null}
                 </div>
 
                 {canManageCourseAccess ? (
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">Course access</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">{ui("Course access")}</label>
                     {assignableCoursesLoading || isLoadingCourses ? (
-                      <div className="text-sm text-muted-foreground">Loading course access…</div>
+                      <div className="text-sm text-muted-foreground">{ui("Loading course access…")}</div>
                     ) : assignableCourses.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">No courses available in this organization.</div>
+                      <div className="text-sm text-muted-foreground">{ui("No courses available in this organization.")}</div>
                     ) : (
                       <div className="space-y-3">
                         <div className="max-h-52 overflow-auto rounded-md border p-2">
@@ -2166,11 +2143,11 @@ function UserDetailsDrawer(props: {
                                               if (!iso) return "";
                                               const ms = new Date(iso).getTime();
                                               const expired = Number.isFinite(ms) ? ms <= Date.now() : false;
-                                              return `${expired ? "Expired" : "Expires"} ${formatShortDate(iso)}`;
+                                              return `${expired ? "Expired" : "Expires"} ${formatShortDate(iso, ui.locale)}`;
                                             })()}
                                           </span>
                                         ) : (
-                                          <span className="hidden sm:inline text-[10px] text-muted-foreground">Unlimited</span>
+                                          <span className="hidden sm:inline text-[10px] text-muted-foreground">{ui("Unlimited")}</span>
                                         )}
                                         <select
                                           value={selectedCourseAccessById[cid] ?? "unlimited"}
@@ -2183,7 +2160,7 @@ function UserDetailsDrawer(props: {
                                         >
                                           {ACCESS_DURATION_KEYS.map((k) => (
                                             <option key={k} value={k}>
-                                              {accessKeyLabel(k)}
+                                              {ui(accessKeyLabel(k))}
                                             </option>
                                           ))}
                                         </select>
@@ -2191,8 +2168,7 @@ function UserDetailsDrawer(props: {
                                     ) : null}
                                     {course.is_published ? null : (
                                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">
-                                        Draft
-                                      </span>
+                                        {ui("Draft")}</span>
                                     )}
                                   </span>
                                 </label>
@@ -2206,7 +2182,7 @@ function UserDetailsDrawer(props: {
                             disabled={isSavingCourses || !courseAssignmentsDirty}
                             onClick={async () => {
                               setIsSavingCourses(true);
-                              const t = toast.loading("Saving course access…");
+                              const t = toast.loading(ui("Saving course access…"));
                               try {
                                 const ids = Array.from(selectedCourseIds).sort();
                                 const assignments = ids.map((course_id) => ({
@@ -2226,16 +2202,15 @@ function UserDetailsDrawer(props: {
                                   }
                                   return next;
                                 });
-                                toast.success(res.message || "Course access updated.", { id: t });
+                                toast.success(ui(res.message || "Course access updated."), { id: t });
                               } catch (e) {
-                                toast.error(e instanceof Error ? e.message : "Failed to save course access", { id: t });
+                                toast.error(ui(e instanceof Error ? e.message : "Failed to save course access"), { id: t });
                               } finally {
                                 setIsSavingCourses(false);
                               }
                             }}
                           >
-                            Save
-                          </Button>
+                            {ui("Save")}</Button>
                           <Button
                             variant="ghost"
                             disabled={isSavingCourses || !courseAssignmentsDirty}
@@ -2244,14 +2219,12 @@ function UserDetailsDrawer(props: {
                               setSelectedCourseAccessById({ ...baselineCourseAccessById });
                             }}
                           >
-                            Reset
-                          </Button>
+                            {ui("Reset")}</Button>
                         </div>
                       </div>
                     )}
                     <HelpText>
-                      Select exactly which courses this member can see and start.
-                    </HelpText>
+                      {ui("Select exactly which courses this member can see and start.")}</HelpText>
                   </div>
                 ) : null}
 
@@ -2269,12 +2242,10 @@ function UserDetailsDrawer(props: {
                     }}
                     className="w-full min-h-[40px] border border-primary bg-primary text-white hover:bg-white hover:text-foreground hover:border-primary"
                   >
-                    Clear
-                </Button>
+                    {ui("Clear")}</Button>
               </div>
               <HelpText className="text-right">
-                Resets unsaved Access & assignment changes (does not save).
-              </HelpText>
+                {ui("Resets unsaved Access & assignment changes (does not save).")}</HelpText>
               </div>
             </div>
           </div>
@@ -2283,10 +2254,10 @@ function UserDetailsDrawer(props: {
 
           {/* Actions */}
           <div className="space-y-3">
-            <div className="text-xl font-semibold text-foreground">Actions</div>
+            <div className="text-xl font-semibold text-foreground">{ui("Actions")}</div>
             <div className="rounded-xl border bg-background p-5">
               {user.role === "super_admin" ? (
-                <div className="text-sm text-muted-foreground">This user is protected.</div>
+                <div className="text-sm text-muted-foreground">{ui("This user is protected.")}</div>
               ) : (
                 <div className="flex flex-wrap gap-4">
                   {canSetup ? (
@@ -2296,22 +2267,20 @@ function UserDetailsDrawer(props: {
                         disabled={isBusy}
                         onClick={async () => {
                           setIsBusy(true);
-                          const t = toast.loading("Sending setup link…");
+                          const t = toast.loading(ui("Sending setup link…"));
                           try {
                             const res = await props.onPasswordSetupLink(user.id);
-                            toast.success(res.message || "Setup link sent.", { id: t });
+                            toast.success(ui(res.message || "Setup link sent."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to send setup link"), { id: t });
                           } finally {
                             setIsBusy(false);
                           }
                         }}
                       >
-                        Reset Password
-                      </Button>
+                        {ui("Reset Password")}</Button>
                       <HelpText>
-                        Sends the user a secure email link to set or reset their password and finish onboarding.
-                      </HelpText>
+                        {ui("Sends the user a secure email link to set or reset their password and finish onboarding.")}</HelpText>
                     </div>
                   ) : null}
 
@@ -2322,20 +2291,19 @@ function UserDetailsDrawer(props: {
                         disabled={isBusy}
                         onClick={async () => {
                           setIsBusy(true);
-                          const t = toast.loading("Sending setup link…");
+                          const t = toast.loading(ui("Sending setup link…"));
                           try {
                             const res = await props.onResendInvite(user.id);
-                            toast.success(res.message || "Password setup link sent.", { id: t });
+                            toast.success(ui(res.message || "Password setup link sent."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to send setup link"), { id: t });
                           } finally {
                             setIsBusy(false);
                           }
                         }}
                       >
-                        Send new setup link
-                      </Button>
-                      <HelpText>Sends a fresh password setup link to this user.</HelpText>
+                        {ui("Send new setup link")}</Button>
+                      <HelpText>{ui("Sends a fresh password setup link to this user.")}</HelpText>
                     </div>
                   ) : null}
 
@@ -2345,21 +2313,20 @@ function UserDetailsDrawer(props: {
                         variant="destructive"
                         disabled={isBusy}
                         onClick={async () => {
-                          if (!confirm("Disable this user? They will no longer be able to log in.")) return;
+                          if (!confirm(ui("Disable this user? They will no longer be able to log in."))) return;
                           setIsBusy(true);
-                          const t = toast.loading("Disabling…");
+                          const t = toast.loading(ui("Disabling…"));
                           try {
                             const res = await props.onDisable(user.id);
-                            toast.success(res.message || "User disabled.", { id: t });
+                            toast.success(ui(res.message || "User disabled."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to disable user", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to disable user"), { id: t });
                           } finally {
                             setIsBusy(false);
                           }
                         }}
                       >
-                        Disable
-                      </Button>
+                        {ui("Disable")}</Button>
                       {/* <HelpText>Prevents the user from logging in until they are enabled again.</HelpText> */}
                     </div>
                   ) : (
@@ -2368,22 +2335,21 @@ function UserDetailsDrawer(props: {
                         variant="outline"
                         disabled={isBusy}
                         onClick={async () => {
-                          if (!confirm("Enable this user? They will be able to log in again.")) return;
+                          if (!confirm(ui("Enable this user? They will be able to log in again."))) return;
                           setIsBusy(true);
-                          const t = toast.loading("Enabling…");
+                          const t = toast.loading(ui("Enabling…"));
                           try {
                             const res = await props.onEnable(user.id);
-                            toast.success(res.message || "User enabled.", { id: t });
+                            toast.success(ui(res.message || "User enabled."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to enable user", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to enable user"), { id: t });
                           } finally {
                             setIsBusy(false);
                           }
                         }}
                       >
-                        Enable
-                      </Button>
-                      <HelpText>Restores access so the user can log in again.</HelpText>
+                        {ui("Enable")}</Button>
+                      <HelpText>{ui("Restores access so the user can log in again.")}</HelpText>
                     </div>
                   )}
 
@@ -2395,34 +2361,32 @@ function UserDetailsDrawer(props: {
                         className="bg-red-800 text-white hover:bg-red-900"
                         onClick={async () => {
                           const ok = confirm(
-                            "Permanently delete this user?\n\nThis will remove them from reports/exports and scrub personal data. This cannot be undone."
+                            ui("Permanently delete this user?\n\nThis will remove them from reports/exports and scrub personal data. This cannot be undone.")
                           );
                           if (!ok) return;
 
                           const typed = prompt('Type DELETE to confirm this deletion.', "");
                           if ((typed ?? "").trim() !== "DELETE") {
-                            alert("Deletion cancelled.");
+                            alert(ui("Deletion cancelled."));
                             return;
                           }
 
                           setIsBusy(true);
-                          const t = toast.loading("Deleting user…");
+                          const t = toast.loading(ui("Deleting user…"));
                           try {
                             const res = await props.onDelete(user.id);
-                            toast.success(res.message || "User deleted.", { id: t });
+                            toast.success(ui(res.message || "User deleted."), { id: t });
                             onClose();
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to delete user", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to delete user"), { id: t });
                           } finally {
                             setIsBusy(false);
                           }
                         }}
                       >
-                        Delete user
-                      </Button>
+                        {ui("Delete user")}</Button>
                       <HelpText>
-                        Requires typing <span className="font-mono">DELETE</span> to confirm. This action is irreversible.
-                      </HelpText>
+                        {ui("Requires typing ")}<span className="font-mono">{ui("DELETE")}</span> {ui("to confirm. This action is irreversible.")}</HelpText>
                     </div>
                   ) : null}
                 </div>
@@ -2451,6 +2415,7 @@ function MobileFilterSheet(props: {
   onClear: () => void;
   onClose: () => void;
 }) {
+  const ui = useUi();
   const [openDropdown, setOpenDropdown] = useState<FilterDropdownId | null>(null);
   const [entered, setEntered] = useState(false);
 
@@ -2492,10 +2457,10 @@ function MobileFilterSheet(props: {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b flex items-center justify-between">
-          <div className="text-lg font-semibold">Filters</div>
+          <div className="text-lg font-semibold">{ui("Filters")}</div>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={ui("Close")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-primary hover:text-white hover:border-primary"
             onClick={props.onClose}
           >
@@ -2506,10 +2471,10 @@ function MobileFilterSheet(props: {
         <div className="flex-1 overflow-auto p-5 space-y-4">
           <UnderlineDropdown
             id="role"
-            label="Role"
+            label={ui("Role")}
             value={props.roleFilter}
             options={[
-              { value: "all", label: "All roles" },
+              { value: "all", label: ui("All roles") },
               ...props.roleOptions.map((r) => ({ value: r, label: roleLabel(r) })),
             ]}
             open={openDropdown === "role"}
@@ -2522,13 +2487,13 @@ function MobileFilterSheet(props: {
 
           <UnderlineDropdown
             id="status"
-            label="Status"
+            label={ui("Status")}
             value={props.statusFilter}
             options={[
-              { value: "all", label: "All statuses" },
-              { value: "active", label: "Active" },
-              { value: "pending", label: "Pending" },
-              { value: "disabled", label: "Disabled" },
+              { value: "all", label: ui("All statuses") },
+              { value: "active", label: ui("Active") },
+              { value: "pending", label: ui("Pending") },
+              { value: "disabled", label: ui("Disabled") },
             ]}
             open={openDropdown === "status"}
             onToggle={() => setOpenDropdown((v) => (v === "status" ? null : "status"))}
@@ -2541,18 +2506,18 @@ function MobileFilterSheet(props: {
           {props.hideOrganizationFilter ? (
             props.organizationLabel ? (
               <div className="min-w-[180px]">
-                <div className="text-xs text-muted-foreground mb-1">Organization</div>
+                <div className="text-xs text-muted-foreground mb-1">{ui("Organization")}</div>
                 <div className="border-b border-primary pb-2 text-sm text-foreground truncate">{props.organizationLabel}</div>
               </div>
             ) : null
           ) : (
             <UnderlineDropdown
               id="organization"
-              label="Organization"
+              label={ui("Organization")}
               value={props.orgFilter as string}
               options={[
-                { value: "all", label: "All organizations" },
-                { value: "none", label: "No organization" },
+                { value: "all", label: ui("All organizations") },
+                { value: "none", label: ui("No organization") },
                 ...props.orgOptions.map((o) => ({ value: o.id, label: o.label })),
               ]}
               open={openDropdown === "organization"}
@@ -2568,9 +2533,8 @@ function MobileFilterSheet(props: {
 
         <div className="p-5 border-t flex items-center justify-between">
           <Button variant="outline" onClick={props.onClear} className="hover:bg-primary hover:text-white hover:border-primary">
-            Clear
-          </Button>
-          <Button onClick={props.onClose}>Apply</Button>
+            {ui("Clear")}</Button>
+          <Button onClick={props.onClose}>{ui("Apply")}</Button>
         </div>
       </div>
     </div>
@@ -2604,6 +2568,7 @@ function MobileUserCard(props: {
     assignments: Array<{ course_id: string; access: AccessDurationKey }>
   ) => Promise<{ message?: string; assignments?: Array<{ course_id: string; access_expires_at: string | null; access_duration_key: string | null }> }>;
 }) {
+  const ui = useUi();
   const {
     user,
     callerRole,
@@ -2704,7 +2669,7 @@ function MobileUserCard(props: {
         setBaselineCourseExpiresAtById(expiresById);
       } catch (e) {
         if (cancelled) return;
-        toast.error(e instanceof Error ? e.message : "Failed to load course assignments");
+        toast.error(ui(e instanceof Error ? e.message : "Failed to load course assignments"));
       } finally {
         if (!cancelled) setLoadingCourses(false);
       }
@@ -2713,7 +2678,7 @@ function MobileUserCard(props: {
     return () => {
       cancelled = true;
     };
-  }, [canManageCourseAccess, onLoadCourseAssignments, open, user.id]);
+  }, [canManageCourseAccess, onLoadCourseAssignments, open, user.id, ui]);
 
   return (
     <div
@@ -2771,23 +2736,20 @@ function MobileUserCard(props: {
                 <div className="flex items-start justify-between gap-4">
                   <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                     <Users className="h-4 w-4" />
-                    Role
-                  </span>
-                  <span className={`${rowText} text-right`}>{roleLabel(user.role)}</span>
+                    {ui("Role")}</span>
+                  <span className={`${rowText} text-right`}>{ui(roleLabel(user.role))}</span>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                     <Building2 className="h-4 w-4" />
-                    Organization
-                  </span>
-                  <span className={`${rowText} text-right`}>{orgInfo ? orgInfo.label : "No organization"}</span>
+                    {ui("Organization")}</span>
+                  <span className={`${rowText} text-right`}>{orgInfo ? orgInfo.label : ui("No organization")}</span>
                 </div>
                 {/* Email + Org created */}
                 <div className="flex items-start justify-between gap-4">
                   <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                     <Mail className="h-4 w-4" />
-                    Email
-                  </span>
+                    {ui("Email")}</span>
                   <span className={`${rowText} text-right break-all`}>{user.email}</span>
                 </div>
 
@@ -2795,9 +2757,8 @@ function MobileUserCard(props: {
                   <div className="flex items-start justify-between gap-4">
                     <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                       <CalendarDays className="h-4 w-4" />
-                      Org created
-                    </span>
-                    <span className={`${rowText} text-right`}>{formatIso(orgCreated)}</span>
+                      {ui("Org created")}</span>
+                    <span className={`${rowText} text-right`}>{formatIso(orgCreated, ui.locale)}</span>
                   </div>
                 ) : null}
               </div>
@@ -2807,29 +2768,26 @@ function MobileUserCard(props: {
 
           {/* Lifecycle */}
           <div className="space-y-3">
-            <div className={`text-base font-semibold ${rowText}`}>Lifecycle</div>
+            <div className={`text-base font-semibold ${rowText}`}>{ui("Lifecycle")}</div>
             <div className={`rounded-xl border p-4 ${selected ? "border-white/15 bg-white/5" : "bg-background"}`}>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start justify-between gap-4">
                   <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                     <CalendarDays className="h-4 w-4" />
-                    User created
-                  </span>
-                  <span className={`${rowText} text-right`}>{formatIso(user.created_at)}</span>
+                    {ui("User created")}</span>
+                  <span className={`${rowText} text-right`}>{formatIso(user.created_at, ui.locale)}</span>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                     <Send className="h-4 w-4" />
-                    Invited
-                  </span>
-                  <span className={`${rowText} text-right`}>{formatIso(user.invited_at)}</span>
+                    {ui("Invited")}</span>
+                  <span className={`${rowText} text-right`}>{formatIso(user.invited_at, ui.locale)}</span>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <span className={`inline-flex items-center gap-2 ${rowMuted}`}>
                     <CheckCheck className="h-4 w-4" />
-                    Activated
-                  </span>
-                  <span className={`${rowText} text-right`}>{formatIso(user.activated_at)}</span>
+                    {ui("Activated")}</span>
+                  <span className={`${rowText} text-right`}>{formatIso(user.activated_at, ui.locale)}</span>
                 </div>
               </div>
             </div>
@@ -2839,16 +2797,16 @@ function MobileUserCard(props: {
 
           {/* Access & assignment */}
           <div className="space-y-3">
-            <div className={`text-base font-semibold ${rowText}`}>Access & assignment</div>
+            <div className={`text-base font-semibold ${rowText}`}>{ui("Access & assignment")}</div>
             <div className={`rounded-xl border p-4 ${selected ? "border-white/15 bg-white/5" : "bg-background"}`}>
               {user.role === "super_admin" ? (
-                <div className={`text-sm ${rowMuted}`}>This user is protected.</div>
+                <div className={`text-sm ${rowMuted}`}>{ui("This user is protected.")}</div>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className={`block text-xs font-medium mb-1 ${rowMuted}`}>Role</label>
+                    <label className={`block text-xs font-medium mb-1 ${rowMuted}`}>{ui("Role")}</label>
                     {!canEdit ? (
-                      <div className={`text-sm ${rowText}`}>{roleLabel(user.role)}</div>
+                      <div className={`text-sm ${rowText}`}>{ui(roleLabel(user.role))}</div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
@@ -2860,7 +2818,7 @@ function MobileUserCard(props: {
                           >
                             {allowedRoleOptions(callerRole).map((r) => (
                               <option key={r} value={r}>
-                                {roleLabel(r)}
+                                {ui(roleLabel(r))}
                               </option>
                             ))}
                           </select>
@@ -2873,30 +2831,28 @@ function MobileUserCard(props: {
                           onClick={async () => {
                             if (selectedRole === user.role) return;
                             setSavingRole(true);
-                            const t = toast.loading("Saving role…");
+                            const t = toast.loading(ui("Saving role…"));
                             try {
                               const res = await props.onChangeRole(user.id, selectedRole);
-                              toast.success(res.message || "Role updated.", { id: t });
+                              toast.success(ui(res.message || "Role updated."), { id: t });
                             } catch (e) {
-                              toast.error(e instanceof Error ? e.message : "Failed to update role", { id: t });
+                              toast.error(ui(e instanceof Error ? e.message : "Failed to update role"), { id: t });
                             } finally {
                               setSavingRole(false);
                             }
                           }}
                         >
-                          Save
-                        </Button>
+                          {ui("Save")}</Button>
                       </div>
                     )}
                     <HelpText className={selected ? "text-white/80" : ""}>
-                      Controls what the user can access in the app. Changes take effect after you click Save.
-                    </HelpText>
+                      {ui("Controls what the user can access in the app. Changes take effect after you click Save.")}</HelpText>
                   </div>
 
                   <div>
-                    <label className={`block text-xs font-medium mb-1 ${rowMuted}`}>Organization</label>
+                    <label className={`block text-xs font-medium mb-1 ${rowMuted}`}>{ui("Organization")}</label>
                     {!canOrg ? (
-                      <div className={`text-sm ${rowMuted}`}>{orgInfo ? orgInfo.label : "No organization"}</div>
+                      <div className={`text-sm ${rowMuted}`}>{orgInfo ? orgInfo.label : ui("No organization")}</div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
@@ -2906,12 +2862,12 @@ function MobileUserCard(props: {
                             className="h-10 w-full appearance-none rounded-md border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground hover:cursor-pointer disabled:opacity-60"
                             disabled={savingOrg}
                           >
-                            <option value="">No organization</option>
+                            <option value="">{ui("No organization")}</option>
                             {organizations.map((o) => {
                               const { label, inactive } = resolveOrgLabel(o);
                               return (
                                 <option key={o.id} value={o.id}>
-                                  {inactive ? `${label} (inactive)` : label}
+                                  {inactive ? ui("{v0} (inactive)", {v0: label}) : label}
                                 </option>
                               );
                             })}
@@ -2924,35 +2880,33 @@ function MobileUserCard(props: {
                           className={outlineButtonClass}
                           onClick={async () => {
                             setSavingOrg(true);
-                            const t = toast.loading("Saving organization…");
+                            const t = toast.loading(ui("Saving organization…"));
                             try {
                               const res = await props.onAssignOrganization(user.id, selectedOrgId);
-                              toast.success(res.message || "Organization updated.", { id: t });
+                              toast.success(ui(res.message || "Organization updated."), { id: t });
                             } catch (e) {
-                              toast.error(e instanceof Error ? e.message : "Failed to assign organization", { id: t });
+                              toast.error(ui(e instanceof Error ? e.message : "Failed to assign organization"), { id: t });
                             } finally {
                               setSavingOrg(false);
                             }
                           }}
                         >
-                          Save
-                        </Button>
+                          {ui("Save")}</Button>
                       </div>
                     )}
                     {callerRole !== "organization_admin" && canOrg ? (
                       <HelpText className={selected ? "text-white/80" : ""}>
-                        Assign which organization this user belongs to. This can affect what content and data they can see.
-                      </HelpText>
+                        {ui("Assign which organization this user belongs to. This can affect what content and data they can see.")}</HelpText>
                     ) : null}
                   </div>
 
                   {canManageCourseAccess ? (
                     <div>
-                      <label className={`block text-xs font-medium mb-1 ${rowMuted}`}>Course access</label>
+                      <label className={`block text-xs font-medium mb-1 ${rowMuted}`}>{ui("Course access")}</label>
                       {assignableCoursesLoading || loadingCourses ? (
-                        <div className={`text-sm ${rowMuted}`}>Loading course access…</div>
+                        <div className={`text-sm ${rowMuted}`}>{ui("Loading course access…")}</div>
                       ) : assignableCourses.length === 0 ? (
-                        <div className={`text-sm ${rowMuted}`}>No courses available in this organization.</div>
+                        <div className={`text-sm ${rowMuted}`}>{ui("No courses available in this organization.")}</div>
                       ) : (
                         <div className="space-y-3">
                           <div className={`max-h-48 overflow-auto rounded-md border p-2 ${selected ? "border-white/20" : ""}`}>
@@ -2997,11 +2951,11 @@ function MobileUserCard(props: {
                                                 if (!iso) return "";
                                                 const ms = new Date(iso).getTime();
                                                 const expired = Number.isFinite(ms) ? ms <= Date.now() : false;
-                                                return `${expired ? "Expired" : "Expires"} ${formatShortDate(iso)}`;
+                                                return `${expired ? "Expired" : "Expires"} ${formatShortDate(iso, ui.locale)}`;
                                               })()}
                                             </span>
                                           ) : (
-                                            <span className={`hidden sm:inline text-[10px] ${rowMuted}`}>Unlimited</span>
+                                            <span className={`hidden sm:inline text-[10px] ${rowMuted}`}>{ui("Unlimited")}</span>
                                           )}
                                           <select
                                             value={selectedCourseAccessById[cid] ?? "unlimited"}
@@ -3014,7 +2968,7 @@ function MobileUserCard(props: {
                                           >
                                             {ACCESS_DURATION_KEYS.map((k) => (
                                               <option key={k} value={k}>
-                                                {accessKeyLabel(k)}
+                                                {ui(accessKeyLabel(k))}
                                               </option>
                                             ))}
                                           </select>
@@ -3022,8 +2976,7 @@ function MobileUserCard(props: {
                                       ) : null}
                                       {course.is_published ? null : (
                                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">
-                                          Draft
-                                        </span>
+                                          {ui("Draft")}</span>
                                       )}
                                     </span>
                                   </label>
@@ -3038,7 +2991,7 @@ function MobileUserCard(props: {
                               disabled={savingCourses || !courseAssignmentsDirty}
                               onClick={async () => {
                                 setSavingCourses(true);
-                                const t = toast.loading("Saving course access…");
+                                const t = toast.loading(ui("Saving course access…"));
                                 try {
                                   const ids = Array.from(selectedCourseIds).sort();
                                   const assignments = ids.map((course_id) => ({
@@ -3058,16 +3011,15 @@ function MobileUserCard(props: {
                                     }
                                     return next;
                                   });
-                                  toast.success(res.message || "Course access updated.", { id: t });
+                                  toast.success(ui(res.message || "Course access updated."), { id: t });
                                 } catch (e) {
-                                  toast.error(e instanceof Error ? e.message : "Failed to save course access", { id: t });
+                                  toast.error(ui(e instanceof Error ? e.message : "Failed to save course access"), { id: t });
                                 } finally {
                                   setSavingCourses(false);
                                 }
                               }}
                             >
-                              Save
-                            </Button>
+                              {ui("Save")}</Button>
                             <Button
                               variant="ghost"
                               disabled={savingCourses || !courseAssignmentsDirty}
@@ -3077,14 +3029,12 @@ function MobileUserCard(props: {
                               }}
                               className={selected ? "text-white hover:bg-white/10 hover:text-white" : ""}
                             >
-                              Reset
-                            </Button>
+                              {ui("Reset")}</Button>
                           </div>
                         </div>
                       )}
                       <HelpText className={selected ? "text-white/80" : ""}>
-                        Select exactly which courses this member can see and start.
-                      </HelpText>
+                        {ui("Select exactly which courses this member can see and start.")}</HelpText>
                     </div>
                   ) : null}
 
@@ -3100,12 +3050,10 @@ function MobileUserCard(props: {
                       }}
                       className="w-full min-h-[40px] border border-primary bg-primary text-white hover:bg-white hover:text-foreground hover:border-primary"
                     >
-                      Clear
-                    </Button>
+                      {ui("Clear")}</Button>
                   </div>
                   <HelpText className={selected ? "text-white/80 text-right" : "text-right"}>
-                    Resets unsaved Access & assignment changes (does not save).
-                  </HelpText>
+                    {ui("Resets unsaved Access & assignment changes (does not save).")}</HelpText>
                 </div>
               )}
             </div>
@@ -3115,10 +3063,10 @@ function MobileUserCard(props: {
 
           {/* Actions */}
           <div className="space-y-3">
-            <div className={`text-base font-semibold ${rowText}`}>Actions</div>
+            <div className={`text-base font-semibold ${rowText}`}>{ui("Actions")}</div>
             <div className={`rounded-xl border p-4 ${selected ? "border-white/15 bg-white/5" : "bg-background"}`}>
               {user.role === "super_admin" ? (
-                <div className={`text-sm ${rowMuted}`}>This user is protected.</div>
+                <div className={`text-sm ${rowMuted}`}>{ui("This user is protected.")}</div>
               ) : (
                 <div className="flex flex-wrap gap-4">
                   {canSetup ? (
@@ -3129,22 +3077,20 @@ function MobileUserCard(props: {
                         className={outlineButtonClass}
                         onClick={async () => {
                           setBusy(true);
-                          const t = toast.loading("Sending setup link…");
+                          const t = toast.loading(ui("Sending setup link…"));
                           try {
                             const res = await props.onPasswordSetupLink(user.id);
-                            toast.success(res.message || "Setup link sent.", { id: t });
+                            toast.success(ui(res.message || "Setup link sent."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to send setup link"), { id: t });
                           } finally {
                             setBusy(false);
                           }
                         }}
                       >
-                        Reset Password
-                      </Button>
+                        {ui("Reset Password")}</Button>
                       <HelpText className={selected ? "text-white/80" : ""}>
-                        Sends the user a secure email link to set or reset their password and finish onboarding.
-                      </HelpText>
+                        {ui("Sends the user a secure email link to set or reset their password and finish onboarding.")}</HelpText>
                     </div>
                   ) : null}
 
@@ -3156,20 +3102,19 @@ function MobileUserCard(props: {
                         className={outlineButtonClass}
                         onClick={async () => {
                           setBusy(true);
-                          const t = toast.loading("Sending setup link…");
+                          const t = toast.loading(ui("Sending setup link…"));
                           try {
                             const res = await props.onResendInvite(user.id);
-                            toast.success(res.message || "Password setup link sent.", { id: t });
+                            toast.success(ui(res.message || "Password setup link sent."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to send setup link", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to send setup link"), { id: t });
                           } finally {
                             setBusy(false);
                           }
                         }}
                       >
-                        Send new setup link
-                      </Button>
-                      <HelpText className={selected ? "text-white/80" : ""}>Sends a fresh password setup link to this user.</HelpText>
+                        {ui("Send new setup link")}</Button>
+                      <HelpText className={selected ? "text-white/80" : ""}>{ui("Sends a fresh password setup link to this user.")}</HelpText>
                     </div>
                   ) : null}
 
@@ -3179,24 +3124,22 @@ function MobileUserCard(props: {
                         variant="destructive"
                         disabled={busy}
                         onClick={async () => {
-                          if (!confirm("Disable this user? They will no longer be able to log in.")) return;
+                          if (!confirm(ui("Disable this user? They will no longer be able to log in."))) return;
                           setBusy(true);
-                          const t = toast.loading("Disabling…");
+                          const t = toast.loading(ui("Disabling…"));
                           try {
                             const res = await props.onDisable(user.id);
-                            toast.success(res.message || "User disabled.", { id: t });
+                            toast.success(ui(res.message || "User disabled."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to disable user", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to disable user"), { id: t });
                           } finally {
                             setBusy(false);
                           }
                         }}
                       >
-                        Disable
-                      </Button>
+                        {ui("Disable")}</Button>
                       <HelpText className={selected ? "text-white/80" : ""}>
-                        Prevents the user from logging in until they are enabled again.
-                      </HelpText>
+                        {ui("Prevents the user from logging in until they are enabled again.")}</HelpText>
                     </div>
                   ) : (
                     <div className="flex flex-col items-start gap-1 max-w-[260px]">
@@ -3205,22 +3148,21 @@ function MobileUserCard(props: {
                         disabled={busy}
                         className={outlineButtonClass}
                         onClick={async () => {
-                          if (!confirm("Enable this user? They will be able to log in again.")) return;
+                          if (!confirm(ui("Enable this user? They will be able to log in again."))) return;
                           setBusy(true);
-                          const t = toast.loading("Enabling…");
+                          const t = toast.loading(ui("Enabling…"));
                           try {
                             const res = await props.onEnable(user.id);
-                            toast.success(res.message || "User enabled.", { id: t });
+                            toast.success(ui(res.message || "User enabled."), { id: t });
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to enable user", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to enable user"), { id: t });
                           } finally {
                             setBusy(false);
                           }
                         }}
                       >
-                        Enable
-                      </Button>
-                      <HelpText className={selected ? "text-white/80" : ""}>Restores access so the user can log in again.</HelpText>
+                        {ui("Enable")}</Button>
+                      <HelpText className={selected ? "text-white/80" : ""}>{ui("Restores access so the user can log in again.")}</HelpText>
                     </div>
                   )}
 
@@ -3232,34 +3174,32 @@ function MobileUserCard(props: {
                         className="bg-red-800 text-white hover:bg-red-900"
                         onClick={async () => {
                           const ok = confirm(
-                            "Permanently delete this user?\n\nThis will remove them from reports/exports and scrub personal data. This cannot be undone."
+                            ui("Permanently delete this user?\n\nThis will remove them from reports/exports and scrub personal data. This cannot be undone.")
                           );
                           if (!ok) return;
 
                           const typed = prompt('Type DELETE to confirm this deletion.', "");
                           if ((typed ?? "").trim() !== "DELETE") {
-                            alert("Deletion cancelled.");
+                            alert(ui("Deletion cancelled."));
                             return;
                           }
 
                           setBusy(true);
-                          const t = toast.loading("Deleting user…");
+                          const t = toast.loading(ui("Deleting user…"));
                           try {
                             const res = await props.onDelete(user.id);
-                            toast.success(res.message || "User deleted.", { id: t });
+                            toast.success(ui(res.message || "User deleted."), { id: t });
                             props.onToggleOpen(false);
                           } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Failed to delete user", { id: t });
+                            toast.error(ui(e instanceof Error ? e.message : "Failed to delete user"), { id: t });
                           } finally {
                             setBusy(false);
                           }
                         }}
                       >
-                        Delete user
-                      </Button>
+                        {ui("Delete user")}</Button>
                       <HelpText className={selected ? "text-white/80" : ""}>
-                        Requires typing <span className="font-mono">DELETE</span> to confirm. This action is irreversible.
-                      </HelpText>
+                        {ui("Requires typing ")}<span className="font-mono">{ui("DELETE")}</span> {ui("to confirm. This action is irreversible.")}</HelpText>
                     </div>
                   ) : null}
                 </div>
@@ -3281,8 +3221,7 @@ function MobileUserCard(props: {
                   }}
                   onChange={(e) => props.onToggleSelect(e.target.checked)}
                 />
-                Select
-              </label>
+                {ui("Select")}</label>
             ) : null}
 
             <Button
@@ -3290,8 +3229,7 @@ function MobileUserCard(props: {
               onClick={() => props.onToggleOpen(false)}
               className={`ml-auto ${outlineButtonClass}`}
             >
-              Hide details
-              <ChevronDown className="h-4 w-4 rotate-180" />
+              {ui("Hide details")}<ChevronDown className="h-4 w-4 rotate-180" />
             </Button>
           </div>
         </>
@@ -3312,8 +3250,7 @@ function MobileUserCard(props: {
                 }}
                 onChange={(e) => props.onToggleSelect(e.target.checked)}
               />
-              Select
-            </label>
+              {ui("Select")}</label>
           ) : null}
 
           <Button
@@ -3321,8 +3258,7 @@ function MobileUserCard(props: {
             onClick={() => props.onToggleOpen(true)}
             className={`ml-auto ${outlineButtonClass}`}
           >
-            Details
-            <ChevronDown className="h-4 w-4" />
+            {ui("Details")}<ChevronDown className="h-4 w-4" />
           </Button>
         </div>
       ) : null}

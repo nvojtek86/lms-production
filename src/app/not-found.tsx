@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import Link from "next/link";
 import { SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ function getDashboardHref(user: Awaited<ReturnType<typeof getServerUser>>["user"
 }
 
 export default async function NotFound() {
+  const ui = await getUi();
   const { user } = await getServerUser();
   const dashboardHref = getDashboardHref(user);
 
@@ -24,15 +27,14 @@ export default async function NotFound() {
           <SearchX className="h-24 w-24 text-muted-foreground" />
         </div>
 
-        <h1 className="text-4xl font-bold text-foreground">Page not found</h1>
+        <h1 className="text-4xl font-bold text-foreground">{ui("Page not found")}</h1>
 
         <p className="text-lg text-muted-foreground max-w-md">
-          The page you’re looking for doesn’t exist or may have been moved.
-        </p>
+          {ui("The page you’re looking for doesn’t exist or may have been moved.")}</p>
 
         <div className="flex gap-4 justify-center">
           <Button asChild>
-            <Link href={dashboardHref}>Back to Dashboard</Link>
+            <Link href={dashboardHref}>{ui("Back to Dashboard")}</Link>
           </Button>
         </div>
       </div>

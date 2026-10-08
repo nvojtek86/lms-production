@@ -1,3 +1,5 @@
+
+import {getUi} from "@/i18n/server";
 import Link from "next/link";
 import Image from "next/image";
 import { BookOpen, Plus } from "lucide-react";
@@ -26,10 +28,10 @@ function truncateWords(text: string, maxWords: number) {
   return words.slice(0, maxWords).join(" ") + "…";
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale = "en") {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return d.toLocaleDateString(locale, { year: "numeric", month: "short", day: "2-digit" });
 }
 
 function currentIsoTimestamp() {
@@ -63,6 +65,7 @@ const titleClampStyle = {
 };
 
 export default async function CoursesPage({ params }: { params: Promise<{ orgId: string }> }) {
+  const ui = await getUi();
   const { user, error } = await getServerUser();
   if (error || !user) return null;
 
@@ -156,11 +159,11 @@ export default async function CoursesPage({ params }: { params: Promise<{ orgId:
         <div className="flex items-center gap-3">
           <BookOpen className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Courses</h1>
+            <h1 className="text-2xl font-bold text-foreground">{ui("Courses")}</h1>
             <p className="text-muted-foreground">
               {user.role === "member"
-                ? "Assigned published courses from all organizations you belong to."
-                : "Your Journey Begins with a Single Lesson."}
+                ? ui("Assigned published courses from all organizations you belong to.")
+                : ui("Your Journey Begins with a Single Lesson.")}
             </p>
           </div>
         </div>
@@ -169,22 +172,21 @@ export default async function CoursesPage({ params }: { params: Promise<{ orgId:
           <Button asChild className="shrink-0">
             <Link href={`/org/${orgSlug}/courses/new-v2`}>
               <Plus className="h-4 w-4" />
-              Create course
-            </Link>
+              {ui("Create course")}</Link>
           </Button>
         ) : null}
       </div>
 
       {coursesError ? (
         <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Failed to load courses: {coursesError.message}
+          {ui("Failed to load courses: ")}{coursesError.message}
         </div>
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {courses.length === 0 ? (
           <div className="col-span-full rounded-lg border bg-card p-10 text-center text-muted-foreground">
-            {user.role === "member" ? "No assigned courses available yet." : "No courses available yet."}
+            {user.role === "member" ? ui("No assigned courses available yet.") : ui("No courses available yet.")}
           </div>
         ) : (
           courses.map((course) => {
@@ -218,7 +220,7 @@ export default async function CoursesPage({ params }: { params: Promise<{ orgId:
                   {course.cover_image_url ? (
                     <Image
                       src={course.cover_image_url}
-                      alt={`${title} cover`}
+                      alt={ui("{v0} cover", {v0: title})}
                       fill
                       className="object-cover"
                       sizes="(max-width: 1024px) 100vw, 420px"
@@ -229,14 +231,14 @@ export default async function CoursesPage({ params }: { params: Promise<{ orgId:
                     <div className="h-9 w-9 rounded-lg bg-white/15 ring-1 ring-white/20 backdrop-blur flex items-center justify-center">
                       <BookOpen className="h-5 w-5" />
                     </div>
-                    <span className="text-xs font-medium tracking-wide uppercase">Course</span>
+                    <span className="text-xs font-medium tracking-wide uppercase">{ui("Course")}</span>
                   </div>
                 </div>
 
                 <div className="p-5 h-[calc(420px-10rem)] flex flex-col">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="font-medium text-foreground/80">{authorLabel}</span>
-                    <time dateTime={createdAt}>{createdAt ? formatDate(createdAt) : "—"}</time>
+                    <time dateTime={createdAt}>{createdAt ? formatDate(createdAt, ui.locale) : "—"}</time>
                   </div>
 
                   <h3
@@ -248,7 +250,7 @@ export default async function CoursesPage({ params }: { params: Promise<{ orgId:
                   </h3>
 
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    {excerpt ? truncateWords(excerpt, 20) : "No excerpt yet."}
+                    {excerpt ? truncateWords(excerpt, 20) : ui("No excerpt yet.")}
                   </p>
 
                   <div className="mt-auto pt-4 flex items-center justify-between gap-3">
@@ -263,11 +265,11 @@ export default async function CoursesPage({ params }: { params: Promise<{ orgId:
                     <div className="flex items-center gap-2">
                       {canEdit ? (
                         <Button size="sm" variant="secondary" asChild>
-                          <Link href={`/org/${courseOrgKey}/courses/${course.id}/edit-v2`}>Edit</Link>
+                          <Link href={`/org/${courseOrgKey}/courses/${course.id}/edit-v2`}>{ui("Edit")}</Link>
                         </Button>
                       ) : null}
                       <Button size="sm" variant="outline" asChild>
-                        <Link href={`/org/${courseOrgKey}/courses/${(course.slug ?? "").trim() || course.id}`}>View</Link>
+                        <Link href={`/org/${courseOrgKey}/courses/${(course.slug ?? "").trim() || course.id}`}>{ui("View")}</Link>
                       </Button>
                     </div>
                   </div>
